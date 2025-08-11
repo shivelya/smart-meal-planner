@@ -35,3 +35,24 @@ A full-stack web application to help users manage their pantry, plan meals based
 1. Clone the repo:  
    ```bash
    git clone https://github.com/your-username/smart-meal-planner.git
+
+2. Follow the setup instructions in the /docs folder (coming soon) to configure environment variables and database.
+
+3. Run the backend API:
+   ```bash
+   cd backend
+   dotnet run
+
+4. Run the Angular frontend:
+   ```bash
+   cd frontend
+   npm install
+   npm start
+
+## Contributing
+Feel free to open issues or pull requests. Suggestions and feedback welcome!
+
+## License
+GNU General Public License 3.0
+
+This project is a portfolio piece by Ashley Cochran.
