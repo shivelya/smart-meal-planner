@@ -3,17 +3,24 @@
 A full-stack meal planning application built with **Angular** (frontend) and **ASP.NET Core** (backend). This project demonstrates a professional setup including CI/CD, automated documentation, testing, and deployment.
 
 ## Features
-- Pantry management: add, edit, and remove items
+- Pantry management: add, edit, and remove ingredients
 - Generate meal plans based on pantry contents
+- Recipe search and favorites
 - Create shopping lists automatically
 - Save favorite recipes and import/search recipes online
 
 ## Tech Stack
-- **Frontend**: Angular, SCSS, Compodoc documentation
-- **Backend**: ASP.NET Core Web API, OpenAPI & DocFX documentation
+- **Frontend**: Angular, SCSS
+- **Backend**: ASP.NET Core Web API
+- **Database**: PostgreSQL
+- **Recipe API**: TheMealDB
 - **Testing**:
   - Frontend unit tests and e2e tests (Karma & Playwright)
   - Backend unit tests with XUnit (and Moq for mocking)
+- **Documentation**:
+  - Compodoc for the frontend
+  - OpenAPI for the API docs
+  - DocFX for the backend docs
 - **Deployment & CI/CD**: GitHub Actions + Azure Web Apps + Static Web Apps
 
 ## Documentation
