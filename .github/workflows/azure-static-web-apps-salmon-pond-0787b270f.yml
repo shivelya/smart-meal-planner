@@ -53,6 +53,8 @@ jobs:
         with:
           name: backend-openapi
           path: ./docs/api
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
 
       # Create a root landing page for the documentation to account for both frontend and backend
       - name: Add Root Landing Page
