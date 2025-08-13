@@ -1,58 +1,75 @@
-# Smart Meal Planner
+# Meal Planner App
 
-A full-stack web application to help users manage their pantry, plan meals based on available ingredients, generate shopping lists, and save favorite recipes. Uses TheMealDB API for recipe data.
+A full-stack meal planning application built with **Angular** (frontend) and **ASP.NET Core** (backend). This project demonstrates a professional setup including CI/CD, automated documentation, testing, and deployment.
+
+## Features
+- Pantry management: add, edit, and remove ingredients
+- Generate meal plans based on pantry contents
+- Recipe search and favorites
+- Create shopping lists automatically
+- Save favorite recipes and import/search recipes online
 
 ## Tech Stack
+- **Frontend**: Angular, SCSS
+- **Backend**: ASP.NET Core Web API
+- **Database**: PostgreSQL
+- **Recipe API**: TheMealDB
+- **Testing**:
+  - Frontend unit tests and e2e tests (Karma & Playwright)
+  - Backend unit tests with XUnit (and Moq for mocking)
+- **Documentation**:
+  - Compodoc for the frontend
+  - OpenAPI for the API docs
+  - DocFX for the backend docs
+- **Deployment & CI/CD**: GitHub Actions + Azure Web Apps + Static Web Apps
 
-- Frontend: Angular  
-- Backend: .NET 8 Web API  
-- Database: PostgreSQL  
-- Recipe API: TheMealDB  
-- Hosting & CI/CD: Azure + GitHub Actions (planned)
+## Documentation
+- [Frontend Docs](https://salmon-pond-0787b270f.1.azurestaticapps.net/frontend) (generated with Compodoc)
+- [Backend Docs](https://salmon-pond-0787b270f.1.azurestaticapps.net/backend) (generated with DocFX)
 
-## Project Status
+## Project Structure
+```console
+/frontend # Angular app & unit and e2e tests
+/backend # ASP.NET Core Web API & unit tests
+/docs # temporary folder for merged docs (deployed automatically)
+```
 
-⚙️ In progress — actively developing core features.
-
-## Features (Planned)
-
-- Pantry management (add, edit, delete ingredients)  
-- Meal plan creation (manual & automatic generation)  
-- Recipe search and favorites  
-- Shopping list generation based on meal plans  
-- User authentication & profile management
+## CI/CD
+- Automatic **build → test → deploy** workflows for both frontend and backend
+- Automated deployment of generated documentation
+- Ensures that changes are fully tested and documented before deployment
 
 ## Getting Started
+1. Clone the repository:
+```bash
+git clone https://github.com/shivelya/smart-meal-planner.git
+```
 
-### Prerequisites
+2. Install dependencies and build the frontend:
+```bash
+cd frontend
+npm install
+ng build
+```
 
-- Node.js and npm  
-- .NET 8 SDK  
-- PostgreSQL database
+3. Build and run the backend:
+```bash
+cd backend
+dotnet restore
+dotnet build
+dotnet run
+```
 
-### Running Locally
+4. Run tests:
+```bash
+# Frontend unit
+ng test
+# Frontend e2e (Playwright)
+npx playwright test
+# Backend
+dotnet test Backend.Tests
+```
 
-1. Clone the repo:  
-   ```bash
-   git clone https://github.com/your-username/smart-meal-planner.git
-
-2. Follow the setup instructions in the /docs folder (coming soon) to configure environment variables and database.
-
-3. Run the backend API:
-   ```bash
-   cd backend
-   dotnet run
-
-4. Run the Angular frontend:
-   ```bash
-   cd frontend
-   npm install
-   npm start
-
-## Contributing
-Feel free to open issues or pull requests. Suggestions and feedback welcome!
-
-## License
-GNU General Public License 3.0
-
-This project is a portfolio piece by Ashley Cochran.
+## Notes
+- Documentation is automatically generated and deployed via CI/CD; no need to commit generated docs.
+- Follows best practices for modern full-stack development, including clean repo structure, automated tests, and professional CI/CD pipelines.
