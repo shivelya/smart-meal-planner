@@ -72,6 +72,9 @@ jobs:
           name: .net-app
           path: .
 
+      - name: Install Swagger CLI
+        run: dotnet tool install --global Swashbuckle.AspNetCore.Cli
+
       - name: Generate OpenAPI docs
         run: swagger tofile --output ./openapi.json ./backend/bin/Debug/net8.0/Backend.dll v1
 
