@@ -63,30 +63,53 @@ jobs:
       - name: Build with dotnet
         run: dotnet build backend/Backend --configuration Release
 
+      - name: Build Tests with dotnet
+        run: dotnet build backend/Backend.Tests --configuration Release
+
+  test:
+    runs-on: windows-latest
+    needs: build
+    permissions:
+      contents: read #This is required for actions/checkout
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
+
+      - name: Restore dependencies
+        run: dotnet restore backend/Backend
+
+      - name: Restore Test dependencies
+        run: dotnet restore backend/Backend.Tests
+
       - name: Run unit tests
         run: dotnet test backend/Backend.Tests --configuration Release --no-build
 
-      - name: dotnet publish
-        run: dotnet publish backend/Backend -c Release -o publish
-
-      - name: Upload artifact for deployment job
-        uses: actions/upload-artifact@v4
-        with:
-          name: .net-app
-          path: publish
+#      - name: Upload artifact for deployment job
+#        uses: actions/upload-artifact@v4
+#        with:
+#          name: .net-app
+#          path: publish
 
   deploy:
     runs-on: windows-latest
-    needs: build
+    needs: [build, test]
     permissions:
       id-token: write #This is required for requesting the JWT
       contents: read #This is required for actions/checkout
 
     steps:
-      - name: Download artifact from build job
-        uses: actions/download-artifact@v4
-        with:
-          name: .net-app
+#      - name: Download artifact from build job
+#        uses: actions/download-artifact@v4
+#        with:
+#          name: .net-app
+
+      - name: dotnet publish
+        run: dotnet publish backend/Backend -c Release -o publish
       
       - name: Login to Azure
         uses: azure/login@v2
