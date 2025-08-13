@@ -29,7 +29,7 @@ jobs:
         working-directory: ./frontend
         run: npm install
 
-      - name: Build Frontend Documentation
+      - name: Generate Frontend Documentation
         working-directory: ./frontend
         run: npx compodoc -p tsconfig.json -d _compodoc
 
@@ -41,7 +41,7 @@ jobs:
       - name: Install DocFX
         run: dotnet tool install -g docfx
 
-      - name: Generate Documentation
+      - name: Generate Backend Documentation
         run: docfx build ./backend/Backend/docfx.json
 
       - name: Merge Docs
@@ -51,6 +51,23 @@ jobs:
           mkdir -p docs/frontend
           cp -r ./frontend/_compodoc/* docs/frontend/
           cp -r ./backend/Backend/_site/* docs/backend/
+
+      # Create a root landing page for the documentation to account for both frontend and backend
+      - name: Add Root Landing Page
+        run: |
+          cat <<EOF > docs_site/index.html
+          <!DOCTYPE html>
+          <html>
+            <head><title>Smart Meal Planner Documentation</title></head>
+            <body>
+              <h1>Smart Meal Planner Documentation</h1>
+              <ul>
+                <li><a href="backend/">Backend ASP.NET Core Docs</a></li>
+                <li><a href="frontend/">Frontend Angular Docs</a></li>
+              </ul>
+            </body>
+          </html>
+          EOF
 
       - name: Deploy
         id: deploy
