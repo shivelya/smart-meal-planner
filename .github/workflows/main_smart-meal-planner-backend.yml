@@ -63,8 +63,11 @@ jobs:
       - name: Build with dotnet
         run: dotnet build backend/Backend --configuration Release
 
-      - name: Build Tests with dotnet
-        run: dotnet build backend/Backend.Tests --configuration Release
+      - name: Upload artifact for deployment job
+        uses: actions/upload-artifact@v4
+        with:
+          name: .net-app
+          path: .
 
   test:
     runs-on: windows-latest
@@ -83,12 +86,6 @@ jobs:
       - name: Run unit tests
         run: dotnet test backend/Backend.Tests --configuration Release
 
-#      - name: Upload artifact for deployment job
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: .net-app
-#          path: publish
-
   deploy:
     runs-on: windows-latest
     needs: [build, test]
@@ -97,10 +94,10 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
-#      - name: Download artifact from build job
-#        uses: actions/download-artifact@v4
-#        with:
-#          name: .net-app
+      - name: Download artifact from build job
+        uses: actions/download-artifact@v4
+        with:
+          name: .net-app
 
       - name: dotnet publish
         run: dotnet publish backend/Backend -c Release -o publish
