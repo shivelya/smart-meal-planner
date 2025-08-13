@@ -6,7 +6,7 @@ public class UnitTest1
     public void Test1()
     {
         // Arrange
-        var expected = 6;
+        var expected = 5;
         var actual = 2 + 3;
 
         // Act & Assert
