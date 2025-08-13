@@ -13,49 +13,49 @@ on:
       - main
 
 jobs:
-  build_and_deploy_job:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
-    runs-on: ubuntu-latest
-    name: Build and Deploy Job
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          submodules: true
-          lfs: false
+  # build_and_deploy_job:
+  #   if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
+  #   runs-on: ubuntu-latest
+  #   name: Build and Deploy Job
+  #   steps:
+  #     - uses: actions/checkout@v3
+  #       with:
+  #         submodules: true
+  #         lfs: false
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v3
-        with:
-          node-version: '20' # Specify the Node.js version to use
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: '20' # Specify the Node.js version to use
 
-      - name: Install Dependencies
-        working-directory: ./frontend
-        run: npm install
+  #     - name: Install Dependencies
+  #       working-directory: ./frontend
+  #       run: npm install
 
-      - name: Build Frontend
-        working-directory: ./frontend
-        run: npm run build --if-present
+  #     - name: Build Frontend
+  #       working-directory: ./frontend
+  #       run: npm run build --if-present
 
-      - name: Run Unit Tests
-        working-directory: ./frontend
-        run: npm test -- --watch=false --browsers=ChromeHeadless
+  #     - name: Run Unit Tests
+  #       working-directory: ./frontend
+  #       run: npm test -- --watch=false --browsers=ChromeHeadless
 
-      - name: Build And Deploy
-        id: builddeploy
-        uses: Azure/static-web-apps-deploy@v1
-        with:
-          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_TREE_0078D2D0F }}
-          repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
-          action: "upload"
-          ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
-          # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
-          app_location: "./frontend" # App source code path
-          api_location: "" # Api source code path - optional
-          output_location: "dist/frontend/browser" # Built app content directory - optional
-          ###### End of Repository/Build Configurations ######
+  #     - name: Build And Deploy
+  #       id: builddeploy
+  #       uses: Azure/static-web-apps-deploy@v1
+  #       with:
+  #         azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_LEMON_TREE_0078D2D0F }}
+  #         repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
+  #         action: "upload"
+  #         ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
+  #         # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
+  #         app_location: "./frontend" # App source code path
+  #         api_location: "" # Api source code path - optional
+  #         output_location: "dist/frontend/browser" # Built app content directory - optional
+  #         ###### End of Repository/Build Configurations ######
 
   build_docs:
-    needs: build_and_deploy_job
+    # needs: build_and_deploy_job
     if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build & Deploy Documentation
@@ -76,7 +76,7 @@ jobs:
 
       - name: Build Documentation
         working-directory: ./frontend
-        run: npx compodoc -p ./frontend/tsconfig.json -d _compodoc
+        run: npx compodoc -p tsconfig.json -d _compodoc
 
       - name: Deploy Documentation
         id: deploydocs
