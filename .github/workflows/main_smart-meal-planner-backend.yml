@@ -122,7 +122,7 @@ jobs:
 
   build_docs:
     needs: [build, deploy]
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     permissions:
       contents: read #This is required for actions/checkout
     steps:
@@ -134,7 +134,7 @@ jobs:
           dotnet-version: '8.x'
 
       - name: Install DocFX
-        run: dotnet tool install -g docfx.console
+        run: dotnet tool install docfx.console
 
       - name: Generate Documentation
         run: docfx build
