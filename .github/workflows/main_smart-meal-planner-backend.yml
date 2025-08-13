@@ -19,13 +19,13 @@
 #        dotnet-version: '8.0.x'
 
 #    - name: Restore dependencies
-#      run: dotnet restore backend/
+#      run: dotnet restore backend/Backend
 
 #    - name: Build
-#      run: dotnet build backend/ --configuration Release --no-restore
+#      run: dotnet build backend/Backend --configuration Release --no-restore
 
 #    - name: Publish
-#      run: dotnet publish backend/ -c Release -o publish
+#      run: dotnet publish backend/Backend -c Release -o publish
 
 #    - name: Deploy to Azure Web App
 #      uses: azure/webapps-deploy@v2
@@ -61,10 +61,10 @@ jobs:
           dotnet-version: '8.x'
 
       - name: Build with dotnet
-        run: dotnet build backend/ --configuration Release
+        run: dotnet build backend/Backend --configuration Release
 
       - name: dotnet publish
-        run: dotnet publish backend/ -c Release -o publish
+        run: dotnet publish backend/Backend -c Release -o publish
 
       - name: Upload artifact for deployment job
         uses: actions/upload-artifact@v4

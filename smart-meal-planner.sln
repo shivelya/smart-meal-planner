@@ -1,8 +1,12 @@
-Microsoft Visual Studio Solution File, Format Version 12.00
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMealPlannerBackend", "backend\SmartMealPlannerBackend.csproj", "{CD049E39-7A49-7EF7-20E9-9E689364BE21}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMealPlannerBackend", "backend\Backend\SmartMealPlannerBackend.csproj", "{CD049E39-7A49-7EF7-20E9-9E689364BE21}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{4931161D-218E-4DD6-AD2A-E699371EF55E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.Tests", "backend\Backend.Tests\Backend.Tests.csproj", "{AB7029BF-06F6-49FD-A27F-393F7697DE32}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -14,11 +18,18 @@ Global
 		{CD049E39-7A49-7EF7-20E9-9E689364BE21}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CD049E39-7A49-7EF7-20E9-9E689364BE21}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CD049E39-7A49-7EF7-20E9-9E689364BE21}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AB7029BF-06F6-49FD-A27F-393F7697DE32}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AB7029BF-06F6-49FD-A27F-393F7697DE32}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AB7029BF-06F6-49FD-A27F-393F7697DE32}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AB7029BF-06F6-49FD-A27F-393F7697DE32}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {28B16E98-6C87-40C4-B878-8B35808C18CB}
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AB7029BF-06F6-49FD-A27F-393F7697DE32} = {4931161D-218E-4DD6-AD2A-E699371EF55E}
 	EndGlobalSection
 EndGlobal
