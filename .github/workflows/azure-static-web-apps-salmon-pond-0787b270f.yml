@@ -5,14 +5,9 @@ on:
     workflows: ["Backend CI/CD", "Frontend CI/CD"]
     types:
       - completed
-  pull_request:
-    types: [opened, synchronize, reopened, closed]
-    branches:
-      - main
 
 jobs:
   build_and_deploy_docs:
-    if: github.event_name == 'push' || (github.event_name == 'pull_request' && github.event.action != 'closed')
     runs-on: ubuntu-latest
     name: Build and Deploy Docs
     steps:
