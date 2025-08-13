@@ -2,6 +2,9 @@ name: Frontend CI/CD
 
 on:
   push:
+    paths:
+      - 'frontend/**'
+      - '.github/workflows/azure-static-web-apps-lemon-tree-0078d2d0f.yml'
     branches:
       - main
   pull_request:
@@ -35,7 +38,7 @@ jobs:
 
       - name: Run Unit Tests
         working-directory: ./frontend
-        run: npm test -- --watch=false --browsers=ChromeHeadlessCI
+        run: npm test -- --watch=false --browsers=ChromeHeadless
 
       - name: Build And Deploy
         id: builddeploy

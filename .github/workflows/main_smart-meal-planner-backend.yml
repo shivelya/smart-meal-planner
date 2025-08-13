@@ -42,6 +42,9 @@ name: Backend CI/CD
   
 on:
   push:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/main_smart-meal-planner-backend.yml'
     branches:
       - main
   workflow_dispatch:
