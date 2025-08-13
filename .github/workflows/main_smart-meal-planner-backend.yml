@@ -137,7 +137,7 @@ jobs:
         run: dotnet tool install -g docfx
 
       - name: Generate Documentation
-        run: docfx build
+        run: docfx build .\backend\Backend\docfx.json
 
       - name: Login to Azure
         uses: azure/login@v2
