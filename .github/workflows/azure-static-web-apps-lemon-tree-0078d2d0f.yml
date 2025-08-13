@@ -19,6 +19,20 @@ jobs:
         with:
           submodules: true
           lfs: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20' # Specify the Node.js version to use
+
+      - name: Install Dependencies
+        working-directory: ./frontend
+        run: npm run build --if-present
+
+      - name: Run Unit Tests
+        working-directory: ./frontend
+        run: npm test -- --watch=false --browsers=ChromeHeadlessCI
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
