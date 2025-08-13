@@ -80,14 +80,8 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Restore dependencies
-        run: dotnet restore backend/Backend
-
-      - name: Restore Test dependencies
-        run: dotnet restore backend/Backend.Tests
-
       - name: Run unit tests
-        run: dotnet test backend/Backend.Tests --configuration Release --no-build
+        run: dotnet test backend/Backend.Tests --configuration Release
 
 #      - name: Upload artifact for deployment job
 #        uses: actions/upload-artifact@v4
