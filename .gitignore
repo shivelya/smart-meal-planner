@@ -33,3 +33,4 @@ yarn-error.log*
 
 # Documentation files
 backend/Backend/_site/
+frontend/_compodoc/
