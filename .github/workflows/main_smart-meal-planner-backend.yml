@@ -153,7 +153,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_SALMON_POND_0787B270F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
-          app_location: "./_site" # App source code path
+          app_location: "./backend/Backend/_site" # App source code path
           api_location: "" # Api source code path - optional
           output_location: "" # Built app content directory - optional
 
