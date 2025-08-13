@@ -55,7 +55,7 @@ jobs:
       # Create a root landing page for the documentation to account for both frontend and backend
       - name: Add Root Landing Page
         run: |
-          cat <<EOF > docs_site/index.html
+          cat <<EOF > docs/index.html
           <!DOCTYPE html>
           <html>
             <head><title>Smart Meal Planner Documentation</title></head>
