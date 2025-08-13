@@ -1,9 +1,10 @@
 name: Build and Deploy Docs
 
 on:
-  push:
-    branches:
-      - main
+  workflow_run:
+    workflows: ["Backend CI/CD", "Frontend CI/CD"]
+    types:
+      - completed
   pull_request:
     types: [opened, synchronize, reopened, closed]
     branches:
@@ -52,6 +53,12 @@ jobs:
           cp -r ./frontend/_compodoc/* docs/frontend/
           cp -r ./backend/Backend/_site/* docs/backend/
 
+      - name: Download OpenAPI docs artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-openapi
+          path: ./docs/api
+
       # Create a root landing page for the documentation to account for both frontend and backend
       - name: Add Root Landing Page
         run: |
@@ -76,6 +83,7 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN_SALMON_POND_0787B270F }}
           repo_token: ${{ secrets.GITHUB_TOKEN }} # Used for Github integrations (i.e. PR comments)
           action: "upload"
+          skip_app_build: true
           ###### Repository/Build Configurations - These values can be configured to match your app requirements. ######
           # For more information regarding Static Web App workflow configurations, please visit: https://aka.ms/swaworkflowconfig
           app_location: "docs" # App source code path

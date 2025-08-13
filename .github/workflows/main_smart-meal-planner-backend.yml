@@ -72,6 +72,15 @@ jobs:
           name: .net-app
           path: .
 
+      - name: Generate OpenAPI docs
+        run: dotnet swagger tofile --output ./openapi.json ./backend/bin/Debug/net8.0/Backend.dll v1
+
+      - name: Upload API docs artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-openapi
+          path: ./openapi.json
+
   test:
     runs-on: windows-latest
     needs: build
