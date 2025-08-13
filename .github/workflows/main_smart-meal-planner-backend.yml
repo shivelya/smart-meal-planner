@@ -76,7 +76,7 @@ jobs:
         run: dotnet tool install --global Swashbuckle.AspNetCore.Cli
 
       - name: Generate OpenAPI docs
-        run: swagger tofile --output ./openapi.json ./backend/bin/Debug/net8.0/Backend.dll v1
+        run: swagger tofile --output ./openapi.json ./backend/bin/Debug/net8.0/SmartMealPlannerBackend.dll v1
 
       - name: Upload API docs artifact
         uses: actions/upload-artifact@v4
