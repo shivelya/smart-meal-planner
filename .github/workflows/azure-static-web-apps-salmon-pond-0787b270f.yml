@@ -48,6 +48,12 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
 
+      - name: Upload Debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: test
+          path: ./
+
       - name: Merge Docs
         run: |
           rm -rf docs
