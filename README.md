@@ -3,11 +3,11 @@
 A full-stack meal planning application built with **Angular** (frontend) and **ASP.NET Core** (backend). This project demonstrates a professional setup including CI/CD, automated documentation, testing, and deployment.
 
 ## Features
-- Pantry management: add, edit, and remove ingredients
-- Generate meal plans based on pantry contents
-- Recipe search and favorites
-- Create shopping lists automatically
-- Save favorite recipes and import/search recipes online
+- Pantry management: add, edit, and remove ingredients  (planned)
+- Generate meal plans based on pantry contents (planned)
+- Recipe search and favorites (planned)
+- Create shopping lists automatically (planned)
+- Save favorite recipes and import/search recipes online (planned)
 
 ## Tech Stack
 - **Frontend**: Angular, SCSS
@@ -26,6 +26,7 @@ A full-stack meal planning application built with **Angular** (frontend) and **A
 ## Documentation
 - [Frontend Docs](https://salmon-pond-0787b270f.1.azurestaticapps.net/frontend) (generated with Compodoc)
 - [Backend Docs](https://salmon-pond-0787b270f.1.azurestaticapps.net/backend) (generated with DocFX)
+- [API Docs](https://salmon-pond-0787b270f.1.azurestaticapps.net/api) (generated with OpenAPI)
 
 ## Project Structure
 ```console
@@ -56,17 +57,18 @@ ng build
 ```bash
 cd backend
 dotnet restore
+dotnet tool restore
 dotnet build
 dotnet run
 ```
 
 4. Run tests:
 ```bash
-# Frontend unit
+# Frontend unit (Karma)
 ng test
 # Frontend e2e (Playwright)
 npx playwright test
-# Backend
+# Backend (xUnit)
 dotnet test Backend.Tests
 ```
 
