@@ -55,7 +55,7 @@ jobs:
           mkdir -p docs/frontend
           cp -r ./frontend/_compodoc/* docs/frontend/
           cp -r ./backend/Backend/_site/* docs/backend/
-          cp -r ./smart-meal-planner/api/* docs/api/
+          cp -r ./api/* docs/api/
 
       # Create a root landing page for the documentation to account for both frontend and backend
       - name: Add Root Landing Page
