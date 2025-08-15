@@ -69,6 +69,7 @@ jobs:
                 <li><a href="frontend/">Frontend Angular Docs</a></li>
                 <li><a href="backend/">Backend ASP.NET Core Docs</a></li>
                 <li><a href="http://https://smart-meal-planner-backend-ceazgjcaehfghdf7.canadacentral-01.azurewebsites.net/swagger">API Docs</a></li>
+                <li><a href="coveragereport">Backend Code Coverage Report</a></li>
               </ul>
             </body>
           </html>
