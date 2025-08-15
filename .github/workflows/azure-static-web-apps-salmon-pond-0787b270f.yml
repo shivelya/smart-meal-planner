@@ -40,23 +40,13 @@ jobs:
       - name: Generate Backend Documentation
         run: docfx build ./backend/Backend/docfx.json
 
-      - name: Download OpenAPI docs artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: backend-openapi
-          path: api
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
-
       - name: Merge Docs
         run: |
           rm -rf docs
           mkdir -p docs/backend
           mkdir -p docs/frontend
-          mkdir -p docs/api
           cp -r ./frontend/_compodoc/* docs/frontend/
           cp -r ./backend/Backend/_site/* docs/backend/
-          cp -r ./api/* docs/api/
 
       # Create a root landing page for the documentation to account for both frontend and backend
       - name: Add Root Landing Page
@@ -70,7 +60,7 @@ jobs:
               <ul>
                 <li><a href="frontend/">Frontend Angular Docs</a></li>
                 <li><a href="backend/">Backend ASP.NET Core Docs</a></li>
-                <li><a href="api/">Backend API Docs</a></li>
+                <li><a href="http://https://smart-meal-planner-backend-ceazgjcaehfghdf7.canadacentral-01.azurewebsites.net/swagger">API Docs</a></li>
               </ul>
             </body>
           </html>
