@@ -2,7 +2,7 @@ name: Build and Deploy Docs
 
 on:
   workflow_run:
-    workflows: ["Backend CI/CD", "Frontend CI/CD"]
+    workflows: ["Main Backend CI/CD", "Main Frontend CI/CD"]
     types:
       - completed
 
