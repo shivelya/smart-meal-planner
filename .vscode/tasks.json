@@ -1,0 +1,17 @@
+{
+    // See https://go.microsoft.com/fwlink/?LinkId=733558
+    // for the documentation about the tasks.json format
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "Run Tests with Coverage",
+            "type": "shell",
+            "command": "dotnet test --collect:\"XPlat Code Coverage\"; reportgenerator -reports:\"**/coverage.cobertura.xml\" -targetdir:\"coveragereport\"; start coveragereport/index.html",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            },
+            "problemMatcher": []
+        }
+    ]
+}
