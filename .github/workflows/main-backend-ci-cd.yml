@@ -1,50 +1,16 @@
-#name: Build and Deploy Backend to Azure
-
-#on:
-#  push:
-#    branches:
-#      - main  # Change if using a different branch
-
-#jobs:
-#  build-and-deploy:
-#    runs-on: windows-latest
-
-#    steps:
-#    - name: Checkout code
-#      uses: actions/checkout@v4
-
-#    - name: Set up .NET
-#      uses: actions/setup-dotnet@v4
-#      with:
-#        dotnet-version: '8.0.x'
-
-#    - name: Restore dependencies
-#      run: dotnet restore backend/Backend
-
-#    - name: Build
-#      run: dotnet build backend/Backend --configuration Release --no-restore
-
-#    - name: Publish
-#      run: dotnet publish backend/Backend -c Release -o publish
-
-#    - name: Deploy to Azure Web App
-#      uses: azure/webapps-deploy@v2
-#      with:
-#        app-name: 'smart-meal-planner-backend'
-#        publish-profile: ${{ secrets.AZURE_PUBLISH_PROFILE }}
-#        package: publish
-
-
-# Docs for the Azure Web Apps Deploy action: https://github.com/Azure/webapps-deploy
-# More GitHub Actions for Azure: https://github.com/Azure/actions
-
-name: Backend CI/CD
+name: Main Backend CI/CD
   
 on:
   push:
     paths:
       - 'backend/**'
-      - '.github/workflows/main_smart-meal-planner-backend.yml'
+      - '.github/workflows/main-backend-ci-cd.yml'
+    branches:
+      - main
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/main-backend-ci-cd.yml'
     branches:
       - main
   workflow_dispatch:
@@ -91,8 +57,29 @@ jobs:
         with:
           dotnet-version: '8.x'
 
-      - name: Run unit tests
-        run: dotnet test backend/Backend.Tests --configuration Release
+      - name: Restore dependencies
+        run: dotnet restore backend/Backend.Tests
+
+      - name: Install report generator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.1.21
+
+      - name: Build the test project
+        run: dotnet build backend/Backend.Tests --configuration Release --no-restore
+
+      - name: Run unit tests with coverage
+        run: dotnet test backend/Backend.Tests --configuration Release -- collect:"XPlat Code Coverage" --results-directory ./TestResults
+
+      - name: Generate code coverage report
+        run: reportgenerator \
+          -reports:./TestResults/**/coverage.cobertura.xml \
+          -targetdir:"coveragereport" \
+          -reporttypes:Html
+
+      - name: Upload code coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-coverage-report-deploy
+          path: coveragereport
 
   deploy:
     runs-on: windows-latest
