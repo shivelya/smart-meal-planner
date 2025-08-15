@@ -39,14 +39,22 @@ jobs:
 
       - name: Generate Backend Documentation
         run: docfx build ./backend/Backend/docfx.json
+      
+      - name: Download Code Coverage Report
+        uses: actions/download-artifact@v4
+        with:
+          name: code-coverage-report-deploy
+          path: coveragereport
 
       - name: Merge Docs
         run: |
           rm -rf docs
           mkdir -p docs/backend
           mkdir -p docs/frontend
+          mkdir -p docs/coveragereport
           cp -r ./frontend/_compodoc/* docs/frontend/
           cp -r ./backend/Backend/_site/* docs/backend/
+          cp -r ./coveragereport/* docs/coveragereport/
 
       # Create a root landing page for the documentation to account for both frontend and backend
       - name: Add Root Landing Page
