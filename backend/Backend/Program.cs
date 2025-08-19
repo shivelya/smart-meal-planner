@@ -3,6 +3,7 @@ using Backend.Services.Impl;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
+using SmartMealPlannerBackend.Model;
 using SmartMealPlannerBackend.Services;
 using SmartMealPlannerBackend.Services.Impl;
 
@@ -14,7 +15,6 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddDbContext<SmartMealPlannerBackend.PlannerContext>(options =>
     options.UseNpgsql(connectionString));
 
-builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -42,7 +42,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-builder.Services.AddScoped<IJwtGenerator, JwtGenerator>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.AddScoped<IUserService, UserSerivce>();
 
 var app = builder.Build();
 

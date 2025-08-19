@@ -1,4 +1,3 @@
-using Xunit;
 using SmartMealPlannerBackend.DTOs;
 
 namespace SmartMealPlannerBackend.Tests.DTOs

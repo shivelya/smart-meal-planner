@@ -106,6 +106,17 @@ namespace SmartMealPlannerBackend.Tests
             var context = new PlannerContext(options, config);
             Assert.NotNull(context.MealPlanEntries);
         }
+
+        [Fact]
+        public void PlannerContext_RefreshTokens_Property_Works()
+        {
+            var options = new DbContextOptionsBuilder<PlannerContext>()
+                .UseInMemoryDatabase(databaseName: "TestDb_RefreshTokens")
+                .Options;
+            var config = new ConfigurationBuilder().Build();
+            var context = new PlannerContext(options, config);
+            Assert.NotNull(context.RefreshTokens);
+        }
     }
 
     public class TestPlannerContext : PlannerContext

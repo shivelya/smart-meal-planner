@@ -22,6 +22,7 @@ namespace SmartMealPlannerBackend
         public DbSet<RecipeIngredient> RecipeIngredients { get; set; } = null!;
         public DbSet<MealPlan> MealPlans { get; set; } = null!;
         public DbSet<MealPlanEntry> MealPlanEntries { get; set; } = null!;
+        public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

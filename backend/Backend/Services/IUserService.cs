@@ -1,15 +1,14 @@
 using SmartMealPlannerBackend.DTOs;
-using System.Collections.Generic;
-using System.Threading.Tasks;
+using SmartMealPlannerBackend.Model;
 
 namespace SmartMealPlannerBackend.Services
 {
     public interface IUserService
     {
-        Task<UserDto?> GetUserByIdAsync(int id);
-        Task<IEnumerable<UserDto>> GetAllUsersAsync();
-        Task<UserDto> CreateUserAsync(UserDto userDto);
-        Task<UserDto> UpdateUserAsync(UserDto userDto);
-        Task<bool> DeleteUserAsync(int id);
+        Task<User> GetByEmailAsync(string email);
+        Task<User> GetByIdAsync(int id);
+        Task<User> CreateUserAsync(string email, string password);
+        Task<UserDto> UpdateUserDtoAsync(UserDto userDto);
+        bool VerifyPasswordHash(string password, User user);
     }
 }
