@@ -110,4 +110,4 @@ jobs:
         with:
           app-name: 'smart-meal-planner-backend'
           slot-name: 'Production'
-          package: .
+          package: ./publish
