@@ -4,52 +4,11 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Run Tests with Coverage",
+            "label": "Run Tests with Coverage 2.0",
             "type": "shell",
-            "command": "dotnet",
-            "args": [
-                "test",
-                "--collect:XPlat Code Coverage"
-            ],
-            // "command": "dotnet test --collect:\"XPlat Code Coverage\"; reportgenerator -reports:\"**/coverage.cobertura.xml\" -targetdir:\"coveragereport\"; start coveragereport/index.html",
+            "command": "dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=../TestResults/coverage.cobertura.xml; reportgenerator -reports:../TestResults/coverage.cobertura.xml -targetdir:../TestResults/coveragereport; start ../TestResults/coveragereport/index.html",
             "options": {
                 "cwd": "${workspaceFolder}/backend/Backend.Tests"
-            },
-            "group": {
-                "kind": "test",
-                "isDefault": true
-            },
-            "problemMatcher": []
-        },
-        {
-            "label": "Generate Coverage Report",
-            "type": "shell",
-            "command": "reportgenerator",
-            "args": [
-                "-reports:**/coverage.cobertura.xml",
-                "-targetdir:coveragereport"
-            ],
-            "options": {
-                "cwd": "${workspaceFolder}/backend/Backend.Tests"
-            },
-            "group": {
-                "kind": "test",
-                "isDefault": false
-            },
-            "problemMatcher": []
-        }
-    ],
-    "compounds": [
-        {
-            "label": "Run Tests and Generate Coverage Report",
-            "dependsOn": [
-                "Run Tests with Coverage",
-                "Generate Coverage Report"
-            ],
-            "dependsOrder": "sequence",
-            "group": {
-                "kind": "test",
-                "isDefault": true
             }
         }
     ]
