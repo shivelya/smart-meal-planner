@@ -2,7 +2,7 @@
 # Visual Studio Version 17
 VisualStudioVersion = 17.5.2.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SmartMealPlannerBackend", "backend\Backend\SmartMealPlannerBackend.csproj", "{CD049E39-7A49-7EF7-20E9-9E689364BE21}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BackendProj", "backend\Backend\Backend.csproj", "{CD049E39-7A49-7EF7-20E9-9E689364BE21}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{4931161D-218E-4DD6-AD2A-E699371EF55E}"
 EndProject
