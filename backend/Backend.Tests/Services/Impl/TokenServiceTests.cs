@@ -1,9 +1,9 @@
 using Microsoft.Extensions.Configuration;
-using SmartMealPlannerBackend.Model;
-using SmartMealPlannerBackend.Services.Impl;
+using Backend.Model;
+using Backend.Services.Impl;
 using Microsoft.EntityFrameworkCore;
 
-namespace SmartMealPlannerBackend.Tests.Services.Impl
+namespace Backend.Tests.Services.Impl
 {
     public class TokenServiceTests
     {

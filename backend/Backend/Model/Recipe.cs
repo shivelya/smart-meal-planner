@@ -1,4 +1,4 @@
-namespace SmartMealPlannerBackend.Model
+namespace Backend.Model
 {
     public class Recipe
     {

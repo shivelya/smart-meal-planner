@@ -1,4 +1,4 @@
-namespace SmartMealPlannerBackend.DTOs
+namespace Backend.DTOs
 {
     public class PantryItemDto
     {

@@ -5,9 +5,9 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using SmartMealPlannerBackend.Model;
+using Backend.Model;
 
-namespace SmartMealPlannerBackend.Services.Impl
+namespace Backend.Services.Impl
 {
     public class TokenService : ITokenService
     {

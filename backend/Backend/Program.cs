@@ -3,16 +3,15 @@ using Backend.Services.Impl;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using SmartMealPlannerBackend.Model;
-using SmartMealPlannerBackend.Services;
-using SmartMealPlannerBackend.Services.Impl;
+using Backend.Model;
+using Backend.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Pull the connection string from configuration (works for both dev & prod)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
-builder.Services.AddDbContext<SmartMealPlannerBackend.PlannerContext>(options =>
+builder.Services.AddDbContext<Backend.PlannerContext>(options =>
     options.UseNpgsql(connectionString));
 
 
@@ -30,7 +29,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidateAudience = true,
             ValidateLifetime = true,
             ValidateIssuerSigningKey = true,
-            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "SmartMealPlannerBackend",
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "Backend",
             ValidAudience = builder.Configuration["Jwt:Audience"] ?? "SmartMealPlannerUsers",
             IssuerSigningKey = new SymmetricSecurityKey(key),
             ClockSkew = TimeSpan.Zero // Optional: Set to zero to avoid delay in token expiration

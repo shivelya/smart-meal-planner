@@ -1,8 +1,8 @@
 using Microsoft.EntityFrameworkCore;
-using SmartMealPlannerBackend.DTOs;
-using SmartMealPlannerBackend.Services;
+using Backend.DTOs;
+using Backend.Services;
 
-namespace SmartMealPlannerBackend.Model
+namespace Backend.Model
 {
     public class UserSerivce: IUserService
     {

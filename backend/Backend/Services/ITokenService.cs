@@ -1,6 +1,6 @@
-using SmartMealPlannerBackend.Model;
+using Backend.Model;
 
-namespace SmartMealPlannerBackend.Services
+namespace Backend.Services
 {
     /// <summary>
     /// Interface for JWT token generation.

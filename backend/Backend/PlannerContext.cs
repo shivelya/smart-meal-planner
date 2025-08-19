@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using SmartMealPlannerBackend.Model;
+using Backend.Model;
 
-namespace SmartMealPlannerBackend
+namespace Backend
 {
     public class PlannerContext : DbContext
     {

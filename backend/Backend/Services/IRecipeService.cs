@@ -1,6 +1,6 @@
-using SmartMealPlannerBackend.DTOs;
+using Backend.DTOs;
 
-namespace SmartMealPlannerBackend.Services
+namespace Backend.Services
 {
     public interface IRecipeService
     {

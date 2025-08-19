@@ -1,6 +1,6 @@
-using SmartMealPlannerBackend.DTOs;
+using Backend.DTOs;
 
-namespace SmartMealPlannerBackend.Tests.DTOs
+namespace Backend.Tests.DTOs
 {
     public class MealPlanDtoTests
     {
