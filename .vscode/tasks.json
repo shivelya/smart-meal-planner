@@ -6,12 +6,51 @@
         {
             "label": "Run Tests with Coverage",
             "type": "shell",
-            "command": "dotnet test --collect:\"XPlat Code Coverage\"; reportgenerator -reports:\"**/coverage.cobertura.xml\" -targetdir:\"coveragereport\"; start coveragereport/index.html",
+            "command": "dotnet",
+            "args": [
+                "test",
+                "--collect:XPlat Code Coverage"
+            ],
+            // "command": "dotnet test --collect:\"XPlat Code Coverage\"; reportgenerator -reports:\"**/coverage.cobertura.xml\" -targetdir:\"coveragereport\"; start coveragereport/index.html",
+            "options": {
+                "cwd": "${workspaceFolder}/backend/Backend.Tests"
+            },
             "group": {
                 "kind": "test",
                 "isDefault": true
             },
             "problemMatcher": []
+        },
+        {
+            "label": "Generate Coverage Report",
+            "type": "shell",
+            "command": "reportgenerator",
+            "args": [
+                "-reports:**/coverage.cobertura.xml",
+                "-targetdir:coveragereport"
+            ],
+            "options": {
+                "cwd": "${workspaceFolder}/backend/Backend.Tests"
+            },
+            "group": {
+                "kind": "test",
+                "isDefault": false
+            },
+            "problemMatcher": []
+        }
+    ],
+    "compounds": [
+        {
+            "label": "Run Tests and Generate Coverage Report",
+            "dependsOn": [
+                "Run Tests with Coverage",
+                "Generate Coverage Report"
+            ],
+            "dependsOrder": "sequence",
+            "group": {
+                "kind": "test",
+                "isDefault": true
+            }
         }
     ]
 }
