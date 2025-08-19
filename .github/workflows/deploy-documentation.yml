@@ -71,7 +71,8 @@ jobs:
                 <li><a href="frontend/">Frontend Angular Docs</a></li>
                 <li><a href="backend/">Backend ASP.NET Core Docs</a></li>
                 <li><a href="https://smart-meal-planner-backend-ceazgjcaehfghdf7.canadacentral-01.azurewebsites.net/swagger">API Docs</a></li>
-                <li><a href="coveragereport">Backend Code Coverage Report</a></li>
+                <li><a href="coveragereport/index.htm">Backend Code Coverage Report</a></li>
+                <li><a href="https://lemon-tree-0078d2d0f.1.azurestaticapps.net/">Frontend Live Site</a></li>
               </ul>
             </body>
           </html>
