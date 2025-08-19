@@ -5,11 +5,38 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Backend.Model;
 using Backend.Services;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
 // Pull the connection string from configuration (works for both dev & prod)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrEmpty(connectionString))
+    throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured in appsettings.json");
+
+// Configure logging
+// Use Serilog in production, built-in logging in development
+if (builder.Environment.IsDevelopment())
+{
+    // Development: built-in logging (console + debug)
+    builder.Logging.ClearProviders();
+    builder.Logging.AddConsole();
+    builder.Logging.AddDebug();
+    builder.Logging.AddJsonConsole(); // optional structured output
+}
+else
+{
+    // Production: use Serilog
+    Log.Logger = new LoggerConfiguration()
+        .Enrich.FromLogContext()
+        .ReadFrom.Configuration(builder.Configuration) // read settings from appsettings.Production.json
+        .WriteTo.Console()
+        .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
+        .CreateLogger();
+
+    builder.Host.UseSerilog();
+}
 
 builder.Services.AddDbContext<Backend.PlannerContext>(options =>
     options.UseNpgsql(connectionString));

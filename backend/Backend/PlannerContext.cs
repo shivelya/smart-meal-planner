@@ -5,14 +5,17 @@ namespace Backend
 {
     public class PlannerContext : DbContext
     {
-        public PlannerContext(DbContextOptions<PlannerContext> options, IConfiguration configuration)
+        public PlannerContext(DbContextOptions<PlannerContext> options, IConfiguration configuration, ILogger<PlannerContext> logger)
             : base(options)
         {
             _configuration = configuration;
+            _logger = logger;
             Database.EnsureCreated();
+            _logger.LogInformation("PlannerContext initialized with connection string: {ConnectionString}", _configuration.GetConnectionString("DefaultConnection"));
         }
 
         private readonly IConfiguration _configuration;
+        private readonly ILogger<PlannerContext> _logger;
 
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Category> Categories { get; set; } = null!;
@@ -36,6 +39,8 @@ namespace Backend
             SetUpMealPlanRelationships(modelBuilder);
             SetUpMealPlanEntryRelationships(modelBuilder);
             SeedCategories(modelBuilder);
+
+            _logger.LogInformation("Model creating completed with configured relationships and seeded categories.");
         }
 
         private void SeedCategories(ModelBuilder modelBuilder)
