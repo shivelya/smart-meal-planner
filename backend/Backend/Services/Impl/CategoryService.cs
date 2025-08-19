@@ -1,7 +1,7 @@
 using Microsoft.EntityFrameworkCore;
-using SmartMealPlannerBackend;
-using SmartMealPlannerBackend.DTOs;
-using SmartMealPlannerBackend.Services;
+using Backend;
+using Backend.DTOs;
+using Backend.Services;
 
 namespace Backend.Services.Impl
 {

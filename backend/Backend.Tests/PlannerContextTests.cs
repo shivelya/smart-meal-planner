@@ -1,9 +1,9 @@
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
-using SmartMealPlannerBackend.Model;
+using Backend.Model;
 
-namespace SmartMealPlannerBackend.Tests
+namespace Backend.Tests
 {
     [Collection("NonParallelTests")]
     public class PlannerContextTests

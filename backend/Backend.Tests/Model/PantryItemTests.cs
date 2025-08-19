@@ -1,6 +1,6 @@
-using SmartMealPlannerBackend.Model;
+using Backend.Model;
 
-namespace SmartMealPlannerBackend.Tests.Model
+namespace Backend.Tests.Model
 {
     public class PantryItemTests
     {

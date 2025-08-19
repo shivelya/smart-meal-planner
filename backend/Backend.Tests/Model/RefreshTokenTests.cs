@@ -1,8 +1,8 @@
 using Xunit;
 using System;
-using SmartMealPlannerBackend.Model;
+using Backend.Model;
 
-namespace SmartMealPlannerBackend.Tests.Model
+namespace Backend.Tests.Model
 {
     public class RefreshTokenTests
     {

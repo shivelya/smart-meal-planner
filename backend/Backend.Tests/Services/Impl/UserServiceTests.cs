@@ -1,7 +1,7 @@
-using SmartMealPlannerBackend.Model;
+using Backend.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace SmartMealPlannerBackend.Tests.Services.Impl
+namespace Backend.Tests.Services.Impl
 {
     public class UserServiceTests
     {

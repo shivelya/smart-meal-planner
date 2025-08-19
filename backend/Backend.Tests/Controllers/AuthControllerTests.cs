@@ -1,13 +1,13 @@
 using Moq;
-using SmartMealPlannerBackend.Controllers;
-using SmartMealPlannerBackend.Model;
-using SmartMealPlannerBackend.Services;
+using Backend.Controllers;
+using Backend.Model;
+using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity.Data;
-using LoginRequest = SmartMealPlannerBackend.Controllers.LoginRequest;
+using LoginRequest = Backend.Controllers.LoginRequest;
 using Microsoft.AspNetCore.Http;
 
-namespace SmartMealPlannerBackend.Tests.Controllers
+namespace Backend.Tests.Controllers
 {
     public class AuthControllerTests
     {

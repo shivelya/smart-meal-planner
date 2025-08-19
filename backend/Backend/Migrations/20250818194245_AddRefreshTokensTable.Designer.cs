@@ -5,11 +5,11 @@ using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
-using SmartMealPlannerBackend;
+using Backend;
 
 #nullable disable
 
-namespace SmartMealPlannerBackend.Migrations
+namespace Backend.Migrations
 {
     [DbContext(typeof(PlannerContext))]
     [Migration("20250818194245_AddRefreshTokensTable")]
@@ -56,7 +56,7 @@ namespace SmartMealPlannerBackend.Migrations
                     b.ToTable("RefreshTokens");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.Category", b =>
+            modelBuilder.Entity("Backend.Model.Category", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -140,7 +140,7 @@ namespace SmartMealPlannerBackend.Migrations
                         });
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.Ingredient", b =>
+            modelBuilder.Entity("Backend.Model.Ingredient", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -162,7 +162,7 @@ namespace SmartMealPlannerBackend.Migrations
                     b.ToTable("Ingredients");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.MealPlan", b =>
+            modelBuilder.Entity("Backend.Model.MealPlan", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -183,7 +183,7 @@ namespace SmartMealPlannerBackend.Migrations
                     b.ToTable("MealPlans");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.MealPlanEntry", b =>
+            modelBuilder.Entity("Backend.Model.MealPlanEntry", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -209,7 +209,7 @@ namespace SmartMealPlannerBackend.Migrations
                     b.ToTable("MealPlanEntries");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.PantryItem", b =>
+            modelBuilder.Entity("Backend.Model.PantryItem", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -238,7 +238,7 @@ namespace SmartMealPlannerBackend.Migrations
                     b.ToTable("PantryItems");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.Recipe", b =>
+            modelBuilder.Entity("Backend.Model.Recipe", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -271,7 +271,7 @@ namespace SmartMealPlannerBackend.Migrations
                     b.ToTable("Recipes");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.RecipeIngredient", b =>
+            modelBuilder.Entity("Backend.Model.RecipeIngredient", b =>
                 {
                     b.Property<int>("RecipeId")
                         .HasColumnType("integer");
@@ -292,7 +292,7 @@ namespace SmartMealPlannerBackend.Migrations
                     b.ToTable("RecipeIngredients");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.User", b =>
+            modelBuilder.Entity("Backend.Model.User", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -313,9 +313,9 @@ namespace SmartMealPlannerBackend.Migrations
                     b.ToTable("Users");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.Ingredient", b =>
+            modelBuilder.Entity("Backend.Model.Ingredient", b =>
                 {
-                    b.HasOne("SmartMealPlannerBackend.Model.Category", "Category")
+                    b.HasOne("Backend.Model.Category", "Category")
                         .WithMany("Ingredients")
                         .HasForeignKey("CategoryId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -324,9 +324,9 @@ namespace SmartMealPlannerBackend.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.MealPlan", b =>
+            modelBuilder.Entity("Backend.Model.MealPlan", b =>
                 {
-                    b.HasOne("SmartMealPlannerBackend.Model.User", "User")
+                    b.HasOne("Backend.Model.User", "User")
                         .WithMany("MealPlans")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -335,15 +335,15 @@ namespace SmartMealPlannerBackend.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.MealPlanEntry", b =>
+            modelBuilder.Entity("Backend.Model.MealPlanEntry", b =>
                 {
-                    b.HasOne("SmartMealPlannerBackend.Model.MealPlan", "MealPlan")
+                    b.HasOne("Backend.Model.MealPlan", "MealPlan")
                         .WithMany("MealPlanEntries")
                         .HasForeignKey("MealPlanId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SmartMealPlannerBackend.Model.Recipe", "Recipe")
+                    b.HasOne("Backend.Model.Recipe", "Recipe")
                         .WithMany("MealPlanEntries")
                         .HasForeignKey("RecipeId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -354,15 +354,15 @@ namespace SmartMealPlannerBackend.Migrations
                     b.Navigation("Recipe");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.PantryItem", b =>
+            modelBuilder.Entity("Backend.Model.PantryItem", b =>
                 {
-                    b.HasOne("SmartMealPlannerBackend.Model.Ingredient", "Ingredient")
+                    b.HasOne("Backend.Model.Ingredient", "Ingredient")
                         .WithMany("PantryItems")
                         .HasForeignKey("IngredientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SmartMealPlannerBackend.Model.User", "User")
+                    b.HasOne("Backend.Model.User", "User")
                         .WithMany("PantryItems")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -373,9 +373,9 @@ namespace SmartMealPlannerBackend.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.Recipe", b =>
+            modelBuilder.Entity("Backend.Model.Recipe", b =>
                 {
-                    b.HasOne("SmartMealPlannerBackend.Model.User", "User")
+                    b.HasOne("Backend.Model.User", "User")
                         .WithMany("Recipes")
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -384,15 +384,15 @@ namespace SmartMealPlannerBackend.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.RecipeIngredient", b =>
+            modelBuilder.Entity("Backend.Model.RecipeIngredient", b =>
                 {
-                    b.HasOne("SmartMealPlannerBackend.Model.Ingredient", "Ingredient")
+                    b.HasOne("Backend.Model.Ingredient", "Ingredient")
                         .WithMany("RecipeIngredients")
                         .HasForeignKey("IngredientId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("SmartMealPlannerBackend.Model.Recipe", "Recipe")
+                    b.HasOne("Backend.Model.Recipe", "Recipe")
                         .WithMany("RecipeIngredients")
                         .HasForeignKey("RecipeId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -403,31 +403,31 @@ namespace SmartMealPlannerBackend.Migrations
                     b.Navigation("Recipe");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.Category", b =>
+            modelBuilder.Entity("Backend.Model.Category", b =>
                 {
                     b.Navigation("Ingredients");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.Ingredient", b =>
+            modelBuilder.Entity("Backend.Model.Ingredient", b =>
                 {
                     b.Navigation("PantryItems");
 
                     b.Navigation("RecipeIngredients");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.MealPlan", b =>
+            modelBuilder.Entity("Backend.Model.MealPlan", b =>
                 {
                     b.Navigation("MealPlanEntries");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.Recipe", b =>
+            modelBuilder.Entity("Backend.Model.Recipe", b =>
                 {
                     b.Navigation("MealPlanEntries");
 
                     b.Navigation("RecipeIngredients");
                 });
 
-            modelBuilder.Entity("SmartMealPlannerBackend.Model.User", b =>
+            modelBuilder.Entity("Backend.Model.User", b =>
                 {
                     b.Navigation("MealPlans");
 

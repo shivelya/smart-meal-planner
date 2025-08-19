@@ -1,7 +1,7 @@
-using SmartMealPlannerBackend.DTOs;
-using SmartMealPlannerBackend.Model;
+using Backend.DTOs;
+using Backend.Model;
 
-namespace SmartMealPlannerBackend.Services
+namespace Backend.Services
 {
     public interface IUserService
     {

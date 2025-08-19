@@ -1,9 +1,9 @@
 using Xunit;
 using System.Reflection;
-using SmartMealPlannerBackend.Controllers;
+using Backend.Controllers;
 using Microsoft.AspNetCore.Mvc;
 
-namespace SmartMealPlannerBackend.Tests.Controllers
+namespace Backend.Tests.Controllers
 {
     public class AuthControllerAttributeTests
     {

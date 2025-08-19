@@ -1,9 +1,9 @@
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
-using SmartMealPlannerBackend.Model;
-using SmartMealPlannerBackend.Services;
+using Backend.Model;
+using Backend.Services;
 
-namespace SmartMealPlannerBackend.Controllers
+namespace Backend.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
