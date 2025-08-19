@@ -1,6 +1,143 @@
-@SmartMealPlannerBackend_HostAddress = http://localhost:5009
+### Authentication
 
-GET {{SmartMealPlannerBackend_HostAddress}}/weatherforecast/
-Accept: application/json
+# Register
+POST https://localhost:5009/auth/register
+Content-type: application/json
 
-###
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+# Login
+POST http://localhost:5009/auth/login
+Content-Type: application/json
+
+{
+  "email": "user@example.com",
+  "password": "Password123!"
+}
+
+# Refresh
+POST http://localhost:5009/auth/refresh
+Content-Type: application/json
+
+{
+  "refreshToken": "token"
+}
+
+### Logout
+POST http://localhost:5009/auth/logout
+Authorization: Bearer {{token}}
+
+
+### Change Password
+PUT http://localhost:5009/auth/change-password
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "oldPassword": "Password123!",
+  "newPassword": "NewPassword456!"
+}
+
+### Request Password Reset
+POST http://localhost:5009/auth/request-password-reset
+Content-Type: application/json
+
+{
+  "email": "user@example.com"
+}
+
+### Reset Password
+POST http://localhost:5009/auth/reset-password
+Content-Type: application/json
+
+{
+  "token": "reset-token-here",
+  "newPassword": "Password789!"
+}
+
+
+### Pantry
+
+# Get pantry items
+GET http://localhost:5009/pantry/items
+Authorization: Bearer {{token}}
+
+### Add pantry item
+POST http://localhost:5009/pantry/items
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Tomato",
+  "quantity": 5,
+  "unit": "pcs"
+}
+
+### Update pantry item
+PUT http://localhost:5009/pantry/items/1
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "name": "Tomato",
+  "quantity": 10,
+  "unit": "pcs"
+}
+
+### Delete pantry item
+DELETE http://localhost:5009/pantry/items/1
+Authorization: Bearer {{token}}
+
+
+### Meal Plans
+
+# Get meal plans
+GET http://localhost:5009/meal-plans
+Authorization: Bearer {{token}}
+
+### Get specific meal plan
+GET http://localhost:5009/meal-plans/1
+Authorization: Bearer {{token}}
+
+### Generate meal plan
+POST http://localhost:5009/meal-plans/generate
+Authorization: Bearer {{token}}
+
+
+### Shopping List
+
+# Get shopping list for a meal plan
+GET http://localhost:5009/meal-plans/1/shopping-list
+Authorization: Bearer {{token}}
+
+
+### Recipes
+
+# Search by keyword
+GET http://localhost:5009/recipes?search=chicken
+Authorization: Bearer {{token}}
+
+### Search by ingredients
+GET http://localhost:5009/recipes?ingredients=tomato,onion,garlic
+Authorization: Bearer {{token}}
+
+### Save recipe
+POST http://localhost:5009/recipes/saved
+Authorization: Bearer {{token}}
+Content-Type: application/json
+
+{
+  "title": "Spaghetti Carbonara",
+  "url": "https://example.com/carbonara"
+}
+
+### Get saved recipes
+GET http://localhost:5009/recipes/saved
+Authorization: Bearer {{token}}
+
+### Delete saved recipe
+DELETE http://localhost:5009/recipes/saved/1
+Authorization: Bearer {{token}}
