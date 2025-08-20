@@ -10,6 +10,8 @@ namespace Backend
         {
             _configuration = configuration;
             _logger = logger;
+            _logger.LogInformation("PlannerContext created with options: {Options}", options);
+            _logger.LogInformation("Using connection string: {ConnectionString}", _configuration.GetConnectionString("DefaultConnection"));
             Database.EnsureCreated();
             _logger.LogInformation("PlannerContext initialized with connection string: {ConnectionString}", _configuration.GetConnectionString("DefaultConnection"));
         }
