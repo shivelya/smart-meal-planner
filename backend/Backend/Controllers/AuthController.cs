@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Backend.Model;
 using Backend.Services;
+using Serilog;
 
 namespace Backend.Controllers
 {
@@ -11,41 +12,63 @@ namespace Backend.Controllers
     {
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
+        private readonly ILogger<AuthController> _logger;
 
-        public AuthController(ITokenService jwt, IUserService userService)
+        public AuthController(ITokenService tokenService, IUserService userService, ILogger<AuthController> logger)
         {
-            _tokenService = jwt;
+            _tokenService = tokenService;
             _userService = userService;
+            _logger = logger;
         }
 
         // POST: api/auth/register
         [HttpPost("register")]
         public async Task<IActionResult> Register(RegisterRequest request)
         {
+            _logger.LogDebug("Request: {Request}", request);
             if (request.Email == null || request.Password == null)
+            {
+                _logger.LogWarning("Registration failed: Email or password is null.");
                 return BadRequest("Email and password are required.");
+            }
 
             if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Registration failed: Model state is invalid.");
+                _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
                 return BadRequest(ModelState);
+            }
 
             // Check if user already exists
             if (await _userService.GetByEmailAsync(request.Email) != null)
+            {
+                _logger.LogWarning("Registration failed: User with email {Email} already exists.", request.Email);
                 return BadRequest("User already exists.");
+            }
 
             var user = await _userService.CreateUserAsync(request.Email, request.Password);
             if (user == null)
+            {
+                _logger.LogError("Registration failed: User creation returned null.");
+                _logger.LogDebug("Failed to create user with email {Email}.", request.Email);
                 return StatusCode(500, "Failed to create user.");
+            }
 
             var result = await GenerateTokens(user);
             if (result.Error != null)
             {
+                _logger.LogError("Registration failed: {Error}", result.Error);
+                _logger.LogDebug("Failed to generate tokens for user with email {Email}.", request.Email);
                 return result.Error ?? StatusCode(500, "Failed to generate tokens.");
             }
+
+            _logger.LogInformation("User registered successfully with email {Email}.", request.Email);
+            _logger.LogDebug("Generated tokens for user with email {Email}.", request.Email);
 
             // Return the tokens
             return Ok(new TokenResponse
             {
-                 AccessToken = result.AccessToken,
+                AccessToken = result.AccessToken,
                 RefreshToken = result.RefreshToken?.Token!,
             });
         }
@@ -54,21 +77,42 @@ namespace Backend.Controllers
         [HttpPost("login")]
         public async Task<IActionResult> Login(LoginRequest request)
         {
+            _logger.LogDebug("Login request: {Request}", request);
             if (request.Email == null || request.Password == null)
+            {
+                _logger.LogWarning("Login failed: Email or password is null.");
                 return BadRequest("Email and password are required.");
+            }
 
             if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Login failed: Model state is invalid.");
+                _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
                 return BadRequest(ModelState);
+            }
 
             var user = await _userService.GetByEmailAsync(request.Email);
-            if (user == null) return Unauthorized("Invalid email or password.");
+            if (user == null)
+            {
+                _logger.LogWarning("Login failed: User with email {Email} not found.", request.Email);
+                return Unauthorized("Invalid email or password.");
+            }
 
             if (!_userService.VerifyPasswordHash(request.Password, user))
+            {
+                _logger.LogWarning("Login failed: Invalid password for user with email {Email}.", request.Email);
                 return Unauthorized("Invalid email or password.");
+            }
 
             var result = await GenerateTokens(user);
             if (result.Error != null)
+            {
+                _logger.LogError("Login failed: {Error}", result.Error);
+                _logger.LogDebug("Failed to generate tokens for user with email {Email}.", request.Email);
                 return result.Error ?? StatusCode(500, "Failed to generate tokens.");
+            }
+
+            _logger.LogInformation("User logged in successfully with email {Email}.", request.Email);
 
             return Ok(new TokenResponse
             {
@@ -82,10 +126,18 @@ namespace Backend.Controllers
         public async Task<IActionResult> Refresh([FromBody]string refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
+            {
+                _logger.LogWarning("Null refresh token provided.");
                 return BadRequest("Refresh token is required.");
+            }
 
             if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Model state is invalid for refresh token request.");
+                _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                _logger.LogDebug("Refresh token: {RefreshToken}", refreshToken);
                 return BadRequest(ModelState);
+            }
 
             var oldRefreshToken = await _tokenService.FindRefreshToken(refreshToken);
 
@@ -93,18 +145,32 @@ namespace Backend.Controllers
             // this is a security measure to prevent token reuse
             if (oldRefreshToken == null || oldRefreshToken.Expires < DateTime.UtcNow
                 || oldRefreshToken.IsRevoked)
+            {
+                _logger.LogWarning("Invalid or expired refresh token provided: {RefreshToken}", refreshToken);
                 return Unauthorized("Invalid refresh token.");
+            }
 
             var user = await _userService.GetByIdAsync(oldRefreshToken.UserId);
-            if (user == null) return Unauthorized("Invalid user.");
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for refresh token: {RefreshToken}", refreshToken);
+                return Unauthorized("Invalid user.");
+            }
 
             // Mark the old refresh token as revoked
             oldRefreshToken.IsRevoked = true;
+            _logger.LogDebug("Revoking old refresh token: {RefreshToken}", refreshToken);
 
             // Generate new tokens
             var result = await GenerateTokens(user);
             if (result.Error != null)
+            {
+                _logger.LogError("Failed to generate new tokens: {Error}", result.Error);
+                _logger.LogDebug("Failed to generate new tokens for user with email {Email}.", user.Email);
                 return result.Error ?? StatusCode(500, "Failed to generate tokens.");
+            }
+
+            _logger.LogInformation("Tokens refreshed successfully for user with email {Email}.", user.Email);
 
             return Ok(new TokenResponse
             {
@@ -118,10 +184,18 @@ namespace Backend.Controllers
         public async Task<IActionResult> Logout([FromBody]string refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
+            {
+                _logger.LogWarning("Logout failed: Null refresh token provided.");
                 return BadRequest("Refresh token is required.");
+            }
 
             if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Logout failed: Model state is invalid.");
+                _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                _logger.LogDebug("Refresh token: {RefreshToken}", refreshToken);
                 return BadRequest(ModelState);
+            }
 
             var refreshTokenObj = await _tokenService.FindRefreshToken(refreshToken);
 
@@ -146,17 +220,21 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"Error generating token: {ex.Message}");
+                _logger.LogError(ex, "Error generating token for user with email {Email}: {message}", user.Email, ex.Message);
                 result.Error = StatusCode(500, $"Internal server error: Failed to generate token.");
                 return result;
             }
 
             if (result.AccessToken == null || result.RefreshToken == null)
             {
+                _logger.LogError("Failed to generate access token or refresh token for user with email {Email}.", user.Email);
+                _logger.LogDebug("AccessToken: {AccessToken}, RefreshToken: {RefreshToken}", result.AccessToken, result.RefreshToken);
                 result.Error = StatusCode(500, "Failed to generate token.");
                 return result;
             }
 
+            _logger.LogDebug("Generated access token and refresh token for user with email {Email}.", user.Email);
+            _logger.LogDebug("AccessToken: {AccessToken}, RefreshToken: {RefreshToken}", result.AccessToken, result.RefreshToken.Token);
             return result;
         }
     }

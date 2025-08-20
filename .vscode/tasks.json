@@ -10,6 +10,18 @@
             "options": {
                 "cwd": "${workspaceFolder}/backend/Backend.Tests"
             }
-        }
+        },
+        {
+            "label": "build",
+            "command": "dotnet",
+            "type": "process",
+            "args": [
+                "build",
+                "${workspaceFolder}\\backend\\Backend\\Backend.csproj",
+                "/property:GenerateFullPaths=true",
+                "/consoleloggerparameters:NoSummary"
+            ],
+            "problemMatcher": "$msCompile"
+            }
     ]
 }
