@@ -6,14 +6,9 @@ using Microsoft.IdentityModel.Tokens;
 using Backend.Model;
 using Backend.Services;
 using Serilog;
+using Microsoft.AspNetCore.Diagnostics;
 
 var builder = WebApplication.CreateBuilder(args);
-
-// Pull the connection string from configuration (works for both dev & prod)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-
-if (string.IsNullOrEmpty(connectionString))
-    throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured in appsettings.json");
 
 // Configure logging
 // Use Serilog in production, built-in logging in development
@@ -37,6 +32,12 @@ else
 
     builder.Host.UseSerilog();
 }
+
+// Pull the connection string from configuration (works for both dev & prod)
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+if (string.IsNullOrEmpty(connectionString))
+    throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured in appsettings.json");
 
 builder.Services.AddDbContext<Backend.PlannerContext>(options =>
     options.UseNpgsql(connectionString));
@@ -80,6 +81,22 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.MapControllers();
+app.UseSerilogRequestLogging();
 
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
+        var exception = exceptionHandlerPathFeature?.Error;
+
+        var logger = app.Services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(exception, "An unhandled exception occurred.");
+
+        context.Response.StatusCode = 500;
+        await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
+    });
+});
+
+app.MapControllers();
 app.Run();
