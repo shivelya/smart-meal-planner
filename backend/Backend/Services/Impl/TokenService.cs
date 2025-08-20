@@ -2,7 +2,6 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
-using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Backend.Model;
@@ -13,10 +12,12 @@ namespace Backend.Services.Impl
     {
         private readonly IConfiguration _config;
         private readonly PlannerContext _context;
-        public TokenService(IConfiguration config, PlannerContext context)
+        private readonly ILogger<TokenService> _logger;
+        public TokenService(IConfiguration config, PlannerContext context, ILogger<TokenService> logger)
         {
             _config = config;
             _context = context;
+            _logger = logger;
         }
 
         public string GenerateAccessToken(User user)
@@ -38,6 +39,7 @@ namespace Backend.Services.Impl
                 signingCredentials: creds
             );
 
+            _logger.LogInformation("Generated JWT token for user {UserId} at {Time}", user.Id, DateTime.UtcNow);
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
@@ -58,12 +60,16 @@ namespace Backend.Services.Impl
             _context.RefreshTokens.Add(refreshToken);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("Generated refresh token for user {UserId} at {Time}", user.Id, DateTime.UtcNow);
+
             return refreshToken;
         }
 
-        public async Task<RefreshToken?> FindRefreshToken(string token)
+        public async Task<RefreshToken?> FindRefreshToken(string tokenStr)
         {
-            return await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == token);
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == tokenStr);
+            _logger.LogInformation("Found refresh token for user {UserId} at {Time}", token?.UserId, DateTime.UtcNow);
+            return token;
         }
 
         public async Task RevokeRefreshToken(RefreshToken token)
@@ -71,6 +77,7 @@ namespace Backend.Services.Impl
             token.IsRevoked = true;
             _context.RefreshTokens.Update(token);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("Revoked refresh token for user {UserId} at {Time}", token.UserId, DateTime.UtcNow);
         }
     }
 }

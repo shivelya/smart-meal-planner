@@ -11,8 +11,10 @@ namespace Backend.Tests.Services.Impl
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
             var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
-            return new UserSerivce(context);
+            var userLogger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<UserSerivce>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
+            return new UserSerivce(context, userLogger);
         }
 
         [Fact]

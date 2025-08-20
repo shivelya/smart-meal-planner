@@ -10,7 +10,8 @@ namespace Backend.Tests.Services.Impl
         private TokenService CreateService(PlannerContext context, Dictionary<string, string?> configValues)
         {
             var config = new ConfigurationBuilder().AddInMemoryCollection(configValues).Build();
-            return new TokenService(config, context);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<TokenService>();
+            return new TokenService(config, context, logger);
         }
 
         private PlannerContext CreateInMemoryContext()
@@ -19,7 +20,8 @@ namespace Backend.Tests.Services.Impl
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            return new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            return new PlannerContext(options, config, logger);
         }
 
         [Fact]

@@ -2,6 +2,7 @@ using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Backend.Model;
+using Microsoft.Extensions.Logging;
 
 namespace Backend.Tests
 {
@@ -15,7 +16,8 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context);
         }
 
@@ -26,7 +28,8 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb_Users")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.Users);
         }
 
@@ -37,7 +40,8 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb_Categories")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.Categories);
         }
 
@@ -48,7 +52,8 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb_Ingredients")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.Ingredients);
         }
 
@@ -59,7 +64,8 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb_PantryItems")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.PantryItems);
         }
 
@@ -70,7 +76,8 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb_Recipes")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.Recipes);
         }
 
@@ -81,7 +88,8 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb_RecipeIngredients")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.RecipeIngredients);
         }
 
@@ -92,7 +100,8 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb_MealPlans")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.MealPlans);
         }
 
@@ -103,7 +112,8 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb_MealPlanEntries")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.MealPlanEntries);
         }
 
@@ -114,15 +124,16 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: "TestDb_RefreshTokens")
                 .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new PlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.RefreshTokens);
         }
     }
 
     public class TestPlannerContext : PlannerContext
     {
-        public TestPlannerContext(DbContextOptions<PlannerContext> options, IConfiguration config)
-            : base(options, config) { }
+        public TestPlannerContext(DbContextOptions<PlannerContext> options, IConfiguration config, ILogger<PlannerContext> logger)
+            : base(options, config, logger) { }
 
         public void CallOnModelCreating(ModelBuilder builder)
         {
@@ -140,7 +151,8 @@ namespace Backend.Tests
                             .UseInMemoryDatabase(dbName)
                             .Options;
             var config = new ConfigurationBuilder().Build();
-            var context = new TestPlannerContext(options, config);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new TestPlannerContext(options, config, logger);
             context.Database.EnsureDeleted();
             var builder = new ModelBuilder();
             context.CallOnModelCreating(builder);
@@ -224,8 +236,8 @@ namespace Backend.Tests
 
     public class CategorySeedingPlannerContext : PlannerContext
     {
-        public CategorySeedingPlannerContext(DbContextOptions<PlannerContext> options, IConfiguration configuration)
-            : base(options, configuration) { }
+        public CategorySeedingPlannerContext(DbContextOptions<PlannerContext> options, IConfiguration configuration, ILogger<PlannerContext> logger)
+            : base(options, configuration, logger) { }
         
         public void CallOnModelCreating(ModelBuilder builder)
         {
@@ -257,8 +269,10 @@ namespace Backend.Tests
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
 
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+
             // Act: create context and ensure database is created
-            using (var context = new CategorySeedingPlannerContext(options, config))
+            using (var context = new CategorySeedingPlannerContext(options, config, logger))
             {
                 context.CallOnModelCreating(new ModelBuilder());
                 var seededCategories = context.Categories.ToList();

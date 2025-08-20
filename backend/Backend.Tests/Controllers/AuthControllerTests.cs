@@ -16,8 +16,9 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Refresh(null!);
 
             Assert.IsType<BadRequestObjectResult>(result);
@@ -28,8 +29,9 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             controller.ModelState.AddModelError("RefreshToken", "Required");
             var result = await controller.Refresh(null!);
 
@@ -42,8 +44,9 @@ namespace Backend.Tests.Controllers
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Refresh("badtoken");
 
             Assert.IsType<UnauthorizedObjectResult>(result);
@@ -56,8 +59,9 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             var revokedToken = new RefreshToken { IsRevoked = true };
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(revokedToken);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Refresh("badtoken");
 
             Assert.IsType<UnauthorizedObjectResult>(result);
@@ -70,8 +74,9 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             var revokedToken = new RefreshToken { Expires = DateTime.UtcNow.AddMinutes(-1), IsRevoked = false };
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(revokedToken);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Refresh("badtoken");
 
             Assert.IsType<UnauthorizedObjectResult>(result);
@@ -85,8 +90,9 @@ namespace Backend.Tests.Controllers
             var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync((User)null!);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Refresh("token");
 
             Assert.IsType<UnauthorizedObjectResult>(result);
@@ -102,8 +108,9 @@ namespace Backend.Tests.Controllers
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
             tokenService.Setup(s => s.GenerateAccessToken(user)).Throws(new Exception("Token generation failed"));
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Refresh("token");
 
             var status = Assert.IsType<ObjectResult>(result);
@@ -120,8 +127,9 @@ namespace Backend.Tests.Controllers
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
             tokenService.Setup(s => s.GenerateRefreshToken(user, "ip")).Throws(new Exception("Token generation failed"));
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Refresh("token");
 
             var status = Assert.IsType<ObjectResult>(result);
@@ -138,8 +146,9 @@ namespace Backend.Tests.Controllers
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
             tokenService.Setup(s => s.GenerateAccessToken(user)).Returns((string)null!);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Refresh("token");
 
             var status = Assert.IsType<ObjectResult>(result);
@@ -156,8 +165,9 @@ namespace Backend.Tests.Controllers
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
             tokenService.Setup(s => s.GenerateRefreshToken(user, "ip")).ReturnsAsync((RefreshToken)null!);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Refresh("token");
 
             var status = Assert.IsType<ObjectResult>(result);
@@ -178,8 +188,9 @@ namespace Backend.Tests.Controllers
             var refreshTokenStr = "refresh-token";
             tokenService.Setup(s => s.GenerateRefreshToken(user, It.IsAny<string>())).ReturnsAsync(
                 new RefreshToken { Token = refreshTokenStr });
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             controller.ControllerContext = new ControllerContext
             {
                 HttpContext = new DefaultHttpContext()
@@ -203,8 +214,9 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Register(new RegisterRequest { Email = null!, Password = "pass" });
 
             Assert.IsType<BadRequestObjectResult>(result);
@@ -215,8 +227,9 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = null! });
 
             Assert.IsType<BadRequestObjectResult>(result);
@@ -227,8 +240,9 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             controller.ModelState.AddModelError("RefreshToken", "Required");
             var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
 
@@ -241,8 +255,9 @@ namespace Backend.Tests.Controllers
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
             userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync(new User());
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
@@ -256,8 +271,9 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
             userService.Setup(s => s.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync((User)null!);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
 
             var status = Assert.IsType<ObjectResult>(result);
@@ -273,8 +289,9 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(
                 new User { Id = 1, Email = "test@test.com" });
             tokenService.Setup(s => s.GenerateAccessToken(It.IsAny<User>())).Throws(new Exception("Token generation failed"));
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
 
             var status = Assert.IsType<ObjectResult>(result);
@@ -294,8 +311,9 @@ namespace Backend.Tests.Controllers
             tokenService.Setup(s => s.GenerateAccessToken(user)).Returns(accessTokenStr);
             tokenService.Setup(s => s.GenerateRefreshToken(user, It.IsAny<string>())).ReturnsAsync(
                 new RefreshToken { Token = refreshTokenStr });
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
             var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
 
@@ -316,7 +334,8 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = null!, Password = "pass" });
             Assert.IsType<BadRequestObjectResult>(result);
         }
@@ -326,7 +345,8 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = null! });
             Assert.IsType<BadRequestObjectResult>(result);
         }
@@ -336,7 +356,8 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             controller.ModelState.AddModelError("Email", "Required");
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "pass" });
             Assert.IsType<BadRequestObjectResult>(result);
@@ -346,10 +367,11 @@ namespace Backend.Tests.Controllers
         public async Task Login_ReturnsUnauthorized_WhenUserNotFound()
         {
             var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
+            var userService = new Mock<IUserService>();;
             userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "pass" });
 
             var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
@@ -364,8 +386,9 @@ namespace Backend.Tests.Controllers
             var user = new User { Id = 1, Email = "test@example.com" };
             userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
             userService.Setup(s => s.VerifyPasswordHash(It.IsAny<string>(), user)).Returns(false);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "wrong" });
 
             var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
@@ -381,8 +404,9 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
             userService.Setup(s => s.VerifyPasswordHash(It.IsAny<string>(), user)).Returns(true);
             tokenService.Setup(s => s.GenerateAccessToken(user)).Throws(new Exception("Token generation failed"));
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "right" });
 
             var unauthorized = Assert.IsType<ObjectResult>(result);
@@ -402,8 +426,9 @@ namespace Backend.Tests.Controllers
             tokenService.Setup(s => s.GenerateAccessToken(user)).Returns(accessTokenStr);
             tokenService.Setup(s => s.GenerateRefreshToken(user, It.IsAny<string>())).ReturnsAsync(
                 new RefreshToken { Token = refreshTokenStr });
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "pass" });
 
@@ -425,8 +450,9 @@ namespace Backend.Tests.Controllers
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Logout("badtoken");
 
             Assert.IsType<OkResult>(result);
@@ -440,8 +466,9 @@ namespace Backend.Tests.Controllers
             var refreshToken = new RefreshToken { Token = "token" };
             tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
             tokenService.Setup(s => s.RevokeRefreshToken(refreshToken)).Returns(Task.CompletedTask);
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
-            var controller = new AuthController(tokenService.Object, userService.Object);
+            var controller = new AuthController(tokenService.Object, userService.Object, logger);
             var result = await controller.Logout("token");
 
             Assert.IsType<OkResult>(result);
