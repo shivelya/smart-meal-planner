@@ -131,5 +131,65 @@ namespace Backend.Tests.Services.Impl
 
             Assert.False(service.VerifyPasswordHash("wrongpassword", user));
         }
+
+        [Fact]
+        public async Task ChangePasswordAsync_ChangesPassword_WhenOldPasswordIsCorrect()
+        {
+            var service = CreateService();
+            var user = await service.CreateUserAsync("changepass@example.com", "oldpass");
+            await service.ChangePasswordAsync(user.Id.ToString(), "oldpass", "newpass");
+
+            var updatedUser = await service.GetByIdAsync(user.Id);
+            Assert.True(service.VerifyPasswordHash("newpass", updatedUser));
+            Assert.False(service.VerifyPasswordHash("oldpass", updatedUser));
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_Throws_WhenOldPasswordIsIncorrect()
+        {
+            var service = CreateService();
+            var user = await service.CreateUserAsync("wrongold@example.com", "oldpass");
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
+                service.ChangePasswordAsync(user.Id.ToString(), "wrongpass", "newpass"));
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_Throws_WhenUserNotFound()
+        {
+            var service = CreateService();
+            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+                service.ChangePasswordAsync("9999", "oldpass", "newpass"));
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_Throws_WhenInvalidUserGiven()
+        {
+            var service = CreateService();
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                service.ChangePasswordAsync("", "oldpass", "newpass"));
+
+            await Assert.ThrowsAsync<ArgumentException>(() =>
+                service.ChangePasswordAsync("not an id", "oldpass", "newpass"));
+        }
+
+        [Fact]
+        public async Task UpdatePasswordAsync_UpdatesPassword_WhenUserExists()
+        {
+            var service = CreateService();
+            var user = await service.CreateUserAsync("updatepass@example.com", "oldpass");
+            var result = await service.UpdatePasswordAsync(user.Id, "newpass");
+
+            Assert.True(result);
+            var updatedUser = await service.GetByIdAsync(user.Id);
+            Assert.True(service.VerifyPasswordHash("newpass", updatedUser));
+        }
+
+        [Fact]
+        public async Task UpdatePasswordAsync_ReturnsFalse_WhenUserNotFound()
+        {
+            var service = CreateService();
+            var result = await service.UpdatePasswordAsync(9999, "newpass");
+            Assert.False(result);
+        }
     }
 }

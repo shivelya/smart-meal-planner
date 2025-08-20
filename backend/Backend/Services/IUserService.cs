@@ -1,5 +1,6 @@
 using Backend.DTOs;
 using Backend.Model;
+using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Services
 {
@@ -10,5 +11,7 @@ namespace Backend.Services
         Task<User> CreateUserAsync(string email, string password);
         Task<UserDto> UpdateUserDtoAsync(UserDto userDto);
         bool VerifyPasswordHash(string password, User user);
+        Task ChangePasswordAsync(string userId, string oldPassword, string newPassword);
+        Task<bool> UpdatePasswordAsync(int userId, string newPassword);
     }
 }

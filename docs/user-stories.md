@@ -23,11 +23,8 @@
 **Response (200)**
 ```json
 {
-  "token": "jwt-token-here",
-  "user": {
-    "id": 1,
-    "email": "user@example.com",
-    "name": "Jane Doe"
+  "access-token": "jwt-token-here",
+  "refresh-token": 
   }
 }
 ```
@@ -48,6 +45,10 @@
 
 **API**
 - `POST /auth/logout`
+
+**Request**
+```json
+"refresh-token"
 
 **Response (200)**
 ```json
@@ -90,7 +91,7 @@
 - If the token is expired or invalid, I get an error.
 
 **API**
-- `POST /auth/request-password-reset`
+- `POST /auth/forgot-password`
 ```json
 { "email": "user@example.com" }
 ```
@@ -106,6 +107,35 @@
 **Response (200)**
 ```json
 { "message": "Password reset successful" }
+```
+
+---
+
+### Story 5: Token Management
+*As a user, I don't want to have to log in every time I visit the site.
+
+**Acceptance Criteria**
+- While using the system, I am not suddenly logged out.
+- If I come back to the system the next day, I am not logged out.
+- If I come back to the system a week later, I am logged out.
+
+**API**
+- `POST /auth/refresh`
+```json
+"refresh-token"
+```
+
+**Response (200)**
+```json
+{
+  "refreshToken": "new-refresh-token",
+  "accessToken": "new-access-token"
+}
+```
+
+**Response (401)**
+```json
+{ "error": "Invalid token" }
 ```
 
 ---
