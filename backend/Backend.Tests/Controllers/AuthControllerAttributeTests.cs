@@ -1,12 +1,28 @@
-using Xunit;
 using System.Reflection;
 using Backend.Controllers;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Backend.Tests.Controllers
 {
     public class AuthControllerAttributeTests
     {
+        [Fact]
+        public void Refresh_HasAuthorizeAttribute()
+        {
+            var method = typeof(AuthController).GetMethod("Refresh");
+            Assert.NotNull(method);
+            Assert.NotNull(method.GetCustomAttribute<AuthorizeAttribute>());
+        }
+
+        [Fact]
+        public void Logout_HasAuthorizeAttribute()
+        {
+            var method = typeof(AuthController).GetMethod("Logout");
+            Assert.NotNull(method);
+            Assert.NotNull(method.GetCustomAttribute<AuthorizeAttribute>());
+        }
+        
         [Fact]
         public void Register_HasHttpPostAndRouteAttribute()
         {

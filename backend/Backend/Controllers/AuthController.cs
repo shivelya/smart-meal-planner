@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Mvc;
 using Backend.Model;
 using Backend.Services;
 using Serilog;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Backend.Controllers
 {
@@ -12,12 +14,14 @@ namespace Backend.Controllers
     {
         private readonly ITokenService _tokenService;
         private readonly IUserService _userService;
+        private readonly IEmailService _emailService;
         private readonly ILogger<AuthController> _logger;
 
-        public AuthController(ITokenService tokenService, IUserService userService, ILogger<AuthController> logger)
+        public AuthController(ITokenService tokenService, IUserService userService, IEmailService emailService, ILogger<AuthController> logger)
         {
             _tokenService = tokenService;
             _userService = userService;
+            _emailService = emailService;
             _logger = logger;
         }
 
@@ -122,8 +126,9 @@ namespace Backend.Controllers
         }
 
         // POST: api/auth/refresh
+        [Authorize]
         [HttpPost("refresh")]
-        public async Task<IActionResult> Refresh([FromBody]string refreshToken)
+        public async Task<IActionResult> Refresh([FromBody] string refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
             {
@@ -180,8 +185,9 @@ namespace Backend.Controllers
         }
 
         // POST: api/auth/logout
+        [Authorize]
         [HttpPost("logout")]
-        public async Task<IActionResult> Logout([FromBody]string refreshToken)
+        public async Task<IActionResult> Logout([FromBody] string refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
             {
@@ -207,6 +213,108 @@ namespace Backend.Controllers
 
             await _tokenService.RevokeRefreshToken(refreshTokenObj);
             return Ok();
+        }
+
+        // PUT: api/auth/change-password
+        [Authorize]
+        [HttpPut("change-password")]
+        public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                _logger.LogWarning("Change password failed: Model state is invalid.");
+                _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                return BadRequest(ModelState);
+            }
+
+            if (string.IsNullOrEmpty(request.OldPassword) || string.IsNullOrEmpty(request.NewPassword))
+            {
+                _logger.LogWarning("Change password failed: Old password or new password is null or empty.");
+                return BadRequest("Old password and new password are required.");
+            }
+
+
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userId))
+            {
+                _logger.LogWarning("Change password failed: User ID not found in claims.");
+                return Unauthorized();
+            }
+
+            try
+            {
+                await _userService.ChangePasswordAsync(userId, request.OldPassword, request.NewPassword);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                _logger.LogWarning(ex, "Change password unauthorized for user ID {UserId}: {Message}", userId, ex.Message);
+                return Unauthorized("Old password is incorrect.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Change password failed for user ID {UserId}: {Message}", userId, ex.Message);
+                return StatusCode(500, "An error occurred while changing the password. " + ex.Message);
+            }
+
+            _logger.LogInformation("Password changed successfully for user ID {UserId}.", userId);
+
+            return Ok(new { message = "Password updated successfully" });
+        }
+
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+        {
+            var user = await _userService.GetByEmailAsync(request.Email);
+            if (user == null)
+            {
+                _logger.LogInformation("Forgot password request for non-existing email: {Email}", request.Email);
+                return Ok("If that email exists, a reset link has been sent."); // don’t reveal if email exists
+            }
+
+            var token = _tokenService.GenerateResetToken(user);
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogError("Failed to generate reset token for user with email {Email}.", request.Email);
+                return StatusCode(500, "Failed to generate reset token.");
+            }
+
+            _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", request.Email, token);
+
+            try
+            {
+                await _emailService.SendPasswordResetEmailAsync(user.Email, token);
+                _logger.LogInformation("Reset password email sent to {Email}.", user.Email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send reset password email to {Email}: {Message}", user.Email, ex.Message);
+                return StatusCode(500, "Failed to send reset email.");
+            }
+
+            return Ok("If that email exists, a reset link has been sent.");
+        }
+
+        [HttpPost("reset-password")]
+        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        {
+            var userId = _tokenService.ValidateResetToken(request.ResetCode);
+            if (userId == null)
+            {
+                _logger.LogWarning("Reset password failed: Invalid or expired token.");
+                _logger.LogDebug("Reset token: {Token}", request.ResetCode);
+                return BadRequest("Invalid or expired token");
+            }
+
+            var success = await _userService.UpdatePasswordAsync(userId.Value, request.NewPassword);
+            if (!success)
+            {
+                _logger.LogError("Failed to reset password for user ID {UserId}.", userId);
+                _logger.LogDebug("Reset token: {Token}", request.ResetCode);
+                return StatusCode(500, "Could not reset password");
+            }
+
+            _logger.LogInformation("Password reset successfully for user ID {UserId}.", userId);
+            return Ok("Password has been reset successfully.");
         }
 
         private async Task<TokenGenerateResult> GenerateTokens(User user)
@@ -256,5 +364,17 @@ namespace Backend.Controllers
     {
         public required string AccessToken { get; set; }
         public required string RefreshToken { get; set; }
+    }
+
+    public class ChangePasswordRequest
+    {
+        public required string OldPassword { get; set; }
+        public required string NewPassword { get; set; }
+    }
+
+    public class ResetPasswordRequest
+    {
+        public required string ResetCode { get; set; }
+        public required string NewPassword { get; set; }
     }
 }

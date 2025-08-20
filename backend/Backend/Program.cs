@@ -71,6 +71,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IUserService, UserSerivce>();
+builder.Services.AddScoped<IEmailService, BrevoEmailService>();
 
 var app = builder.Build();
 

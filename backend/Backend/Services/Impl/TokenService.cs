@@ -13,6 +13,7 @@ namespace Backend.Services.Impl
         private readonly IConfiguration _config;
         private readonly PlannerContext _context;
         private readonly ILogger<TokenService> _logger;
+        private readonly string _resetStr = "reset";
         public TokenService(IConfiguration config, PlannerContext context, ILogger<TokenService> logger)
         {
             _config = config;
@@ -24,8 +25,8 @@ namespace Backend.Services.Impl
         {
             var claims = new[]
             {
-                new Claim("id", user.Id.ToString()),
-                new Claim("email", user.Email)
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Email)
             };
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? ""));
@@ -78,6 +79,78 @@ namespace Backend.Services.Impl
             _context.RefreshTokens.Update(token);
             await _context.SaveChangesAsync();
             _logger.LogInformation("Revoked refresh token for user {UserId} at {Time}", token.UserId, DateTime.UtcNow);
+        }
+
+        public string GenerateResetToken(User user)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "default_secret_key");
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(_resetStr, "true") // custom claim to mark as reset token
+            };
+
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(1), // token valid for 1 hour
+                SigningCredentials = new SigningCredentials(
+                    new SymmetricSecurityKey(key),
+                    SecurityAlgorithms.HmacSha256Signature
+                ),
+                Audience = _config["Jwt:Audience"],
+                Issuer = _config["Jwt:Issuer"]
+            };
+
+            var token = tokenHandler.CreateToken(tokenDescriptor);
+            return tokenHandler.WriteToken(token);
+        }
+
+        public int? ValidateResetToken(string token)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(_config["Jwt:Key"] ?? "default_secret_key");
+
+            try
+            {
+                var principal = tokenHandler.ValidateToken(token, new TokenValidationParameters
+                {
+                    ValidateIssuerSigningKey = true,
+                    IssuerSigningKey = new SymmetricSecurityKey(key),
+                    ValidateIssuer = true,
+                    ValidIssuer = _config["Jwt:Issuer"],
+                    ValidateAudience = true,
+                    ValidAudience = _config["Jwt:Audience"],
+                    ValidateLifetime = true,
+                    ClockSkew = TimeSpan.Zero
+                }, out var validatedToken);
+
+                // Make sure it's actually a reset token
+                var resetClaim = principal.FindFirst(_resetStr)?.Value;
+                if (resetClaim != "true")
+                {
+                    _logger.LogWarning("Invalid reset token: {Token}", token);
+                    return null;
+                }
+
+                var sub = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                int.TryParse(sub, out var userId);
+                if (userId <= 0)
+                {
+                    _logger.LogWarning("Invalid user ID in reset token: {Token}", token);
+                    return null;
+                }
+
+                return userId;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating reset token: {Token}", token);
+                return null; // invalid or expired token
+            }
         }
     }
 }

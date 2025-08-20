@@ -78,6 +78,54 @@ namespace Backend.Model
             return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
         }
 
+        public async Task ChangePasswordAsync(string userId, string oldPassword, string newPassword)
+        {
+            if (!int.TryParse(userId, out int id))
+            {
+                _logger.LogWarning("Invalid user ID format: {UserId}", userId);
+                throw new ArgumentException("Invalid user ID format.");
+            }
+
+            var user = await GetByIdAsync(id);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found with ID: {UserId}", userId);
+                throw new InvalidOperationException("User not found.");
+            }
+
+            if (!VerifyPasswordHash(oldPassword, user))
+            {
+                _logger.LogWarning("Old password does not match for user ID: {UserId}", userId);
+                throw new UnauthorizedAccessException("Old password is incorrect.");
+            }
+
+            // Hash the new password
+            string newHashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            user.PasswordHash = newHashedPassword;
+
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Password changed successfully for user ID: {UserId}", userId);
+        }
+
+        public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
+        {
+            var user = await GetByIdAsync(userId);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found with ID: {UserId}", userId);
+                return false;
+            }
+
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+
+            _logger.LogInformation("Password updated successfully for user ID: {UserId}", userId);
+            return true;
+        }
+
         public Task<UserDto> UpdateUserDtoAsync(UserDto userDto)
         {
             throw new NotImplementedException();

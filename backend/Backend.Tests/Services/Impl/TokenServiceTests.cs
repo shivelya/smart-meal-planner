@@ -1,7 +1,12 @@
-using Microsoft.Extensions.Configuration;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 using Backend.Model;
 using Backend.Services.Impl;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Tests.Services.Impl
 {
@@ -106,6 +111,183 @@ namespace Backend.Tests.Services.Impl
 
             Assert.NotNull(found);
             Assert.True(found.IsRevoked);
+        }
+
+        private TokenService CreateService(out User user)
+        {
+            var configDict = new Dictionary<string, string?>
+            {
+                ["Jwt:Key"] = "super_secret_key_12345super_secret_key_12345super_secret_key_12345",
+                ["Jwt:Issuer"] = "TestIssuer",
+                ["Jwt:Audience"] = "TestAudience",
+                ["Jwt:ExpireMinutes"] = "15",
+                ["Jwt:RefreshExpireDays"] = "7"
+            };
+            var config = new ConfigurationBuilder().AddInMemoryCollection(configDict).Build();
+
+            var options = new DbContextOptionsBuilder<PlannerContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+            var logger = new LoggerFactory().CreateLogger<TokenService>();
+            var context = new PlannerContext(options, config, new LoggerFactory().CreateLogger<PlannerContext>());
+
+            user = new User { Id = 42, Email = "user@example.com", PasswordHash = "hash" };
+            context.Users.Add(user);
+            context.SaveChanges();
+
+            return new TokenService(config, context, logger);
+        }
+
+        [Fact]
+        public void GenerateResetToken_CreatesValidToken()
+        {
+            var service = CreateService(out var user);
+            var token = service.GenerateResetToken(user);
+
+            Assert.False(string.IsNullOrWhiteSpace(token));
+
+            var handler = new JwtSecurityTokenHandler();
+            var jwtToken = handler.ReadJwtToken(token);
+
+            Assert.Equal("TestIssuer", jwtToken.Issuer);
+            Assert.Equal("TestAudience", jwtToken.Audiences.First());
+            Assert.Equal(user.Id.ToString(), jwtToken.Claims.First(c => c.Type == JwtRegisteredClaimNames.Sub).Value);
+            Assert.Equal("true", jwtToken.Claims.First(c => c.Type == "reset").Value);
+        }
+
+        [Fact]
+        public void ValidateResetToken_ReturnsUserId_WhenTokenIsValid()
+        {
+            var service = CreateService(out var user);
+            var token = service.GenerateResetToken(user);
+
+            var result = service.ValidateResetToken(token);
+
+            Assert.Equal(user.Id, result);
+        }
+
+        [Fact]
+        public void ValidateResetToken_ReturnsNull_WhenResetClaimIsMissing()
+        {
+            var configDict = new Dictionary<string, string?>
+            {
+                ["Jwt:Key"] = "super_secret_key_12345super_secret_key_12345super_secret_key_12345",
+                ["Jwt:Issuer"] = "TestIssuer",
+                ["Jwt:Audience"] = "TestAudience"
+            };
+            var config = new ConfigurationBuilder().AddInMemoryCollection(configDict).Build();
+
+            var options = new DbContextOptionsBuilder<PlannerContext>()
+                .UseInMemoryDatabase(Guid.NewGuid().ToString())
+                .Options;
+            var logger = new LoggerFactory().CreateLogger<TokenService>();
+            var context = new PlannerContext(options, config, new LoggerFactory().CreateLogger<PlannerContext>());
+            var service = new TokenService(config, context, logger);
+
+            var handler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes(config["Jwt:Key"] ?? "");
+            var claims = new[] { new Claim(JwtRegisteredClaimNames.Sub, "42") };
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+                Audience = config["Jwt:Audience"],
+                Issuer = config["Jwt:Issuer"]
+            };
+            var token = handler.CreateToken(tokenDescriptor);
+            var tokenStr = handler.WriteToken(token);
+
+            var result = service.ValidateResetToken(tokenStr);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ValidateResetToken_ReturnsNull_WhenSubClaimIsMissing()
+        {
+            var service = CreateService(out var _);
+            var handler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes("super_secret_key_12345super_secret_key_12345super_secret_key_12345");
+            var claims = new[] { new Claim("reset", "true") };
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+                Audience = "TestAudience",
+                Issuer = "TestIssuer"
+            };
+            var token = handler.CreateToken(tokenDescriptor);
+            var tokenStr = handler.WriteToken(token);
+
+            var result = service.ValidateResetToken(tokenStr);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ValidateResetToken_ReturnsNull_WhenSubClaimIsInvalid()
+        {
+            var service = CreateService(out var _);
+            var handler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes("super_secret_key_12345super_secret_key_12345super_secret_key_12345");
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, "not_an_int"),
+                new Claim("reset", "true")
+            };
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddHours(1),
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+                Audience = "TestAudience",
+                Issuer = "TestIssuer"
+            };
+            var token = handler.CreateToken(tokenDescriptor);
+            var tokenStr = handler.WriteToken(token);
+
+            var result = service.ValidateResetToken(tokenStr);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ValidateResetToken_ReturnsNull_WhenTokenIsExpired()
+        {
+            var service = CreateService(out var user);
+            var handler = new JwtSecurityTokenHandler();
+            var key = Encoding.UTF8.GetBytes("super_secret_key_12345super_secret_key_12345super_secret_key_12345");
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim("reset", "true")
+            };
+            var tokenDescriptor = new SecurityTokenDescriptor
+            {
+                Subject = new ClaimsIdentity(claims),
+                Expires = DateTime.UtcNow.AddSeconds(+1), // already expired
+                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature),
+                Audience = "TestAudience",
+                Issuer = "TestIssuer"
+            };
+            var token = handler.CreateToken(tokenDescriptor);
+            var tokenStr = handler.WriteToken(token);
+
+            Thread.Sleep(2000); // ensure token is expired
+            var result = service.ValidateResetToken(tokenStr);
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ValidateResetToken_ReturnsNull_WhenTokenIsTampered()
+        {
+            var service = CreateService(out var user);
+            var token = service.GenerateResetToken(user);
+
+            // Tamper with the token string
+            var tamperedToken = token.Substring(0, token.Length - 2) + "xx";
+
+            var result = service.ValidateResetToken(tamperedToken);
+            Assert.Null(result);
         }
     }
 }
