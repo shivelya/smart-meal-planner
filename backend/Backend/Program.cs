@@ -33,11 +33,16 @@ else
     builder.Host.UseSerilog();
 }
 
-// Pull the connection string from configuration (works for both dev & prod)
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+var connectionString = Environment.GetEnvironmentVariable("DOTNET_CONNECTIONSTRING");
 
 if (string.IsNullOrEmpty(connectionString))
-    throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured in appsettings.json");
+{
+    // Pull the connection string from configuration (works for both dev & prod)
+    connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+}
+
+if (string.IsNullOrEmpty(connectionString))
+        throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured in appsettings.json");
 
 builder.Services.AddDbContext<Backend.PlannerContext>(options =>
     options.UseNpgsql(connectionString));
