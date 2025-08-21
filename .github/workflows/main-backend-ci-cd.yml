@@ -91,6 +91,14 @@ jobs:
         with:
           dotnet-version: '8.x'
 
+      - name: Install EF Core CLI
+        run: dotnet tool install --global dotnet-ef
+        shell: pwsh
+
+      - name: Add .dotnet tools to PATH
+        run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'" 
+        shell: pwsh
+
       - name: Check for pending migrations
         id: migrations
         run: |
