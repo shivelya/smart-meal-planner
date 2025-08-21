@@ -84,6 +84,11 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
+      - name: Install PostgreSQL tools
+        uses: tj-actions/setup-postgres@v3
+        with:
+          postgres-version: 17
+
       # ✅ Backup DB
       - name: Backup PostgreSQL database
         run: |
