@@ -166,7 +166,7 @@ jobs:
       # ✅ Apply migrations
       - name: Apply EF Core migrations
         if: steps.migrations.outputs.pending == 'true'
-        run:
+        run: |
           export DOTNET_CONNECTIONSTRING="Host=${{ secrets.AZURE_DB_HOST }};Database=${{ secrets.AZURE_DB_NAME }};Username=${{ secrets.AZURE_DB_USER }};Password=${{ secrets.AZURE_DB_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true"
           dotnet ef --project backend/Backend/Backend.csproj database update  \
             "Host=${{ secrets.AZURE_DB_HOST }};Database=${{ secrets.AZURE_DB_NAME }};Username=${{ secrets.AZURE_DB_USER }};Password=${{ secrets.AZURE_DB_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true"
