@@ -136,6 +136,11 @@ jobs:
       - name: Backup PostgreSQL database
         if: steps.migrations.outputs.pending == 'true'
         run: |
+          # Add binPath to PATH for the current session
+          $pgPath = Get-ChildItem 'C:\Program Files\PostgreSQL' | Sort-Object Name -Descending | Select-Object -First 1
+          $binPath = Join-Path $pgPath.FullName 'bin'
+          $env:PATH = "$binPath;$env:PATH"
+
           $env:PGPASSWORD="${{ secrets.AZURE_DB_PASSWORD }}"
           pg_dump `
             --host="${{ secrets.AZURE_DB_HOST }}" `
