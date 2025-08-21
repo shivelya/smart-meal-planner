@@ -87,11 +87,11 @@ jobs:
       # ✅ Backup DB
       - name: Backup PostgreSQL database
         run: |
-          $env:PGPASSWORD=${{ secrets.AZURE_DB_PASSWORD }}
+          $env:PGPASSWORD="${{ secrets.AZURE_DB_PASSWORD }}""
           pg_dump `
-            --host=${{ secrets.AZURE_DB_HOST }} `
-            --username=${{ secrets.AZURE_DB_USER }} `
-            --dbname=${{ secrets.AZURE_DB_NAME }} `
+            --host="${{ secrets.AZURE_DB_HOST }}" `
+            --username="${{ secrets.AZURE_DB_USER }}" `
+            --dbname="${{ secrets.AZURE_DB_NAME }}" `
             --format=custom `
             --file=backup_$(Get-Date -Format yyyyMMddHHmm).dump
           shell: pwsh
@@ -101,12 +101,12 @@ jobs:
         with:
           inlineScript: |
               az storage blob upload `
-                --account-name ${{ secrets.STORAGE_ACCOUNT }} `
+                --account-name "${{ secrets.STORAGE_ACCOUNT }}" `
                 --container-name db-backups `
                 --name backup_$(Get-Date -Format yyyyMMddHHmm).dump `
                 --file backup_$(Get-Date -Format yyyyMMddHHmm).dump `
                 --auth-mode key `
-                --account-key ${{ secrets.STORAGE_KEY }}
+                --account-key "${{ secrets.STORAGE_KEY }}"
 
       # ✅ Apply migrations
       - name: Apply EF Core migrations
