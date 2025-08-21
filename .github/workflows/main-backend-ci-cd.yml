@@ -84,15 +84,37 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
+      - name: Check for pending migrations
+        id: migrations
+        run: |
+          dotnet ef migrations script `
+            --idempotent `
+            --output migrations.sql `
+            --project backend/Backend/Backend.csproj `
+            --startup-project backend/Backend/Backend.csproj `
+            --connection "Host=${{ secrets.AZURE_DB_HOST }};Database=${{ secrets.AZURE_DB_NAME }};Username=${{ secrets.AZURE_DB_USER }};Password=${{ secrets.AZURE_DB_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true"
+
+          if ((Get-Content migrations.sql | Measure-Object -Line).Lines -gt 0) {
+            Write-Host "##[set-output name=pending;]true"
+          } else {
+            Write-Host "##[set-output name=pending;]false"
+          }
+        shell: pwsh
+
       - name: Install PostgreSQL tools
+        if: steps.migrations.outputs.pending == 'true'
         run: |
           choco install postgresql --no-progress --yes
+          $pgPath = Get-ChildItem 'C:\Program Files\PostgreSQL' | Sort-Object Name -Descending | Select-Object -First 1
+          $binPath = Join-Path $pgPath.FullName 'bin'
+          echo "$binPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
           refreshenv
           pg_dump --version
         shell: pwsh
 
       # ✅ Backup DB
       - name: Backup PostgreSQL database
+        if: steps.migrations.outputs.pending == 'true'
         run: |
           $env:PGPASSWORD="${{ secrets.AZURE_DB_PASSWORD }}"
           pg_dump `
@@ -104,6 +126,7 @@ jobs:
           shell: pwsh
 
       - name: Upload backup to Azure Blob
+        if: steps.migrations.outputs.pending == 'true'
         uses: azure/CLI@v2
         with:
           inlineScript: |
@@ -117,6 +140,7 @@ jobs:
 
       # ✅ Apply migrations
       - name: Apply EF Core migrations
+        if: steps.migrations.outputs.pending == 'true'
         run: dotnet ef database update --project backend/Backend.csproj `
           --connection "Host=${{ secrets.AZURE_DB_HOST }};Database=${{ secrets.AZURE_DB_NAME }};Username=${{ secrets.AZURE_DB_USER }};Password=${{ secrets.AZURE_DB_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true"
 
