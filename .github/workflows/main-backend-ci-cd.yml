@@ -102,17 +102,18 @@ jobs:
       - name: Check for pending migrations
         id: migrations
         run: |
+          $env:DOTNET_CONNECTIONSTRING="Host=${{ secrets.AZURE_DB_HOST }};Database=${{ secrets.AZURE_DB_NAME }};Username=${{ secrets.AZURE_DB_USER }};Password=${{ secrets.AZURE_DB_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true"
           dotnet ef migrations script `
             --idempotent `
             --output migrations.sql `
             --project backend/Backend/Backend.csproj `
             --startup-project backend/Backend/Backend.csproj
 
-          #if ((Get-Content migrations.sql | Measure-Object -Line).Lines -gt 0) {
-          #  Write-Host "##[set-output name=pending;]true"
-          #} else {
-          #  Write-Host "##[set-output name=pending;]false"
-          #}
+          if ((Get-Content migrations.sql | Measure-Object -Line).Lines -gt 0) {
+            Write-Host "##[set-output name=pending;]true"
+          } else {
+            Write-Host "##[set-output name=pending;]false"
+          }
         shell: pwsh
 
       - name: Install PostgreSQL tools
