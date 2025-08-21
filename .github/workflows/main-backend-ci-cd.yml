@@ -93,11 +93,11 @@ jobs:
             --project backend/Backend/Backend.csproj `
             --startup-project backend/Backend/Backend.csproj
 
-          if ((Get-Content migrations.sql | Measure-Object -Line).Lines -gt 0) {
-            Write-Host "##[set-output name=pending;]true"
-          } else {
-            Write-Host "##[set-output name=pending;]false"
-          }
+          #if ((Get-Content migrations.sql | Measure-Object -Line).Lines -gt 0) {
+          #  Write-Host "##[set-output name=pending;]true"
+          #} else {
+          #  Write-Host "##[set-output name=pending;]false"
+          #}
         shell: pwsh
 
       - name: Install PostgreSQL tools
