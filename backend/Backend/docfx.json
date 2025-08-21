@@ -13,15 +13,16 @@
             "**/bin/**"
           ]
         }
-      ],
+      ]
     }
   ],
   "build": {
     "content": [
       {
         "files": [
-          "**/*.{md,yml}"
-        ],
+            "api/**.yml"
+          ],
+        "dest": "api",
         "exclude": [
           "_site/**"
         ]
