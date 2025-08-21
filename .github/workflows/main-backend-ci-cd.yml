@@ -120,10 +120,15 @@ jobs:
         if: steps.migrations.outputs.pending == 'true'
         run: |
           choco install postgresql --no-progress --yes
+
+          # Get the latest PostgreSQL folder
           $pgPath = Get-ChildItem 'C:\Program Files\PostgreSQL' | Sort-Object Name -Descending | Select-Object -First 1
           $binPath = Join-Path $pgPath.FullName 'bin'
-          echo "$binPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          refreshenv
+
+          # Add binPath to PATH for the current session
+          $env:PATH = "$binPath;$env:PATH"
+
+          # Test pg_dump
           pg_dump --version
         shell: pwsh
 
