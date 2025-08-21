@@ -4,6 +4,9 @@ using Backend.Services;
 
 namespace Backend.Controllers
 {
+    /// <summary>
+    /// Lists all category types
+    /// </summary>
     [ApiController]
     [Route("api/[controller]")]
     public class CategoriesController : ControllerBase

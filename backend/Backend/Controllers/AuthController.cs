@@ -26,7 +26,16 @@ namespace Backend.Controllers
         }
 
         // POST: api/auth/register
+        /// <summary>
+        /// Registers a new user with the provided email and password.
+        /// Returns access and refresh tokens if successful so user is immediately logged in.
+        /// </summary>
+        /// <param name="request">JSON object with email and password.</param>
+        /// <returns>Return access and refresh tokens if successful.</returns>
         [HttpPost("register")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Register(RegisterRequest request)
         {
             _logger.LogDebug("Request: {Request}", request);
@@ -78,7 +87,16 @@ namespace Backend.Controllers
         }
 
         // POST: api/auth/login
+        /// <summary>
+        /// Logs in a user with the provided email and password.
+        /// </summary>
+        /// <param name="request">JSON object with email and password.</param>
+        /// <returns>JSON object with access and refresh tokens if successful.</returns>
         [HttpPost("login")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Login(LoginRequest request)
         {
             _logger.LogDebug("Login request: {Request}", request);
@@ -126,8 +144,17 @@ namespace Backend.Controllers
         }
 
         // POST: api/auth/refresh
+        /// <summary>
+        /// Refreshes the access and refresh tokens using a valid refresh token.
+        /// </summary>
+        /// <param name="refreshToken">A refresh token string.</param>
+        /// <returns>JSON object with new access and refresh tokens if successful.</returns>
         [Authorize]
         [HttpPost("refresh")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> Refresh([FromBody] string refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
@@ -185,8 +212,15 @@ namespace Backend.Controllers
         }
 
         // POST: api/auth/logout
+        /// <summary>
+        /// Logs out the user by revoking the provided refresh token.
+        /// </summary>
+        /// <param name="refreshToken">A refresh token string.</param>
+        /// <returns>OK status upon logout.</returns>
         [Authorize]
         [HttpPost("logout")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Logout([FromBody] string refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
@@ -216,8 +250,17 @@ namespace Backend.Controllers
         }
 
         // PUT: api/auth/change-password
+        /// <summary>
+        /// Allows an authenticated user to change their password
+        /// </summary>
+        /// <param name="request">JSON object with old password and new password.</param>
+        /// <returns>OK status upon success.</returns>
         [Authorize]
         [HttpPut("change-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
         {
             if (!ModelState.IsValid)
@@ -261,7 +304,14 @@ namespace Backend.Controllers
             return Ok(new { message = "Password updated successfully" });
         }
 
+        /// <summary>
+        /// Allows a user to request to reset their password. Sends an email to a valid user to allow them to reset password.
+        /// </summary>
+        /// <param name="request">JSON object with email.</param>
+        /// <returns>OK status on success.</returns>
         [HttpPost("forgot-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
             var user = await _userService.GetByEmailAsync(request.Email);
@@ -294,7 +344,15 @@ namespace Backend.Controllers
             return Ok("If that email exists, a reset link has been sent.");
         }
 
+        /// <summary>
+        /// Allows a valid user to reset their password.
+        /// </summary>
+        /// <param name="request">JSON object with reset token and email.</param>
+        /// <returns>OK status upon success.</returns>
         [HttpPost("reset-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
         {
             var userId = _tokenService.ValidateResetToken(request.ResetCode);
