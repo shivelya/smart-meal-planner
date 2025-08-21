@@ -84,6 +84,33 @@ jobs:
       contents: read #This is required for actions/checkout
 
     steps:
+      # ✅ Backup DB
+      - name: Backup PostgreSQL database
+        run: |
+          PGPASSWORD=${{ secrets.AZURE_DB_PASSWORD }} pg_dump \
+            --host=${{ secrets.AZURE_DB_HOST }} \
+            --username=${{ secrets.AZURE_DB_USER }} \
+            --dbname=${{ secrets.AZURE_DB_NAME }} \
+            --format=custom \
+            --file=backup_$(date +%Y%m%d%H%M).dump
+      
+      - name: Upload backup to Azure Blob
+        uses: azure/CLI@v2
+        with:
+          inlineScript: |
+            az storage blob upload \
+              --account-name ${{ secrets.STORAGE_ACCOUNT }} \
+              --container-name db-backups \
+              --name backup_$(date +%Y%m%d%H%M).dump \
+              --file backup_$(date +%Y%m%d%H%M).dump \
+              --auth-mode key \
+              --account-key ${{ secrets.STORAGE_KEY }}
+
+      # ✅ Apply migrations
+      - name: Apply EF Core migrations
+        run: dotnet ef database update --project backend/Backend.csproj \
+          --connection "Host=${{ secrets.AZURE_DB_HOST }};Database=${{ secrets.AZURE_DB_NAME }};Username=${{ secrets.AZURE_DB_USER }};Password=${{ secrets.AZURE_DB_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true"
+
       - name: Download artifact from build job
         uses: actions/download-artifact@v4
         with:
