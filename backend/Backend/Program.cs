@@ -7,6 +7,7 @@ using Backend.Model;
 using Backend.Services;
 using Serilog;
 using Microsoft.AspNetCore.Diagnostics;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,14 +24,13 @@ if (builder.Environment.IsDevelopment())
 else
 {
     // Production: use Serilog
-    Log.Logger = new LoggerConfiguration()
-        .Enrich.FromLogContext()
-        .ReadFrom.Configuration(builder.Configuration) // read settings from appsettings.Production.json
-        .WriteTo.Console()
-        .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day)
-        .CreateLogger();
-
-    builder.Host.UseSerilog();
+    builder.Host.UseSerilog((ctx, services, lc) =>
+    {
+        lc.ReadFrom.Configuration(ctx.Configuration)
+          .Enrich.FromLogContext()
+          .WriteTo.Console()
+          .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day);
+    });
 }
 
 var connectionString = Environment.GetEnvironmentVariable("DOTNET_CONNECTIONSTRING");
@@ -72,7 +72,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 builder.Services.AddAuthorization();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen();
+
+builder.Services.AddSwaggerGen(c =>
+{
+    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    c.IncludeXmlComments(xmlPath);
+});
 
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
@@ -86,7 +92,6 @@ app.UseSwaggerUI();
 app.UseHttpsRedirection();
 app.UseAuthentication();
 app.UseAuthorization();
-app.UseSerilogRequestLogging();
 
 app.UseExceptionHandler(errorApp =>
 {
