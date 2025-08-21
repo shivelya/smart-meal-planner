@@ -148,7 +148,7 @@ jobs:
             --dbname="${{ secrets.AZURE_DB_NAME }}" `
             --format=custom `
             --file="backup_$(Get-Date -Format yyyyMMddHHmm).dump"
-          shell: pwsh
+        shell: pwsh
 
       - name: Upload backup to Azure Blob
         if: steps.migrations.outputs.pending == 'true'
