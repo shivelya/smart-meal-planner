@@ -93,80 +93,80 @@ jobs:
 
       - name: Install EF Core CLI
         run: dotnet tool install --global dotnet-ef
-        shell: pwsh
 
       - name: Add .dotnet tools to PATH
-        run: echo "$env:PATH += ';$env:USERPROFILE\.dotnet\tools'" 
-        shell: pwsh
+        run: echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
 
       - name: Check for pending migrations
         id: migrations
         run: |
-          $env:DOTNET_CONNECTIONSTRING="Host=${{ secrets.AZURE_DB_HOST }};Database=${{ secrets.AZURE_DB_NAME }};Username=${{ secrets.AZURE_DB_USER }};Password=${{ secrets.AZURE_DB_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true"
-          dotnet ef migrations script `
-            --idempotent `
-            --output migrations.sql `
-            --project backend/Backend/Backend.csproj `
+          export DOTNET_CONNECTIONSTRING="Host=${{ secrets.AZURE_DB_HOST }};Database=${{ secrets.AZURE_DB_NAME }};Username=${{ secrets.AZURE_DB_USER }};Password=${{ secrets.AZURE_DB_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true"
+          dotnet ef migrations script \
+            --idempotent \
+            --output migrations.sql \
+            --project backend/Backend/Backend.csproj \
             --startup-project backend/Backend/Backend.csproj
 
-          if ((Get-Content migrations.sql | Measure-Object -Line).Lines -gt 0) {
-            Write-Host "##[set-output name=pending;]true"
-          } else {
-            Write-Host "##[set-output name=pending;]false"
-          }
-        shell: pwsh
+          if [ -s migrations.sql ]; then
+            echo "pending=true" >> $GITHUB_OUTPUT
+          else
+            echo "pending=false" >> $GITHUB_OUTPUT
+          fi
 
       - name: Install PostgreSQL tools
         if: steps.migrations.outputs.pending == 'true'
         run: |
-          choco install postgresql --no-progress --yes
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+          pg_dump --version
 
           # Get the latest PostgreSQL folder
-          $pgPath = Get-ChildItem 'C:\Program Files\PostgreSQL' | Sort-Object Name -Descending | Select-Object -First 1
-          $binPath = Join-Path $pgPath.FullName 'bin'
+          #$pgPath = Get-ChildItem 'C:\Program Files\PostgreSQL' | Sort-Object Name -Descending | Select-Object -First 1
+          #$binPath = Join-Path $pgPath.FullName 'bin'
 
           # Add binPath to PATH for the current session
-          $env:PATH = "$binPath;$env:PATH"
+          #$env:PATH = "$binPath;$env:PATH"
 
           # Test pg_dump
           pg_dump --version
-        shell: pwsh
 
       # ✅ Backup DB
       - name: Backup PostgreSQL database
         if: steps.migrations.outputs.pending == 'true'
         run: |
           # Add binPath to PATH for the current session
-          $pgPath = Get-ChildItem 'C:\Program Files\PostgreSQL' | Sort-Object Name -Descending | Select-Object -First 1
-          $binPath = Join-Path $pgPath.FullName 'bin'
-          $env:PATH = "$binPath;$env:PATH"
+          #$pgPath = Get-ChildItem 'C:\Program Files\PostgreSQL' | Sort-Object Name -Descending | Select-Object -First 1
+          #$binPath = Join-Path $pgPath.FullName 'bin'
+          #$env:PATH = "$binPath;$env:PATH"
 
-          $env:PGPASSWORD="${{ secrets.AZURE_DB_PASSWORD }}"
-          pg_dump `
-            --host="${{ secrets.AZURE_DB_HOST }}" `
-            --username="${{ secrets.AZURE_DB_USER }}" `
-            --dbname="${{ secrets.AZURE_DB_NAME }}" `
-            --format=custom `
-            --file="backup_$(Get-Date -Format yyyyMMddHHmm).dump"
-        shell: pwsh
+          export PGPASSWORD="${{ secrets.AZURE_DB_PASSWORD }}"
+          TIMESTAMP=$(date +'%Y%m%d%H%M')
+          pg_dump \
+            --host="${{ secrets.AZURE_DB_HOST }}" \
+            --username="${{ secrets.AZURE_DB_USER }}" \
+            --dbname="${{ secrets.AZURE_DB_NAME }}" \
+            --format=custom \
+            --file="backup_${TIMESTAMP}.dump"
+
+          echo "BACKUP_FILE=backup_${TIMESTAMP}.dump" >> $GITHUB_ENV
 
       - name: Upload backup to Azure Blob
         if: steps.migrations.outputs.pending == 'true'
         uses: azure/CLI@v2
         with:
           inlineScript: |
-              az storage blob upload `
-                --account-name "${{ secrets.STORAGE_ACCOUNT }}" `
-                --container-name db-backups `
-                --name backup_$(Get-Date -Format yyyyMMddHHmm).dump `
-                --file backup_$(Get-Date -Format yyyyMMddHHmm).dump `
-                --auth-mode key `
-                --account-key "${{ secrets.STORAGE_KEY }}"
+            az storage blob upload \
+              --account-name "${{ secrets.STORAGE_ACCOUNT }}" \
+              --container-name db-backups \
+              --name "$BACKUP_FILE" \
+              --file "$BACKUP_FILE" \
+              --auth-mode key \
+              --account-key "${{ secrets.STORAGE_KEY }}"
 
       # ✅ Apply migrations
       - name: Apply EF Core migrations
         if: steps.migrations.outputs.pending == 'true'
-        run: dotnet ef database update --project backend/Backend.csproj `
+        run: dotnet ef database update --project backend/Backend.csproj \
           --connection "Host=${{ secrets.AZURE_DB_HOST }};Database=${{ secrets.AZURE_DB_NAME }};Username=${{ secrets.AZURE_DB_USER }};Password=${{ secrets.AZURE_DB_PASSWORD }};Ssl Mode=Require;Trust Server Certificate=true"
 
       - name: Download artifact from build job
