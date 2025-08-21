@@ -34,6 +34,7 @@ yarn-error.log*
 # Documentation files
 backend/Backend/_site/
 frontend/_compodoc/
+backend/Backend/api
 
 # Testing
 **/TestResults/
@@ -41,3 +42,4 @@ frontend/_compodoc/
 
 # VS Code specific
 .vscode/
+

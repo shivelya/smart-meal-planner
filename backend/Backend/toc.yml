@@ -1,2 +1,249 @@
-- name: Docs
-  href: .
+### YamlMime:TableOfContent
+items:
+- uid: Backend
+  name: Backend
+  type: Namespace
+  items:
+  - uid: Backend.PlannerContext
+    name: PlannerContext
+    type: Class
+- uid: Backend.Controllers
+  name: Backend.Controllers
+  type: Namespace
+  items:
+  - uid: Backend.Controllers.AuthController
+    name: AuthController
+    type: Class
+  - uid: Backend.Controllers.CategoriesController
+    name: CategoriesController
+    type: Class
+  - uid: Backend.Controllers.ChangePasswordRequest
+    name: ChangePasswordRequest
+    type: Class
+  - uid: Backend.Controllers.LoginRequest
+    name: LoginRequest
+    type: Class
+  - uid: Backend.Controllers.ResetPasswordRequest
+    name: ResetPasswordRequest
+    type: Class
+  - uid: Backend.Controllers.TokenGenerateResult
+    name: TokenGenerateResult
+    type: Class
+  - uid: Backend.Controllers.TokenResponse
+    name: TokenResponse
+    type: Class
+- uid: Backend.DTOs
+  name: Backend.DTOs
+  type: Namespace
+  items:
+  - uid: Backend.DTOs.CategoryDto
+    name: CategoryDto
+    type: Class
+  - uid: Backend.DTOs.IngredientDto
+    name: IngredientDto
+    type: Class
+  - uid: Backend.DTOs.MealPlanDto
+    name: MealPlanDto
+    type: Class
+  - uid: Backend.DTOs.MealPlanEntryDto
+    name: MealPlanEntryDto
+    type: Class
+  - uid: Backend.DTOs.PantryItemDto
+    name: PantryItemDto
+    type: Class
+  - uid: Backend.DTOs.RecipeDto
+    name: RecipeDto
+    type: Class
+  - uid: Backend.DTOs.RecipeIngredientDto
+    name: RecipeIngredientDto
+    type: Class
+  - uid: Backend.DTOs.UserDto
+    name: UserDto
+    type: Class
+- uid: Backend.Migrations
+  name: Backend.Migrations
+  type: Namespace
+  items:
+  - uid: Backend.Migrations.AddRefreshTokensTable
+    name: AddRefreshTokensTable
+    type: Class
+- uid: Backend.Model
+  name: Backend.Model
+  type: Namespace
+  items:
+  - uid: Backend.Model.Category
+    name: Category
+    type: Class
+  - uid: Backend.Model.Ingredient
+    name: Ingredient
+    type: Class
+  - uid: Backend.Model.MealPlan
+    name: MealPlan
+    type: Class
+  - uid: Backend.Model.MealPlanEntry
+    name: MealPlanEntry
+    type: Class
+  - uid: Backend.Model.PantryItem
+    name: PantryItem
+    type: Class
+  - uid: Backend.Model.Recipe
+    name: Recipe
+    type: Class
+  - uid: Backend.Model.RecipeIngredient
+    name: RecipeIngredient
+    type: Class
+  - uid: Backend.Model.User
+    name: User
+    type: Class
+  - uid: Backend.Model.UserSerivce
+    name: UserSerivce
+    type: Class
+- uid: Backend.Services
+  name: Backend.Services
+  type: Namespace
+  items:
+  - uid: Backend.Services.ICategoryService
+    name: ICategoryService
+    type: Interface
+  - uid: Backend.Services.IEmailService
+    name: IEmailService
+    type: Interface
+  - uid: Backend.Services.IIngredientService
+    name: IIngredientService
+    type: Interface
+  - uid: Backend.Services.IMealPlanEntryService
+    name: IMealPlanEntryService
+    type: Interface
+  - uid: Backend.Services.IMealPlanService
+    name: IMealPlanService
+    type: Interface
+  - uid: Backend.Services.IPantryItemService
+    name: IPantryItemService
+    type: Interface
+  - uid: Backend.Services.IRecipeIngredientService
+    name: IRecipeIngredientService
+    type: Interface
+  - uid: Backend.Services.IRecipeService
+    name: IRecipeService
+    type: Interface
+  - uid: Backend.Services.ITokenService
+    name: ITokenService
+    type: Interface
+  - uid: Backend.Services.IUserService
+    name: IUserService
+    type: Interface
+- uid: Backend.Services.Impl
+  name: Backend.Services.Impl
+  type: Namespace
+  items:
+  - uid: Backend.Services.Impl.BrevoEmailService
+    name: BrevoEmailService
+    type: Class
+  - uid: Backend.Services.Impl.CategoryService
+    name: CategoryService
+    type: Class
+  - uid: Backend.Services.Impl.TokenService
+    name: TokenService
+    type: Class
+- uid: Backend.Tests
+  name: Backend.Tests
+  type: Namespace
+  items:
+  - uid: Backend.Tests.CategorySeedingPlannerContext
+    name: CategorySeedingPlannerContext
+    type: Class
+  - uid: Backend.Tests.CategorySeedingPlannerContextTests
+    name: CategorySeedingPlannerContextTests
+    type: Class
+  - uid: Backend.Tests.PlannerContextTests
+    name: PlannerContextTests
+    type: Class
+  - uid: Backend.Tests.TestPlannerContext
+    name: TestPlannerContext
+    type: Class
+  - uid: Backend.Tests.TestPlannerContextTests
+    name: TestPlannerContextTests
+    type: Class
+- uid: Backend.Tests.Controllers
+  name: Backend.Tests.Controllers
+  type: Namespace
+  items:
+  - uid: Backend.Tests.Controllers.AuthControllerAttributeTests
+    name: AuthControllerAttributeTests
+    type: Class
+  - uid: Backend.Tests.Controllers.AuthControllerNewMethodsTests
+    name: AuthControllerNewMethodsTests
+    type: Class
+  - uid: Backend.Tests.Controllers.AuthControllerTests
+    name: AuthControllerTests
+    type: Class
+- uid: Backend.Tests.DTOs
+  name: Backend.Tests.DTOs
+  type: Namespace
+  items:
+  - uid: Backend.Tests.DTOs.CategoryDtoTests
+    name: CategoryDtoTests
+    type: Class
+  - uid: Backend.Tests.DTOs.IngredientDtoTests
+    name: IngredientDtoTests
+    type: Class
+  - uid: Backend.Tests.DTOs.MealPlanDtoTests
+    name: MealPlanDtoTests
+    type: Class
+  - uid: Backend.Tests.DTOs.MealPlanEntryDtoTests
+    name: MealPlanEntryDtoTests
+    type: Class
+  - uid: Backend.Tests.DTOs.PantryItemDtoTests
+    name: PantryItemDtoTests
+    type: Class
+  - uid: Backend.Tests.DTOs.RecipeDtoTests
+    name: RecipeDtoTests
+    type: Class
+  - uid: Backend.Tests.DTOs.RecipeIngredientDtoTests
+    name: RecipeIngredientDtoTests
+    type: Class
+  - uid: Backend.Tests.DTOs.UserDtoTests
+    name: UserDtoTests
+    type: Class
+- uid: Backend.Tests.Model
+  name: Backend.Tests.Model
+  type: Namespace
+  items:
+  - uid: Backend.Tests.Model.CategoryTests
+    name: CategoryTests
+    type: Class
+  - uid: Backend.Tests.Model.IngredientTests
+    name: IngredientTests
+    type: Class
+  - uid: Backend.Tests.Model.MealPlanEntryTests
+    name: MealPlanEntryTests
+    type: Class
+  - uid: Backend.Tests.Model.MealPlanTests
+    name: MealPlanTests
+    type: Class
+  - uid: Backend.Tests.Model.PantryItemTests
+    name: PantryItemTests
+    type: Class
+  - uid: Backend.Tests.Model.RecipeIngredientTests
+    name: RecipeIngredientTests
+    type: Class
+  - uid: Backend.Tests.Model.RecipeTests
+    name: RecipeTests
+    type: Class
+  - uid: Backend.Tests.Model.RefreshTokenTests
+    name: RefreshTokenTests
+    type: Class
+  - uid: Backend.Tests.Model.UserTests
+    name: UserTests
+    type: Class
+- uid: Backend.Tests.Services.Impl
+  name: Backend.Tests.Services.Impl
+  type: Namespace
+  items:
+  - uid: Backend.Tests.Services.Impl.TokenServiceTests
+    name: TokenServiceTests
+    type: Class
+  - uid: Backend.Tests.Services.Impl.UserServiceTests
+    name: UserServiceTests
+    type: Class
+memberLayout: SamePage
