@@ -85,9 +85,11 @@ jobs:
 
     steps:
       - name: Install PostgreSQL tools
-        uses: tj-actions/setup-postgres@v3
-        with:
-          postgres-version: 17
+        run: |
+          choco install postgresql --no-progress --yes
+          refreshenv
+          pg_dump --version
+        shell: pwsh
 
       # ✅ Backup DB
       - name: Backup PostgreSQL database
