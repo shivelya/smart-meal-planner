@@ -30,7 +30,8 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Adds a pantry item for the authenticated user. Assumes the corresponding Ingredient item has already been added.
+        /// Adds a pantry item for the authenticated user. Assumes an IngredientId for ingredients that already exist,
+        /// and assumes an Ingredientname and CategoryId for ingredients that need to be added.
         /// </summary>
         /// <param name="dto">A DTO containing pantry item details.</param>
         /// <returns>A created pantry item DTO.</returns>
@@ -40,13 +41,23 @@ namespace Backend.Controllers
         {
             var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
             _logger.LogInformation("Adding pantry item for user {UserId}: {@Dto}", userId, dto);
-            var result = await _service.CreatePantryItemAsync(dto, userId);
-            _logger.LogInformation("Pantry item added for user {UserId}: {@Result}", userId, result);
-            return Ok(result);
+            try
+            {
+                var result = await _service.CreatePantryItemAsync(dto, userId);
+
+                _logger.LogInformation("Pantry item added for user {UserId}: {@Result}", userId, result);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+                return BadRequest(ex.Message);
+            }
         }
 
         /// <summary>
-        /// Adds multiple pantry items for the authenticated user. Assumes the corresponding Ingredient items have already been added.
+        /// Adds multiple pantry items for the authenticated user. Assumes an IngredientId for ingredients which already exist,
+        /// and assumes an IngredientName and a CategoryId for ingredients which need to be added.
         /// </summary>
         /// <param name="dtos">A collection of DTOs containing pantry item details.</param>
         /// <returns>A collection of created pantry item DTOs.</returns>
