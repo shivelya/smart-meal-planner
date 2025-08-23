@@ -14,6 +14,12 @@ namespace Backend.Services.Impl
             _logger = logger;
         }
 
+        /// <summary>
+        /// Sends a password reset email to the specified recipient with the provided reset link.
+        /// </summary>
+        /// <param name="toEmail">The recipient's email address.</param>
+        /// <param name="resetLink">The password reset link to include in the email.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
         public async Task SendPasswordResetEmailAsync(string toEmail, string resetLink)
         {
             var emailMessage = new MimeMessage();

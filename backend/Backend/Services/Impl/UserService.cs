@@ -15,6 +15,12 @@ namespace Backend.Model
             _logger = logger;
         }
 
+        /// <summary>
+        /// Creates a new user with the specified email and password.
+        /// </summary>
+        /// <param name="email">The user's email address.</param>
+        /// <param name="password">The user's password.</param>
+        /// <returns>The created user.</returns>
         public async Task<User> CreateUserAsync(string email, string password)
         {
             // Check if user already exists
@@ -42,6 +48,11 @@ namespace Backend.Model
             return user;
         }
 
+        /// <summary>
+        /// Retrieves a user by their email address.
+        /// </summary>
+        /// <param name="email">The user's email address.</param>
+        /// <returns>The user if found, otherwise null.</returns>
         public async Task<User> GetByEmailAsync(string email)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email) ?? null!;
@@ -54,7 +65,12 @@ namespace Backend.Model
             return user;
         }
 
-        public async Task<User> GetByIdAsync(int id)
+    /// <summary>
+    /// Retrieves a user by their unique ID.
+    /// </summary>
+    /// <param name="id">The user's unique identifier.</param>
+    /// <returns>The user if found, otherwise null.</returns>
+    public async Task<User> GetByIdAsync(int id)
         {
             var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id) ?? null!;
             if (user == null)
@@ -66,7 +82,13 @@ namespace Backend.Model
             return user;
         }
 
-        public bool VerifyPasswordHash(string password, User user)
+    /// <summary>
+    /// Verifies the password hash for the specified user.
+    /// </summary>
+    /// <param name="password">The password to verify.</param>
+    /// <param name="user">The user whose password hash to verify.</param>
+    /// <returns>True if the password matches, otherwise false.</returns>
+    public bool VerifyPasswordHash(string password, User user)
         {
             // Verify the password against the stored hash
             if (user == null || string.IsNullOrEmpty(user.PasswordHash))
@@ -78,7 +100,14 @@ namespace Backend.Model
             return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
         }
 
-        public async Task ChangePasswordAsync(string userId, string oldPassword, string newPassword)
+    /// <summary>
+    /// Changes the password for the specified user.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="oldPassword">The user's current password.</param>
+    /// <param name="newPassword">The user's new password.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    public async Task ChangePasswordAsync(string userId, string oldPassword, string newPassword)
         {
             if (!int.TryParse(userId, out int id))
             {
@@ -109,7 +138,13 @@ namespace Backend.Model
             _logger.LogInformation("Password changed successfully for user ID: {UserId}", userId);
         }
 
-        public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
+    /// <summary>
+    /// Updates the password for the specified user.
+    /// </summary>
+    /// <param name="userId">The user's unique identifier.</param>
+    /// <param name="newPassword">The new password to set.</param>
+    /// <returns>True if the update was successful, otherwise false.</returns>
+    public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
         {
             var user = await GetByIdAsync(userId);
             if (user == null)
@@ -126,7 +161,12 @@ namespace Backend.Model
             return true;
         }
 
-        public Task<UserDto> UpdateUserDtoAsync(UserDto userDto)
+    /// <summary>
+    /// Updates the user DTO information.
+    /// </summary>
+    /// <param name="userDto">The user DTO to update.</param>
+    /// <returns>The updated user DTO.</returns>
+    public Task<UserDto> UpdateUserDtoAsync(UserDto userDto)
         {
             throw new NotImplementedException();
         }

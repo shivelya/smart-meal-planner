@@ -7,6 +7,10 @@ namespace Backend.Services
     /// </summary>
     public interface ICategoryService
     {
+        /// <summary>
+        /// Retrieves all categories.
+        /// </summary>
+        /// <returns>An enumerable collection of category DTOs.</returns>
         Task<IEnumerable<CategoryDto>> GetAllAsync();
     }
 }
