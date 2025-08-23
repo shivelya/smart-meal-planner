@@ -20,8 +20,17 @@
     "content": [
       {
         "files": [
-            "**/api/**.yml"
+            "index.md",
+            "toc.yml"
           ],
+        "exclude": [
+          "_site/**"
+        ]
+      },
+      {
+        "files": [
+            "**/api/**.yml"
+        ],
         "dest": "api",
         "exclude": [
           "_site/**"
