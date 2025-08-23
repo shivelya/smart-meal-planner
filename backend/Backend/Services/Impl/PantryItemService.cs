@@ -15,7 +15,8 @@ namespace Backend.Services.Impl
         }
 
         /// <summary>
-        /// Creates a new pantry item for the specified user. Assumes a new ingredient object has already been added.
+        /// Creates a new pantry item for the specified user. Assumes an IngredientId for ingredients that already exist,
+        /// and assumes an IntredientName and CategoryId for ingredients that need to be added to the DB.
         /// </summary>
         /// <param name="pantryItemDto">The DTO containing pantry item details.</param>
         /// <param name="userId">The user ID to associate with the pantry item.</param>
@@ -23,9 +24,40 @@ namespace Backend.Services.Impl
         public async Task<PantryItemDto> CreatePantryItemAsync(CreatePantryItemDto pantryItemDto, int userId)
         {
             _logger.LogInformation("Creating for user {0} pantry item {1}", userId, pantryItemDto);
+
+            int ingredientId;
+
+            if (pantryItemDto.IngredientId.HasValue)
+            {
+                ingredientId = pantryItemDto.IngredientId.Value;
+            }
+            else if (!string.IsNullOrWhiteSpace(pantryItemDto.IngredientName))
+            {
+                if (pantryItemDto.CategoryId == null)
+                {
+                    _logger.LogWarning("Ingredientname was provided with CategoryId");
+                    throw new ArgumentException("CategoryId is required on pantry items with new ingredients.");
+                }
+
+                var ingredient = new Ingredient
+                {
+                    Name = pantryItemDto.IngredientName,
+                    CategoryId = (int)pantryItemDto.CategoryId
+                }; 
+
+                _context.Ingredients.Add(ingredient);
+                await _context.SaveChangesAsync();
+                ingredientId = ingredient.Id;
+            }
+            else
+            {
+                _logger.LogError("IntredientId or IngredientName must be provided.");
+                throw new ArgumentException("IngredientId or IngredientName must be provided.");
+            }
+
             var entity = new PantryItem
             {
-                IngredientId = pantryItemDto.IngredientId,
+                IngredientId = ingredientId,
                 Quantity = pantryItemDto.Quantity,
                 Unit = pantryItemDto.Unit,
                 UserId = userId
@@ -40,7 +72,8 @@ namespace Backend.Services.Impl
         }
 
         /// <summary>
-        /// Creates multiple pantry items for the specified user. Assumes the corresponding Ingredient objects have already been created.
+        /// Creates multiple pantry items for the specified user. Assumes an IngredientId for ingredients that alreay exist
+        /// and assumes an IngredientName and CategoryId for ingredients that need to be added to the DB.
         /// </summary>
         /// <param name="pantryItemDtos">A collection of DTOs containing pantry item details.</param>
         /// <param name="userId">The user ID to associate with the pantry items.</param>
@@ -48,13 +81,47 @@ namespace Backend.Services.Impl
         public async Task<IEnumerable<PantryItemDto>> CreatePantryItemsAsync(IEnumerable<CreatePantryItemDto> pantryItemDtos, int userId)
         {
             _logger.LogInformation("Creating for user {0} {1} pantry items", userId, pantryItemDtos.Count());
-            var entities = pantryItemDtos.Select(dto => new PantryItem
+
+            if (pantryItemDtos.Where(dto => dto.IngredientId == null && dto.IngredientName == null).Count() > 0)
             {
-                IngredientId = dto.IngredientId,
-                Quantity = dto.Quantity,
-                Unit = dto.Unit,
-                UserId = userId
-            }).ToList();
+                _logger.LogWarning("Pantry items with no ingredient were added. These will be filtered out.");
+            }
+
+            var entities = pantryItemDtos.Where(dto => dto.IngredientId != null || (dto.IngredientName != null && dto.CategoryId != null))
+                .Select(dto =>
+                {
+                    int ingredientId;
+                    if (dto.IngredientId.HasValue)
+                    {
+                        ingredientId = dto.IngredientId.Value;
+                    }
+                    else if (!string.IsNullOrWhiteSpace(dto.IngredientName))
+                    {
+                        var ingredient = new Ingredient
+                        {
+                            Name = dto.IngredientName,
+                            CategoryId = (int)dto.CategoryId!
+                        };
+
+                        _context.Ingredients.Add(ingredient);
+                        _context.SaveChanges();
+                        ingredientId = ingredient.Id;
+                    }
+                    else
+                    {
+                        // shouldn't get here based on the where statement above
+                        _logger.LogError("IngredientId or IngredientName and CategoryId must be provided.");
+                        throw new ArgumentException("IngredientId or IngredientName and CategoryId must be provided.");
+                    }
+
+                    return new PantryItem
+                    {
+                        IngredientId = ingredientId,
+                        Quantity = dto.Quantity,
+                        Unit = dto.Unit,
+                        UserId = userId
+                    };
+                }).ToList();
 
             _context.PantryItems.AddRange(entities);
             int count = await _context.SaveChangesAsync();

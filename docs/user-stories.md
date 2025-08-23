@@ -184,6 +184,33 @@
 
 ---
 
+## User Story: Ingredient Selection for Pantry Items
+
+**As a** user,  
+**I want** to select or add ingredients when creating a pantry item,  
+**so that** I can easily track the foods I have without worrying about duplicates or database structure.
+
+### Acceptance Criteria
+
+1. When creating a new pantry item, the user can start typing the name of an ingredient.
+2. The system should search the database for matching ingredients and suggest them in real-time (autocomplete).
+3. If the ingredient exists:
+   - Selecting it will populate the pantry item with the corresponding `IngredientId`.
+4. If the ingredient does not exist:
+   - The user can enter the new ingredient name.
+   - The system will create the new ingredient in the database before creating the pantry item.
+5. From the user’s perspective, they do not need to distinguish between ingredients and pantry items; they only interact with ingredient names.
+6. On the backend, all ingredients are stored in a single table for searchability and consistency.
+
+### Notes
+
+- Ingredient fields: `Id`, `Name`, `Category`
+- PantryItem fields: `Id`, `IngredientId`, `Quantity`, `Unit`
+- The backend should expose a search endpoint: `GET /ingredients?search=<text>`
+- Pantry item creation should accept either an `IngredientId` or an `IngredientName`
+
+---
+
 ### Story 7: Edit Pantry Item
 *As a logged-in user, I want to edit a pantry item, so that I can adjust quantities or fix mistakes.*
 
