@@ -17,6 +17,15 @@ namespace Backend.Controllers
         private readonly IEmailService _emailService;
         private readonly ILogger<AuthController> _logger;
 
+        /// <summary>
+        /// Initializes a new instance of the AuthController class.
+        /// Handles user registration, login, logout, token management,
+        /// and forgotten passwords.
+        /// </summary>
+        /// <param name="tokenService">Service for token operations.</param>
+        /// <param name="userService">Service for user operations.</param>
+        /// <param name="emailService">Service for email operations.</param>
+        /// <param name="logger">Logger instance.</param>
         public AuthController(ITokenService tokenService, IUserService userService, IEmailService emailService, ILogger<AuthController> logger)
         {
             _tokenService = tokenService;
