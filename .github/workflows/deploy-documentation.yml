@@ -5,6 +5,7 @@ on:
     workflows: ["Main Backend CI/CD", "Main Frontend CI/CD"]
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
   build_and_deploy_docs:
