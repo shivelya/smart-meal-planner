@@ -43,3 +43,5 @@ backend/Backend/api
 # VS Code specific
 .vscode/
 
+#DB migrations
+migrations.sql
