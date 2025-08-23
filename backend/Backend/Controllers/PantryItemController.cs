@@ -171,6 +171,33 @@ namespace Backend.Controllers
             return Ok(await _service.Search(search, userId));
         }
 
+        /// <summary>
+        /// Searches the current user's pantry items for the given name.
+        /// </summary>
+        /// <param name="id">The id of the pantryItem to update</param>
+        /// <param name="pantryItem">The pantry item to update</param>
+        /// <returns>The pantry items found, or 400 if an error occurs.</returns>
+        [HttpPut("{id:int}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<PantryItemDto>> Update([FromQuery] string id, [FromBody] CreatePantryItemDto pantryItem)
+        {
+            if (string.IsNullOrEmpty(id))
+            {
+                _logger.LogWarning("id is required.");
+                return BadRequest("id is required.");
+            }
+
+            if (pantryItem == null)
+            {
+                _logger.LogWarning("PantryItemDto pantryItem is required");
+                return BadRequest("PantryItemDto pantryItem is required.");
+            }
+
+            var userId = GetUserId();
+            return Ok(await _service.UpdatePantryItemAsync(pantryItem, userId));
+        }
+
         private int GetUserId()
         {
             return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);

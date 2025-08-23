@@ -11,6 +11,8 @@ namespace Backend.DTOs
 
     public class CreatePantryItemDto
     {
+        // optional, used for updates but not creates
+        public int? Id { get; set; }
         // behind the scenes when a new pantry item is created we'll connect it to an existing ingredient or add a new one
         public int? IngredientId { get; set; }
         public string? IngredientName { get; set; }

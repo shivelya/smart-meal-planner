@@ -239,5 +239,49 @@ namespace Backend.Tests.Controllers
             var value = Assert.IsAssignableFrom<IEnumerable<PantryItemDto>>(okResult.Value);
             Assert.Empty(value);
         }
+
+        [Fact]
+        public async Task Update_WithValidIdAndDto_ReturnsServiceResult()
+        {
+            var pantryItemDto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            var updatedDto = new PantryItemDto { Id = 1, IngredientId = 1, Quantity = 2, Unit = "kg", UserId = 42 };
+            _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, 42)).ReturnsAsync(updatedDto);
+
+            var result = await _controller.Update("1", pantryItemDto);
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            Assert.Equal(updatedDto, okResult.Value);
+        }
+
+        [Fact]
+        public async Task Update_WithNullId_ReturnsBadRequest()
+        {
+            var pantryItemDto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+
+            var result = await _controller.Update(null!, pantryItemDto);
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("id is required.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task Update_WithEmptyId_ReturnsBadRequest()
+        {
+            var pantryItemDto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+
+            var result = await _controller.Update("", pantryItemDto);
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("id is required.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task Update_WithNullDto_ReturnsBadRequest()
+        {
+            var result = await _controller.Update("1", null!);
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("PantryItemDto pantryItem is required.", badRequest.Value);
+        }
     }
 }

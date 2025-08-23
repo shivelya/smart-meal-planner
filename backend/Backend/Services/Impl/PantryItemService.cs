@@ -39,15 +39,7 @@ namespace Backend.Services.Impl
                     throw new ArgumentException("CategoryId is required on pantry items with new ingredients.");
                 }
 
-                var ingredient = new Ingredient
-                {
-                    Name = pantryItemDto.IngredientName,
-                    CategoryId = (int)pantryItemDto.CategoryId
-                }; 
-
-                _context.Ingredients.Add(ingredient);
-                await _context.SaveChangesAsync();
-                ingredientId = ingredient.Id;
+                ingredientId = await CreateNewIngredient(pantryItemDto);
             }
             else
             {
@@ -87,8 +79,8 @@ namespace Backend.Services.Impl
                 _logger.LogWarning("Pantry items with no ingredient were added. These will be filtered out.");
             }
 
-            var entities = pantryItemDtos.Where(dto => dto.IngredientId != null || (dto.IngredientName != null && dto.CategoryId != null))
-                .Select(dto =>
+            var tasks = pantryItemDtos.Where(dto => dto.IngredientId != null || (dto.IngredientName != null && dto.CategoryId != null))
+                .Select(async dto =>
                 {
                     int ingredientId;
                     if (dto.IngredientId.HasValue)
@@ -97,15 +89,7 @@ namespace Backend.Services.Impl
                     }
                     else if (!string.IsNullOrWhiteSpace(dto.IngredientName))
                     {
-                        var ingredient = new Ingredient
-                        {
-                            Name = dto.IngredientName,
-                            CategoryId = (int)dto.CategoryId!
-                        };
-
-                        _context.Ingredients.Add(ingredient);
-                        _context.SaveChanges();
-                        ingredientId = ingredient.Id;
+                        ingredientId = await CreateNewIngredient(dto);
                     }
                     else
                     {
@@ -122,6 +106,8 @@ namespace Backend.Services.Impl
                         UserId = userId
                     };
                 }).ToList();
+
+            var entities = await Task.WhenAll(tasks);
 
             _context.PantryItems.AddRange(entities);
             int count = await _context.SaveChangesAsync();
@@ -200,10 +186,52 @@ namespace Backend.Services.Impl
         /// Updates an existing pantry item.
         /// </summary>
         /// <param name="pantryItemDto">The pantry item DTO to update.</param>
+        /// <param name="userId">The user id the item belongs to.</param>
         /// <returns>The updated pantry item DTO.</returns>
-        public Task<PantryItemDto> UpdatePantryItemAsync(PantryItemDto pantryItemDto)
+        public async Task<PantryItemDto> UpdatePantryItemAsync(CreatePantryItemDto pantryItemDto, int userId)
         {
-            throw new NotImplementedException();
+            if (pantryItemDto == null)
+            {
+                _logger.LogWarning("pantryItem is required");
+                throw new ArgumentException("pantryItem is required.");
+            }
+
+            var user = _context.Users.FirstOrDefault(user => user.Id == userId);
+            if (user == null)
+            {
+                _logger.LogWarning("Could not find user {0}", userId);
+                throw new ArgumentException("Could not find user {0}", userId.ToString());
+            }
+
+            if (pantryItemDto.Id == null)
+            {
+                _logger.LogWarning("PantryItemDto.Id is required for updates.");
+                throw new ArgumentException("PantryItemDto.Id is required for updates.");
+            }
+
+            var item = _context.PantryItems.FirstOrDefault(item => item.Id == pantryItemDto.Id);
+            if (item == null)
+            {
+                _logger.LogWarning("Could not find pantry item {0} to update.", pantryItemDto.Id);
+                throw new ArgumentException("Could not find pantry item {0} to update.", pantryItemDto.Id.ToString());
+            }
+
+            if (user.Id != item.UserId)
+            {
+                _logger.LogWarning("Cannot update pantry items for other users.");
+                throw new ArgumentException("Cannot update pantry items for other users.");
+            }
+
+            item.Quantity = pantryItemDto.Quantity;
+            item.Unit = pantryItemDto.Unit;
+
+            if (pantryItemDto.IngredientId != null)
+                item.IngredientId = (int)pantryItemDto.IngredientId;
+            else
+                item.IngredientId = await CreateNewIngredient(pantryItemDto);
+
+            await _context.SaveChangesAsync();
+            return ToDto(item);
         }
 
         /// <summary>
@@ -222,6 +250,19 @@ namespace Backend.Services.Impl
                 .ToListAsync();
 
             return items.Select(ToDto);
+        }
+
+        private async Task<int> CreateNewIngredient(CreatePantryItemDto dto)
+        {
+            var ingredient = new Ingredient
+            {
+                Name = dto.IngredientName!,
+                CategoryId = (int)dto.CategoryId!
+            };
+
+            _context.Ingredients.Add(ingredient);
+            await _context.SaveChangesAsync();
+            return ingredient.Id;
         }
 
         private static PantryItemDto ToDto(PantryItem entity) => new PantryItemDto
