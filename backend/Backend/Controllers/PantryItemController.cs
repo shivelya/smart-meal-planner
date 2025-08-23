@@ -65,7 +65,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<IEnumerable<PantryItemDto>>> AddItems(IEnumerable<CreatePantryItemDto> dtos)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            var userId = GetUserId();
             _logger.LogInformation("Adding multiple pantry items for user {UserId}: {@Dtos}", userId, dtos);
             var result = await _service.CreatePantryItemsAsync(dtos, userId);
             _logger.LogInformation("Pantry items added for user {UserId}: {@Result}", userId, result);
@@ -106,7 +106,7 @@ namespace Backend.Controllers
             _logger.LogInformation("Retrieving pantry items: page {PageNumber}, size {PageSize}", pageNumber, pageSize);
             var (items, totalCount) = await _service.GetAllPantryItemsAsync(pageNumber, pageSize);
             _logger.LogInformation("Retrieved {TotalCount} pantry items", totalCount);
-            return Ok(new GetItemsResult() { TotalCount = totalCount,  Items = items });
+            return Ok(new GetItemsResult() { TotalCount = totalCount, Items = items });
         }
 
         /// <summary>
@@ -149,6 +149,31 @@ namespace Backend.Controllers
             }
             _logger.LogWarning("No pantry items deleted for IDs: {@Ids}", ids);
             return NotFound();
+        }
+
+        /// <summary>
+        /// Searches the current user's pantry items for the given name.
+        /// </summary>
+        /// <param name="search">The search term to query on.</param>
+        /// <returns>The pantry items found, or 400 if an error occurs.</returns>
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<IEnumerable<PantryItemDto>>> Search([FromQuery] string search)
+        {
+            if (string.IsNullOrEmpty(search))
+            {
+                _logger.LogWarning("A search term is required.");
+                return BadRequest("A search term is required.");
+            }
+
+            var userId = GetUserId();
+            return Ok(await _service.Search(search, userId));
+        }
+
+        private int GetUserId()
+        {
+            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
         }
     }
 
