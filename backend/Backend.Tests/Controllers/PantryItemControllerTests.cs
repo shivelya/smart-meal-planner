@@ -192,5 +192,52 @@ namespace Backend.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(resultDtos, okResult.Value);
         }
+
+        [Fact]
+        public async Task Search_WithValidTerm_ReturnsOkWithResults()
+        {
+            var searchTerm = "Salt";
+            var expectedResults = new List<PantryItemDto>
+            {
+                new PantryItemDto { Id = 1, IngredientId = 1, Quantity = 2, Unit = "g", UserId = 42 }
+            };
+            _serviceMock.Setup(s => s.Search(searchTerm, 42)).ReturnsAsync(expectedResults);
+
+            var result = await _controller.Search(searchTerm);
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            Assert.Equal(expectedResults, okResult.Value);
+        }
+
+        [Fact]
+        public async Task Search_WithEmptyTerm_ReturnsBadRequest()
+        {
+            var result = await _controller.Search("");
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("A search term is required.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task Search_WithNullTerm_ReturnsBadRequest()
+        {
+            var result = await _controller.Search(null!);
+
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("A search term is required.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task Search_ReturnsEmptyListIfNoResults()
+        {
+            var searchTerm = "NotFound";
+            _serviceMock.Setup(s => s.Search(searchTerm, 42)).ReturnsAsync(new List<PantryItemDto>());
+
+            var result = await _controller.Search(searchTerm);
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsAssignableFrom<IEnumerable<PantryItemDto>>(okResult.Value);
+            Assert.Empty(value);
+        }
     }
 }

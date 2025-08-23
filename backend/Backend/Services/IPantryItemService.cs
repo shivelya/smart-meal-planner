@@ -50,5 +50,12 @@ namespace Backend.Services
         /// <param name="ids">The list of pantry item ids to be deleted.</param>
         /// <returns>The number of items that were deleted.</returns>
         Task<int> DeletePantryItemsAsync(IEnumerable<int> ids);
+        /// <summary>
+        /// Performs a text search on pantry item names (ingredient names) for the current user.
+        /// </summary>
+        /// <param name="search">The string to search on.</param>
+        /// <param name="userId">The id of the current user.</param>
+        /// <returns>The matching pentry items.</returns>
+        Task<IEnumerable<PantryItemDto>> Search(string search, int userId);
     }
 }
