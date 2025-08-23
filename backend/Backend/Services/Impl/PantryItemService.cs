@@ -206,6 +206,24 @@ namespace Backend.Services.Impl
             throw new NotImplementedException();
         }
 
+        /// <summary>
+        /// Search for pantry items for the current user whose name matches the given search string.
+        /// </summary>
+        /// <param name="search">The string to search on.</param>
+        /// <param name="userId">The id of the current user.</param>
+        /// <returns>The pantry items which are a match.</returns>
+        public async Task<IEnumerable<PantryItemDto>> Search(string search, int userId)
+        {
+            var items = await _context.PantryItems
+                .Where(i => i.UserId == userId)
+                .Where(i => i.Ingredient.Name.ToLower().Contains(search.ToLower()))
+                .OrderBy(i => i.Ingredient.Name)
+                .Take(20) // limit results for performance
+                .ToListAsync();
+
+            return items.Select(ToDto);
+        }
+
         private static PantryItemDto ToDto(PantryItem entity) => new PantryItemDto
         {
             Id = entity.Id,

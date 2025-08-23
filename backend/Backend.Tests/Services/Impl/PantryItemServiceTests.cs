@@ -135,7 +135,124 @@ namespace Backend.Tests.Services.Impl
             var dto = new PantryItemDto();
 
             // Act & Assert
-            await Assert.ThrowsAsync<System.NotImplementedException>(() => _service.UpdatePantryItemAsync(dto));
+            await Assert.ThrowsAsync<NotImplementedException>(() => _service.UpdatePantryItemAsync(dto));
+        }
+
+        private PantryItemService CreateServiceWithData(out int userId)
+        {
+            var options = new DbContextOptionsBuilder<PlannerContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var logger = new LoggerFactory().CreateLogger<PantryItemService>();
+            var context = new PlannerContext(options, null!, new LoggerFactory().CreateLogger<PlannerContext>());
+            userId = 1;
+
+            // Seed ingredients
+            var ingredient1 = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1 };
+            var ingredient2 = new Ingredient { Id = 2, Name = "Sugar", CategoryId = 1 };
+            var ingredient3 = new Ingredient { Id = 3, Name = "Pepper", CategoryId = 2 };
+            context.Ingredients.AddRange(ingredient1, ingredient2, ingredient3);
+
+            // Seed pantry items
+            context.PantryItems.AddRange(
+                new PantryItem { Id = 1, IngredientId = 1, Quantity = 2, Unit = "g", UserId = userId, Ingredient = ingredient1 },
+                new PantryItem { Id = 2, IngredientId = 2, Quantity = 5, Unit = "g", UserId = userId, Ingredient = ingredient2 },
+                new PantryItem { Id = 3, IngredientId = 3, Quantity = 1, Unit = "g", UserId = userId, Ingredient = ingredient3 },
+                new PantryItem { Id = 4, IngredientId = 2, Quantity = 3, Unit = "g", UserId = 99, Ingredient = ingredient2 } // different user
+            );
+            context.SaveChanges();
+
+            return new PantryItemService(context, logger);
+        }
+
+        [Fact]
+        public async Task Search_ReturnsMatchingItems_ForUser()
+        {
+            var service = CreateServiceWithData(out int userId);
+
+            var results = await service.Search("salt", userId);
+
+            Assert.Single(results);
+            Assert.Equal(1, results.First().IngredientId);
+        }
+
+        [Fact]
+        public async Task Search_ReturnsMultipleMatches()
+        {
+            var service = CreateServiceWithData(out int userId);
+
+            var results = await service.Search("s", userId); // matches "Sugar" and "Salt"
+
+            Assert.Equal(2, results.Count());
+            var names = results.Select(r => r.IngredientId).ToList();
+            Assert.Contains(1, names);
+            Assert.Contains(2, names);
+        }
+
+        [Fact]
+        public async Task Search_IsCaseInsensitive()
+        {
+            var service = CreateServiceWithData(out int userId);
+
+            var results = await service.Search("SALT", userId);
+
+            Assert.Single(results);
+            Assert.Equal(1, results.First().IngredientId);
+        }
+
+        [Fact]
+        public async Task Search_ReturnsEmpty_WhenNoMatch()
+        {
+            var service = CreateServiceWithData(out int userId);
+
+            var results = await service.Search("flour", userId);
+
+            Assert.Empty(results);
+        }
+
+        [Fact]
+        public async Task Search_OnlyReturnsItemsForSpecifiedUser()
+        {
+            var service = CreateServiceWithData(out int userId);
+
+            var results = await service.Search("Sugar", userId);
+
+            Assert.Single(results);
+            Assert.Equal(userId, results.First().UserId);
+        }
+
+        [Fact]
+        public async Task Search_LimitsResultsTo20()
+        {
+            var options = new DbContextOptionsBuilder<PlannerContext>()
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+                .Options;
+            var logger = new LoggerFactory().CreateLogger<PantryItemService>();
+            var context = new PlannerContext(options, null!, new LoggerFactory().CreateLogger<PlannerContext>());
+            int userId = 1;
+
+            var ingredient = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1 };
+            context.Ingredients.Add(ingredient);
+
+            for (int i = 0; i < 25; i++)
+            {
+                context.PantryItems.Add(new PantryItem
+                {
+                    Id = i + 1,
+                    IngredientId = 1,
+                    Quantity = 1,
+                    Unit = "g",
+                    UserId = userId,
+                    Ingredient = ingredient
+                });
+            }
+            context.SaveChanges();
+
+            var service = new PantryItemService(context, logger);
+
+            var results = await service.Search("Salt", userId);
+
+            Assert.Equal(20, results.Count());
         }
     }
 }
