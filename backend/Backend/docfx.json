@@ -20,7 +20,7 @@
     "content": [
       {
         "files": [
-            "api/**.yml"
+            "**/api/**.yml"
           ],
         "dest": "api",
         "exclude": [
