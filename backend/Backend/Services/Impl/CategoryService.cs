@@ -13,6 +13,10 @@ namespace Backend.Services.Impl
             _logger = logger;
         }
 
+        /// <summary>
+        /// Retrieves all categories from the database.
+        /// </summary>
+        /// <returns>An enumerable collection of category DTOs.</returns>
         public async Task<IEnumerable<CategoryDto>> GetAllAsync()
         {
             var categories = await _context.Categories
