@@ -227,8 +227,16 @@ namespace Backend.Services.Impl
 
             if (pantryItemDto.IngredientId != null)
                 item.IngredientId = (int)pantryItemDto.IngredientId;
-            else
+            else if (pantryItemDto.IngredientName != null || pantryItemDto.CategoryId != null)
+            {
+                if (pantryItemDto.IngredientName == null || pantryItemDto.CategoryId == null)
+                {
+                    _logger.LogWarning("Both IngredientName and CategoryId must be supplied to create new Ingredient.");
+                    throw new ArgumentException("Both IngredientName and CategoryId must supplied to create new Ingredient.");
+                }
+
                 item.IngredientId = await CreateNewIngredient(pantryItemDto);
+            }
 
             await _context.SaveChangesAsync();
             return ToDto(item);
