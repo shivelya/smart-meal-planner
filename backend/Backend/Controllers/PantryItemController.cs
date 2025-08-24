@@ -180,7 +180,7 @@ namespace Backend.Controllers
         [HttpPut("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<PantryItemDto>> Update([FromQuery] string id, [FromBody] CreatePantryItemDto pantryItem)
+        public async Task<ActionResult<PantryItemDto>> Update(string id, [FromBody] CreatePantryItemDto pantryItem)
         {
             if (string.IsNullOrEmpty(id))
             {
