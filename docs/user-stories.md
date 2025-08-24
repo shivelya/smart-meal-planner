@@ -248,6 +248,30 @@ _No content_
 
 ---
 
+## User Story: Add Pantry Items via Label Photo
+
+**As a** user,  
+**I want** to take a photo of a food label and have the app automatically extract the ingredients,  
+**so that** I can quickly add multiple pantry items without typing each one manually.
+
+### Acceptance Criteria
+
+1. The user can capture or upload a photo of a food product label.
+2. The client app sends the image to the OCR service (Azure Computer Vision) to extract text.
+3. The extracted text is parsed for the ingredient list.
+4. The user can review, edit, remove, or add ingredients before saving.
+5. Only after the user validates the ingredients does the app send them to the backend to create PantryItems or new Ingredients.
+6. The user should see a clear list of ingredients ready for confirmation.
+7. The backend only receives the **final validated list**, reducing errors and unnecessary processing.
+
+### Notes
+
+- OCR is performed client-side for immediate feedback.
+- Parsing should focus on identifying the line(s) starting with "Ingredients:".
+- Any new ingredients not already in the database will be created by the backend.
+
+---
+
 ## 📅 Meal Plans
 
 ### Story 9: View Saved Meal Plans
