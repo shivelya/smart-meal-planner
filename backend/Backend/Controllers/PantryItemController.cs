@@ -395,7 +395,15 @@ namespace Backend.Controllers
             }
 
             var userId = GetUserId();
-            return Ok(await _service.UpdatePantryItemAsync(pantryItem, userId));
+            try
+            {
+                return Ok(await _service.UpdatePantryItemAsync(pantryItem, userId));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error while updating pantry item.");
+                return StatusCode(500, ex);
+            }
         }
 
         private int GetUserId()

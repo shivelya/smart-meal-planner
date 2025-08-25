@@ -559,7 +559,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithValidIdAndDto_ReturnsServiceResult()
         {
-            var pantryItemDto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            var pantryItemDto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
             var updatedDto = new PantryItemDto { Id = 1, IngredientId = 1, Quantity = 2, Unit = "kg", UserId = 42 };
             _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, 42)).ReturnsAsync(updatedDto);
 
@@ -572,7 +572,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithNullId_ReturnsBadRequest()
         {
-            var pantryItemDto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            var pantryItemDto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
 
             var result = await _controller.Update(null!, pantryItemDto);
 
@@ -583,7 +583,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithEmptyId_ReturnsBadRequest()
         {
-            var pantryItemDto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            var pantryItemDto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
 
             var result = await _controller.Update("", pantryItemDto);
 
