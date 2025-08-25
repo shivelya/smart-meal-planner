@@ -10,24 +10,18 @@ namespace Backend.Controllers
     /// Controller for managing pantry items.
     /// For authenticated user only.
     /// </summary>
+    /// <remarks>
+    /// Initializes a new instance of the <see cref="PantryItemController"/> class.
+    /// </remarks>
+    /// <param name="service">The pantry item service.</param>
+    /// <param name="logger">The logger instance.</param>
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class PantryItemController : ControllerBase
+    public class PantryItemController(IPantryItemService service, ILogger<PantryItemController> logger) : ControllerBase
     {
-        private readonly IPantryItemService _service;
-        private readonly ILogger<PantryItemController> _logger;
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PantryItemController"/> class.
-        /// </summary>
-        /// <param name="service">The pantry item service.</param>
-        /// <param name="logger">The logger instance.</param>
-        public PantryItemController(IPantryItemService service, ILogger<PantryItemController> logger)
-        {
-            _service = service;
-            _logger = logger;
-        }
+        private readonly IPantryItemService _service = service;
+        private readonly ILogger<PantryItemController> _logger = logger;
 
         /// <summary>
         /// Adds a pantry item for the authenticated user. Assumes an IngredientId for ingredients that already exist,
@@ -39,7 +33,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         public async Task<ActionResult<PantryItemDto>> AddItem(CreatePantryItemDto dto)
         {
-            var userId = int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            var userId = GetUserId();
             _logger.LogInformation("Adding pantry item for user {UserId}: {@Dto}", userId, dto);
             try
             {
@@ -50,8 +44,8 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex.Message);
-                return BadRequest(ex.Message);
+                _logger.LogError(ex, "Error adding pantry item.");
+                return StatusCode(500, ex);
             }
         }
 
@@ -67,9 +61,18 @@ namespace Backend.Controllers
         {
             var userId = GetUserId();
             _logger.LogInformation("Adding multiple pantry items for user {UserId}: {@Dtos}", userId, dtos);
-            var result = await _service.CreatePantryItemsAsync(dtos, userId);
-            _logger.LogInformation("Pantry items added for user {UserId}: {@Result}", userId, result);
-            return Ok(result);
+            try
+            {
+                var result = await _service.CreatePantryItemsAsync(dtos, userId);
+                _logger.LogInformation("Pantry items added for user {UserId}: {@Result}", userId, result);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error adding pantry items");
+                return StatusCode(500, ex);
+            }
         }
 
         /// <summary>
@@ -83,14 +86,23 @@ namespace Backend.Controllers
         public async Task<ActionResult<PantryItemDto>> GetItem(int id)
         {
             _logger.LogInformation("Retrieving pantry item with ID {Id}", id);
-            var item = await _service.GetPantryItemByIdAsync(id);
-            if (item is null)
+            try
             {
-                _logger.LogWarning("Pantry item with ID {Id} not found", id);
-                return NotFound();
+                var item = await _service.GetPantryItemByIdAsync(id);
+                if (item is null)
+                {
+                    _logger.LogWarning("Pantry item with ID {Id} not found", id);
+                    return NotFound();
+                }
+
+                _logger.LogInformation("Pantry item retrieved: {@Item}", item);
+                return Ok(item);
             }
-            _logger.LogInformation("Pantry item retrieved: {@Item}", item);
-            return Ok(item);
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error retrieving pantry item.");
+                return StatusCode(500, ex);
+            }
         }
 
         /// <summary>
@@ -101,12 +113,21 @@ namespace Backend.Controllers
         /// <returns>An object containing the total count and the items.</returns>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<GetItemsResult>> GetItems([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<GetPantryItemsResult>> GetItems([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             _logger.LogInformation("Retrieving pantry items: page {PageNumber}, size {PageSize}", pageNumber, pageSize);
-            var (items, totalCount) = await _service.GetAllPantryItemsAsync(pageNumber, pageSize);
-            _logger.LogInformation("Retrieved {TotalCount} pantry items", totalCount);
-            return Ok(new GetItemsResult() { TotalCount = totalCount, Items = items });
+            try
+            {
+                var (items, totalCount) = await _service.GetAllPantryItemsAsync(pageNumber, pageSize);
+                _logger.LogInformation("Retrieved {TotalCount} pantry items", totalCount);
+
+                return Ok(new GetPantryItemsResult() { TotalCount = totalCount, Items = items });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error retrieving pantry items.");
+                return StatusCode(500, ex);
+            }
         }
 
         /// <summary>
@@ -120,14 +141,23 @@ namespace Backend.Controllers
         public async Task<IActionResult> DeleteItem(int id)
         {
             _logger.LogInformation("Deleting pantry item with ID {Id}", id);
-            var deleted = await _service.DeletePantryItemAsync(id);
-            if (deleted)
+            try
             {
-                _logger.LogInformation("Pantry item with ID {Id} deleted", id);
-                return NoContent();
+                var deleted = await _service.DeletePantryItemAsync(id);
+                if (deleted)
+                {
+                    _logger.LogInformation("Pantry item with ID {Id} deleted", id);
+                    return NoContent();
+                }
+
+                _logger.LogWarning("Pantry item with ID {Id} not found for deletion", id);
+                return NotFound();
             }
-            _logger.LogWarning("Pantry item with ID {Id} not found for deletion", id);
-            return NotFound();
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error while deleting pantry item.");
+                return StatusCode(500, ex);
+            }
         }
 
         /// <summary>
@@ -141,14 +171,23 @@ namespace Backend.Controllers
         public async Task<IActionResult> DeleteItems([FromBody] IEnumerable<int> ids)
         {
             _logger.LogInformation("Deleting multiple pantry items: {@Ids}", ids);
-            var deleted = await _service.DeletePantryItemsAsync(ids);
-            if (deleted > 0)
+            try
             {
-                _logger.LogInformation("Deleted {Count} pantry items", deleted);
-                return Ok(deleted);
+                var deleted = await _service.DeletePantryItemsAsync(ids);
+                if (deleted > 0)
+                {
+                    _logger.LogInformation("Deleted {Count} pantry items", deleted);
+                    return Ok(deleted);
+                }
+
+                _logger.LogWarning("No pantry items deleted for IDs: {@Ids}", ids);
+                return NotFound();
             }
-            _logger.LogWarning("No pantry items deleted for IDs: {@Ids}", ids);
-            return NotFound();
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error deleting pantry items.");
+                return StatusCode(500, ex);
+            }
         }
 
         /// <summary>
@@ -168,7 +207,15 @@ namespace Backend.Controllers
             }
 
             var userId = GetUserId();
-            return Ok(await _service.Search(search, userId));
+            try
+            {
+                return Ok(await _service.Search(search, userId));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error while search for pantry item.)");
+                return StatusCode(500, ex);
+            }
         }
 
         /// <summary>
@@ -195,18 +242,20 @@ namespace Backend.Controllers
             }
 
             var userId = GetUserId();
-            return Ok(await _service.UpdatePantryItemAsync(pantryItem, userId));
+            try
+            {
+                return Ok(await _service.UpdatePantryItemAsync(pantryItem, userId));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex, "Error while updating pantry item.");
+                return StatusCode(500, ex);
+            }
         }
 
         private int GetUserId()
         {
             return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
         }
-    }
-
-    public class GetItemsResult
-    {
-        public int TotalCount { get; set; }
-        public required IEnumerable<PantryItemDto> Items { get; set; }
     }
 }

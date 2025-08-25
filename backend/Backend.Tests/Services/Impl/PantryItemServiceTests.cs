@@ -30,7 +30,9 @@ namespace Backend.Tests.Services.Impl
         public async Task CreatePantryItemAsync_CreatesItem_ReturnsDto()
         {
             // Arrange
-            var dto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            var dto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            plannerContext.Ingredients.Add(new Ingredient { Id = 1, Name = "juice" });
+            plannerContext.SaveChanges();
             var userId = 42;
 
             // Act
@@ -50,8 +52,8 @@ namespace Backend.Tests.Services.Impl
             // Arrange
             var dtos = new List<CreatePantryItemDto>
             {
-                new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" },
-                new CreatePantryItemDto { IngredientId = 2, Quantity = 3, Unit = "g" }
+                new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" },
+                new CreatePantryItemOldIngredientDto { IngredientId = 2, Quantity = 3, Unit = "g" }
             };
             var userId = 42;
 
@@ -272,7 +274,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_UpdatesQuantityAndUnit()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var dto = new CreatePantryItemDto { Id = 10, IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new CreatePantryItemOldIngredientDto { Id = 10, IngredientId = 1, Quantity = 5, Unit = "kg" };
 
             var result = await service.UpdatePantryItemAsync(dto, userId);
 
@@ -293,7 +295,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_ThrowsIfUserNotFound()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var dto = new CreatePantryItemDto { Id = 10, IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new CreatePantryItemOldIngredientDto { Id = 10, IngredientId = 1, Quantity = 5, Unit = "kg" };
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, 999));
         }
@@ -302,7 +304,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_ThrowsIfIdIsNull()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var dto = new CreatePantryItemDto { IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 5, Unit = "kg" };
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, userId));
         }
@@ -311,7 +313,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_ThrowsIfPantryItemNotFound()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var dto = new CreatePantryItemDto { Id = 999, IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new CreatePantryItemOldIngredientDto { Id = 999, IngredientId = 1, Quantity = 5, Unit = "kg" };
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, userId));
         }
@@ -326,7 +328,7 @@ namespace Backend.Tests.Services.Impl
             context.PantryItems.Add(pantryItem);
             context.SaveChanges();
 
-            var dto = new CreatePantryItemDto { Id = 20, IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new CreatePantryItemOldIngredientDto { Id = 20, IngredientId = 1, Quantity = 5, Unit = "kg" };
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, userId));
         }
@@ -339,7 +341,7 @@ namespace Backend.Tests.Services.Impl
             context.Ingredients.Add(newIngredient);
             context.SaveChanges();
 
-            var dto = new CreatePantryItemDto { Id = 10, IngredientId = 2, Quantity = 5, Unit = "kg" };
+            var dto = new CreatePantryItemOldIngredientDto { Id = 10, IngredientId = 2, Quantity = 5, Unit = "kg" };
 
             var result = await service.UpdatePantryItemAsync(dto, userId);
 

@@ -36,7 +36,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItem_ReturnsOk_WithCreatedItem()
         {
-            var dto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            var dto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
             var resultDto = new PantryItemDto { Id = 1, IngredientId = 1, Quantity = 2, Unit = "kg", UserId = 42 };
             _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, 42)).ReturnsAsync(resultDto);
 
@@ -49,7 +49,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItems_ReturnsOk_WithCreatedItems()
         {
-            var dtos = new List<CreatePantryItemDto> { new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" } };
+            var dtos = new List<CreatePantryItemDto> { new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" } };
             var resultDtos = new List<PantryItemDto> { new PantryItemDto { Id = 1, IngredientId = 1, Quantity = 2, Unit = "kg", UserId = 42 } };
             _serviceMock.Setup(s => s.CreatePantryItemsAsync(dtos, 42)).ReturnsAsync(resultDtos);
 
@@ -90,7 +90,7 @@ namespace Backend.Tests.Controllers
             var result = await _controller.GetItems(1, 10);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            GetItemsResult value = Assert.IsType<GetItemsResult>(okResult.Value);
+            GetPantryItemsResult value = Assert.IsType<GetPantryItemsResult>(okResult.Value);
             Assert.Equal(items.Count, value.TotalCount);
             Assert.Equal(items, value.Items);
         }
@@ -141,7 +141,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItem_WithIngredientId_CreatesItem()
         {
-            var dto = new CreatePantryItemDto { IngredientId = 5, Quantity = 2, Unit = "kg" };
+            var dto = new CreatePantryItemOldIngredientDto { IngredientId = 5, Quantity = 2, Unit = "kg" };
             var resultDto = new PantryItemDto { Id = 1, IngredientId = 5, Quantity = 2, Unit = "kg", UserId = 42 };
             _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, 42)).ReturnsAsync(resultDto);
 
@@ -153,7 +153,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItem_WithIngredientName_CreatesItem()
         {
-            var dto = new CreatePantryItemDto { IngredientName = "Salt", Quantity = 1, Unit = "g" };
+            var dto = new CreatePantryItemNewIngredientDto { IngredientName = "Salt", Quantity = 1, Unit = "g" };
             var resultDto = new PantryItemDto { Id = 2, IngredientId = 10, Quantity = 1, Unit = "g", UserId = 42 };
             _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, 42)).ReturnsAsync(resultDto);
 
@@ -165,11 +165,12 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItem_WithoutIngredientIdOrName_ReturnsBadRequest()
         {
-            var dto = new CreatePantryItemDto { Quantity = 1, Unit = "g" };
+            var dto = new CreatePantryItemOldIngredientDto { Quantity = 1, Unit = "g" };
             _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, 42)).ThrowsAsync(new ArgumentException());
 
             var result = await _controller.AddItem(dto);
-            Assert.IsType<BadRequestObjectResult>(result.Result);
+            var resulta = Assert.IsType<ObjectResult>(result.Result);
+            Assert.IsType<ArgumentException>(resulta.Value);
         }
 
         [Fact]
@@ -177,9 +178,9 @@ namespace Backend.Tests.Controllers
         {
             var dtos = new List<CreatePantryItemDto>
             {
-                new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" },
-                new CreatePantryItemDto { IngredientName = "Sugar", Quantity = 3, Unit = "g" },
-                new CreatePantryItemDto { Quantity = 5, Unit = "g" } // invalid
+                new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" },
+                new CreatePantryItemNewIngredientDto { IngredientName = "Sugar", Quantity = 3, Unit = "g" },
+                new CreatePantryItemOldIngredientDto { Quantity = 5, Unit = "g" } // invalid
             };
             var resultDtos = new List<PantryItemDto>
             {
@@ -243,7 +244,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithValidIdAndDto_ReturnsServiceResult()
         {
-            var pantryItemDto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            var pantryItemDto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
             var updatedDto = new PantryItemDto { Id = 1, IngredientId = 1, Quantity = 2, Unit = "kg", UserId = 42 };
             _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, 42)).ReturnsAsync(updatedDto);
 
@@ -256,7 +257,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithNullId_ReturnsBadRequest()
         {
-            var pantryItemDto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            var pantryItemDto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
 
             var result = await _controller.Update(null!, pantryItemDto);
 
@@ -267,7 +268,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithEmptyId_ReturnsBadRequest()
         {
-            var pantryItemDto = new CreatePantryItemDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
+            var pantryItemDto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
 
             var result = await _controller.Update("", pantryItemDto);
 

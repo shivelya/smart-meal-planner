@@ -9,15 +9,28 @@ namespace Backend.DTOs
         public string? Unit { get; set; }
     }
 
-    public class CreatePantryItemDto
+    public abstract class CreatePantryItemDto
     {
         // optional, used for updates but not creates
         public int? Id { get; set; }
-        // behind the scenes when a new pantry item is created we'll connect it to an existing ingredient or add a new one
-        public int? IngredientId { get; set; }
-        public string? IngredientName { get; set; }
-        public int? CategoryId { get; set; }
         public decimal Quantity { get; set; }
         public string? Unit { get; set; }
+    }
+
+    public class CreatePantryItemNewIngredientDto : CreatePantryItemDto
+    {
+        public required string IngredientName { get; set; }
+        public int CategoryId { get; set; }
+    }
+
+    public class CreatePantryItemOldIngredientDto : CreatePantryItemDto
+    {
+        public int IngredientId { get; set; }
+    }
+
+    public class GetPantryItemsResult
+    {
+        public int TotalCount { get; set; }
+        public required IEnumerable<PantryItemDto> Items { get; set; }
     }
 }
