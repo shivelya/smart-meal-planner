@@ -31,7 +31,7 @@ namespace Backend.Tests.Services.Impl
         {
             // Arrange
             var dto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
-            plannerContext.Ingredients.Add(new Ingredient { Id = 1, Name = "juice" });
+            plannerContext.Ingredients.Add(new Ingredient { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
             plannerContext.SaveChanges();
             var userId = 42;
 
@@ -40,7 +40,7 @@ namespace Backend.Tests.Services.Impl
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(dto.IngredientId, result.IngredientId);
+            Assert.Equal(dto.IngredientId, result.Ingredient.Id);
             Assert.Equal(dto.Quantity, result.Quantity);
             Assert.Equal(dto.Unit, result.Unit);
             Assert.Equal(userId, result.UserId);
@@ -56,6 +56,8 @@ namespace Backend.Tests.Services.Impl
                 new CreatePantryItemOldIngredientDto { IngredientId = 2, Quantity = 3, Unit = "g" }
             };
             var userId = 42;
+            plannerContext.Ingredients.Add(new Ingredient { Id = 1, Name = "banana", Category = new Category { Name = "produce"} });
+            plannerContext.Ingredients.Add(new Ingredient { Id = 2, Name = "apple", Category = new Category { Name = "produce"} });
 
             // Act
             var result = await _service.CreatePantryItemsAsync(dtos, userId);
@@ -109,7 +111,7 @@ namespace Backend.Tests.Services.Impl
         public async Task GetPantryItemByIdAsync_ItemExists_ReturnsDto()
         {
             // Arrange
-            var item = new PantryItem { Id = 1, IngredientId = 2, Quantity = 3, Unit = "g", UserId = 42 };
+            var item = new PantryItem { Id = 1, IngredientId = 2, Quantity = 3, Unit = "g", UserId = 42, Ingredient = new Ingredient { Id = 1, Name = "banana", Category = new Category { Name = "produce" }} };
             plannerContext.PantryItems.Add(item);
 
             // Act
@@ -140,9 +142,10 @@ namespace Backend.Tests.Services.Impl
             userId = 1;
 
             // Seed ingredients
-            var ingredient1 = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1 };
-            var ingredient2 = new Ingredient { Id = 2, Name = "Sugar", CategoryId = 1 };
-            var ingredient3 = new Ingredient { Id = 3, Name = "Pepper", CategoryId = 2 };
+            var category = new Category { Name = "produce" };
+            var ingredient1 = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1, Category = category };
+            var ingredient2 = new Ingredient { Id = 2, Name = "Sugar", CategoryId = 1, Category = category };
+            var ingredient3 = new Ingredient { Id = 3, Name = "Pepper", CategoryId = 2, Category = category };
             context.Ingredients.AddRange(ingredient1, ingredient2, ingredient3);
 
             // Seed pantry items
@@ -165,7 +168,7 @@ namespace Backend.Tests.Services.Impl
             var results = await service.Search("salt", userId);
 
             Assert.Single(results);
-            Assert.Equal(1, results.First().IngredientId);
+            Assert.Equal(1, results.First().Ingredient.Id);
         }
 
         [Fact]
@@ -176,7 +179,7 @@ namespace Backend.Tests.Services.Impl
             var results = await service.Search("s", userId); // matches "Sugar" and "Salt"
 
             Assert.Equal(2, results.Count());
-            var names = results.Select(r => r.IngredientId).ToList();
+            var names = results.Select(r => r.Ingredient.Id).ToList();
             Assert.Contains(1, names);
             Assert.Contains(2, names);
         }
@@ -189,7 +192,7 @@ namespace Backend.Tests.Services.Impl
             var results = await service.Search("SALT", userId);
 
             Assert.Single(results);
-            Assert.Equal(1, results.First().IngredientId);
+            Assert.Equal(1, results.First().Ingredient.Id);
         }
 
         [Fact]
@@ -223,7 +226,7 @@ namespace Backend.Tests.Services.Impl
             var context = new PlannerContext(options, null!, new LoggerFactory().CreateLogger<PlannerContext>());
             int userId = 1;
 
-            var ingredient = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1 };
+            var ingredient = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce" } };
             context.Ingredients.Add(ingredient);
 
             for (int i = 0; i < 25; i++)
@@ -259,7 +262,7 @@ namespace Backend.Tests.Services.Impl
             var user = new User { Id = userId, Email = "test@example.com", PasswordHash = Guid.NewGuid().ToString() };
             context.Users.Add(user);
 
-            var ingredient = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1 };
+            var ingredient = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce"} };
             context.Ingredients.Add(ingredient);
 
             var pantryItem = new PantryItem { Id = 10, IngredientId = 1, Quantity = 2, Unit = "g", UserId = userId, Ingredient = ingredient };
@@ -345,7 +348,7 @@ namespace Backend.Tests.Services.Impl
 
             var result = await service.UpdatePantryItemAsync(dto, userId);
 
-            Assert.Equal(2, result.IngredientId);
+            Assert.Equal(2, result.Ingredient.Id);
         }
     }
 }

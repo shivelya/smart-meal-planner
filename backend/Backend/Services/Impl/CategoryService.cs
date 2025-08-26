@@ -20,7 +20,7 @@ namespace Backend.Services.Impl
         public async Task<IEnumerable<CategoryDto>> GetAllAsync()
         {
             var categories = await _context.Categories
-                .Select(c => new CategoryDto { Id = c.Id, Name = c.Name })
+                .Select(c => c.ToDto())
                 .ToListAsync();
 
             _logger.LogInformation("Retrieved {Count} categories", categories.Count);
