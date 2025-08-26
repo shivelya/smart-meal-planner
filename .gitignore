@@ -40,8 +40,5 @@ backend/Backend/api
 **/TestResults/
 **/coveragereport/
 
-# VS Code specific
-.vscode/
-
 #DB migrations
 migrations.sql
