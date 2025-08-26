@@ -8,6 +8,7 @@ using Backend.Services;
 using Serilog;
 using Microsoft.AspNetCore.Diagnostics;
 using System.Reflection;
+using Backend.Helpers;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -86,6 +87,7 @@ builder.Services.AddScoped<IUserService, UserSerivce>();
 builder.Services.AddScoped<IEmailService, BrevoEmailService>();
 builder.Services.AddScoped<IPantryItemService, PantryItemService>();
 builder.Services.AddScoped<IIngredientService, IngredientService>();
+builder.Services.AddScoped<IRecipeExtractor, RecipeExtractor>();
 
 var app = builder.Build();
 
