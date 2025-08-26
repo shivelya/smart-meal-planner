@@ -4,16 +4,10 @@ using Backend.Services;
 
 namespace Backend.Model
 {
-    public class UserSerivce: IUserService
+    public class UserSerivce(PlannerContext context, ILogger<UserSerivce> logger) : IUserService
     {
-        private readonly PlannerContext _context;
-        private readonly ILogger<UserSerivce> _logger;
-
-        public UserSerivce(PlannerContext context, ILogger<UserSerivce> logger)
-        {
-            _context = context;
-            _logger = logger;
-        }
+        private readonly PlannerContext _context = context;
+        private readonly ILogger<UserSerivce> _logger = logger;
 
         /// <summary>
         /// Creates a new user with the specified email and password.
