@@ -8,18 +8,12 @@ using Backend.Model;
 
 namespace Backend.Services.Impl
 {
-    public class TokenService : ITokenService
+    public class TokenService(IConfiguration config, PlannerContext context, ILogger<TokenService> logger) : ITokenService
     {
-        private readonly IConfiguration _config;
-        private readonly PlannerContext _context;
-        private readonly ILogger<TokenService> _logger;
+        private readonly IConfiguration _config = config;
+        private readonly PlannerContext _context = context;
+        private readonly ILogger<TokenService> _logger = logger;
         private readonly string _resetStr = "reset";
-        public TokenService(IConfiguration config, PlannerContext context, ILogger<TokenService> logger)
-        {
-            _config = config;
-            _context = context;
-            _logger = logger;
-        }
 
         public string GenerateAccessToken(User user)
         {
