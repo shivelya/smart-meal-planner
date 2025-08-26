@@ -73,8 +73,8 @@ namespace Backend.Tests.Model
         {
             var recipe = new Recipe();
             var ingredients = new List<RecipeIngredient>();
-            recipe.RecipeIngredients = ingredients;
-            Assert.Same(ingredients, recipe.RecipeIngredients);
+            recipe.Ingredients = ingredients;
+            Assert.Same(ingredients, recipe.Ingredients);
         }
 
         [Fact]

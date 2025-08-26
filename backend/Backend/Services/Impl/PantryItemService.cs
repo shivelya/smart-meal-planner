@@ -61,7 +61,7 @@ namespace Backend.Services.Impl
 
             _logger.LogInformation("Pantry item created");
 
-            return ToDto(entity);
+            return entity.ToDto();
         }
 
         /// <summary>
@@ -127,7 +127,7 @@ namespace Backend.Services.Impl
 
             _logger.LogInformation("{count} pantry items created.", count);
 
-            return pantryItems.Select(ToDto);
+            return pantryItems.Select(i => i.ToDto());
         }
 
         /// <summary>
@@ -180,7 +180,7 @@ namespace Backend.Services.Impl
                 .Take(pageSize)
                 .ToListAsync();
 
-            return (items.Select(ToDto), totalCount);
+            return (items.Select(i => i.ToDto()), totalCount);
         }
 
         /// <summary>
@@ -192,7 +192,7 @@ namespace Backend.Services.Impl
         {
             _logger.LogInformation("Getting pantry item {0}", id);
             var entity = await _context.PantryItems.FindAsync(id);
-            return entity is null ? null : ToDto(entity);
+            return entity?.ToDto();
         }
 
         /// <summary>
@@ -236,9 +236,8 @@ namespace Backend.Services.Impl
                 var dto = (CreatePantryItemOldIngredientDto)pantryItemDto;
                 item.IngredientId = dto.IngredientId;
             }
-            else if (pantryItemDto is CreatePantryItemNewIngredientDto)
+            else if (pantryItemDto is CreatePantryItemNewIngredientDto dto)
             {
-                var dto = (CreatePantryItemNewIngredientDto)pantryItemDto;
                 if (string.IsNullOrWhiteSpace(dto.IngredientName))
                 {
                     _logger.LogWarning("IngredientName must be supplied to create new Ingredient.");
@@ -255,7 +254,7 @@ namespace Backend.Services.Impl
             }
 
             await _context.SaveChangesAsync();
-            return ToDto(item);
+            return item.ToDto();
         }
 
         /// <summary>
@@ -273,7 +272,7 @@ namespace Backend.Services.Impl
                 .Take(20) // limit results for performance
                 .ToListAsync();
 
-            return items.Select(ToDto);
+            return items.Select(i => i.ToDto());
         }
 
         private async Task<int> CreateNewIngredient(CreatePantryItemNewIngredientDto dto)
@@ -288,14 +287,5 @@ namespace Backend.Services.Impl
             await _context.SaveChangesAsync();
             return ingredient.Id;
         }
-
-        private static PantryItemDto ToDto(PantryItem entity) => new()
-        {
-            Id = entity.Id,
-            IngredientId = entity.IngredientId,
-            Quantity = entity.Quantity,
-            Unit = entity.Unit,
-            UserId = entity.UserId
-        };
     }
 }

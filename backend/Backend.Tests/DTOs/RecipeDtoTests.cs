@@ -12,15 +12,13 @@ namespace Backend.Tests.DTOs
                 UserId = 1,
                 Title = "Pasta",
                 Source = "Cookbook",
-                Instructions = "Boil water.",
-                ImageURL = "http://image.url"
+                Instructions = "Boil water."
             };
             Assert.Equal(4, dto.Id);
             Assert.Equal(1, dto.UserId);
             Assert.Equal("Pasta", dto.Title);
             Assert.Equal("Cookbook", dto.Source);
             Assert.Equal("Boil water.", dto.Instructions);
-            Assert.Equal("http://image.url", dto.ImageURL);
         }
     }
 }

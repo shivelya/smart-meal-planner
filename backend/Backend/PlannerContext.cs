@@ -81,7 +81,7 @@ namespace Backend
 
             modelBuilder.Entity<RecipeIngredient>()
                 .HasOne(ri => ri.Recipe)
-                .WithMany(r => r.RecipeIngredients)
+                .WithMany(r => r.Ingredients)
                 .HasForeignKey(ri => ri.RecipeId);
 
             modelBuilder.Entity<RecipeIngredient>()
