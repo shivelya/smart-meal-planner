@@ -16,10 +16,10 @@ namespace Backend.Helpers
         Task<ExtractedRecipe?> ExtractRecipeAsync(string url);
     }
 
-    public class RecipeExtractor(ILogger<RecipeExtractor> logger) : IRecipeExtractor
+    public class RecipeExtractor(ILogger<RecipeExtractor> logger, HttpClient httpClient) : IRecipeExtractor
     {
         private readonly ILogger<RecipeExtractor> _logger = logger;
-        private readonly HttpClient _httpClient = new();
+        private readonly HttpClient _httpClient = httpClient;
 
         public async Task<ExtractedRecipe?> ExtractRecipeAsync(string url)
         {
@@ -86,10 +86,10 @@ namespace Backend.Helpers
             // Supports fractions like "1/2" or "½" and decimals
             var regex = new Regex(
                 @"^(?<qty>(\d+([.,]\d+)?|\d+\s*/\s*\d+|[¼½¾⅓⅔⅛⅜⅝⅞]))?\s*
-                (?<unit>[a-zA-Z]+)?\s*
-                (?<name>.+)$",
+                (?:(?<unit>[a-zA-Z]+)\s+(?<name>.*) | (?<name>.+))$",
                 RegexOptions.IgnorePatternWhitespace
             );
+
 
             var match = regex.Match(ingredient.Trim());
             if (match.Success)
@@ -101,7 +101,7 @@ namespace Backend.Helpers
                 );
             }
 
-            // Fallback: stick everything in "Unit"
+            // Fallback: stick everything in "Name"
             return ("", "", ingredient.Trim());
         }
 
