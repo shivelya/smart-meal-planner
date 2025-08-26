@@ -20,5 +20,54 @@ namespace Backend.Tests.DTOs
             Assert.Equal("Cookbook", dto.Source);
             Assert.Equal("Boil water.", dto.Instructions);
         }
+
+        [Fact]
+        public void UpdateRecipeDto_PropertyTest()
+        {
+            var dto = new UpdateRecipeDto {
+                Id = 5,
+                Title = "Soup",
+                Source = "Book",
+                Instructions = "Heat water.",
+                Ingredients = new List<CreateRecipeIngredientDto>()
+            };
+            Assert.Equal(5, dto.Id);
+            Assert.Equal("Soup", dto.Title);
+            Assert.Equal("Book", dto.Source);
+            Assert.Equal("Heat water.", dto.Instructions);
+            Assert.Empty(dto.Ingredients);
+        }
+
+        [Fact]
+        public void CreateRecipeDto_PropertyTest()
+        {
+            var dto = new TestCreateRecipeDto {
+                Title = "Bread",
+                Source = "Web",
+                Instructions = "Mix flour.",
+                Ingredients = new List<CreateRecipeIngredientDto>()
+            };
+            Assert.Equal("Bread", dto.Title);
+            Assert.Equal("Web", dto.Source);
+            Assert.Equal("Mix flour.", dto.Instructions);
+            Assert.Empty(dto.Ingredients);
+        }
+
+        private class TestCreateRecipeDto : CreateRecipeDto { }
+
+        [Fact]
+        public void RecipeSearchOptions_PropertyTest()
+        {
+            var dto = new RecipeSearchOptions {
+                TitleContains = "Egg",
+                IngredientContains = "Milk",
+                Skip = 2,
+                Take = 10
+            };
+            Assert.Equal("Egg", dto.TitleContains);
+            Assert.Equal("Milk", dto.IngredientContains);
+            Assert.Equal(2, dto.Skip);
+            Assert.Equal(10, dto.Take);
+        }
     }
 }
