@@ -1,5 +1,4 @@
 using Backend.DTOs;
-using Backend.Model;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services.Impl
@@ -22,16 +21,7 @@ namespace Backend.Services.Impl
                 .Take(20) // limit results for performance
                 .ToListAsync();
 
-            return ingredients.Select(ToDto);
-        }
-
-        private IngredientDto ToDto(Ingredient source)
-        {
-            return new IngredientDto
-            {
-                Id = source.Id,
-                Name = source.Name
-            };
+            return ingredients.Select(i => i.ToDto());
         }
     }
 }
