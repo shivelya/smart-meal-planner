@@ -17,8 +17,6 @@ namespace Backend.Tests.Services.Impl
         private Mock<ILogger<RecipeService>> _loggerMock;
         private Mock<ILogger<PlannerContext>> _contextLoggerMock;
 
-        public class ConcreteCreateRecipeDto : CreateRecipeDto { }
-
         public RecipeServiceTests()
         {
             _dbOptions = new DbContextOptionsBuilder<PlannerContext>()
@@ -35,7 +33,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task CreateAsync_ThrowsValidationException_WhenRequiredFieldsMissing()
         {
-            var dto = new ConcreteCreateRecipeDto { Title = "", Instructions = "", Ingredients = null!, Source = null! };
+            var dto = new CreateRecipeDtoRequest { Title = "", Instructions = "", Ingredients = null!, Source = null! };
             await Assert.ThrowsAsync<ValidationException>(() => _service.CreateAsync(dto, 1));
         }
 
@@ -45,15 +43,15 @@ namespace Backend.Tests.Services.Impl
             var category = new Category { Id = 1, Name = "TestCat" };
             _context.Categories.Add(category);
             _context.SaveChanges();
-            var dto = new ConcreteCreateRecipeDto
+            var dto = new CreateRecipeDtoRequest
             {
                 Title = "Test",
                 Source = "Source",
                 Instructions = "Do stuff",
-                Ingredients = new List<CreateRecipeIngredientDto>
-                {
-                    new CreateRecipeIngredientNewIngredientDto { IngredientName = "Ing", CategoryId = 1, Quantity = 1, Unit = "g" }
-                }
+                Ingredients =
+                [
+                    new() { Food = new FoodReferenceDto { Mode = AddFoodMode.New, Name = "Ing", CategoryId = 1 }, Quantity = 1, Unit = "g" }
+                ]
             };
             var result = await _service.CreateAsync(dto, 1);
             Assert.NotNull(result);
@@ -138,30 +136,31 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task UpdateAsync_ThrowsArgumentException_WhenRecipeNotFound()
         {
-            var dto = new UpdateRecipeDto { Id = 999, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateRecipeIngredientDto>() };
+            var dto = new CreateRecipeDtoRequest { Id = 999, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
             await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateAsync(999, dto, 1));
         }
 
         [Fact]
         public async Task UpdateAsync_ThrowsValidationException_WhenUserNotOwner()
         {
-            var recipe = new Recipe { Id = 8, UserId = 2, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<RecipeIngredient>() };
+            var recipe = new Recipe { Id = 8, UserId = 2, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
-            var dto = new UpdateRecipeDto { Id = 8, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateRecipeIngredientDto>() };
+            var dto = new CreateRecipeDtoRequest { Id = 8, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
             await Assert.ThrowsAsync<ValidationException>(() => _service.UpdateAsync(8, dto, 1));
         }
 
         [Fact]
         public async Task UpdateAsync_UpdatesRecipe()
         {
-            var recipe = new Recipe { Id = 9, UserId = 1, Title = "Old", Source = "S", Instructions = "I", Ingredients = new List<RecipeIngredient>() };
+            var recipe = new Recipe { Id = 9, UserId = 1, Title = "Old", Source = "S", Instructions = "I", Ingredients = [] };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
             var category = new Category { Id = 2, Name = "Cat" };
             _context.Categories.Add(category);
             _context.SaveChanges();
-            var dto = new UpdateRecipeDto { Id = 9, Title = "New", Source = "S", Instructions = "I", Ingredients = new List<CreateRecipeIngredientDto> { new CreateRecipeIngredientNewIngredientDto { IngredientName = "Ing", CategoryId = 2, Quantity = 1, Unit = "g" } } };
+            var dto = new CreateRecipeDtoRequest { Id = 9, Title = "New", Source = "S", Instructions = "I",
+                Ingredients = [new() { Food = new FoodReferenceDto { Mode = AddFoodMode.New, Name = "Ing", CategoryId = 2 }, Quantity = 1, Unit = "g" }] };
             var result = await _service.UpdateAsync(9, dto, 1);
             Assert.Equal("New", result.Title);
             Assert.Single(result.Ingredients);

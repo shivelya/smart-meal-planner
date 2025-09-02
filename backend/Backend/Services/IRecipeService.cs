@@ -11,7 +11,7 @@ namespace Backend.Services
         /// <param name="recipeDto">The recipe DTO to create.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>The created recipe DTO.</returns>
-        Task<RecipeDto> CreateAsync(CreateRecipeDto recipeDto, int userId);
+        Task<RecipeDto> CreateAsync(CreateRecipeDtoRequest recipeDto, int userId);
         /// <summary>
         /// Retrieves a recipe by its unique ID.
         /// </summary>
@@ -40,7 +40,7 @@ namespace Backend.Services
         /// <param name="recipeDto">The recipe DTO to update.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>The updated recipe DTO.</returns>
-        Task<RecipeDto> UpdateAsync(int id, UpdateRecipeDto recipeDto, int userId);
+        Task<RecipeDto> UpdateAsync(int id, CreateRecipeDtoRequest recipeDto, int userId);
         /// <summary>
         /// Deletes a recipe by its unique ID.
         /// </summary>

@@ -21,22 +21,27 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GetCategories_ReturnsOk_WithCategories()
         {
-            var categories = new List<CategoryDto> { new CategoryDto { Id = 1, Name = "Fruit" }, new CategoryDto { Id = 2, Name = "Vegetable" } };
+            var categories = new List<CategoryDto> { new() { Id = 1, Name = "Fruit" }, new() { Id = 2, Name = "Vegetable" } };
             _serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(categories);
+
             var result = await _controller.GetCategories();
+
             var ok = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsAssignableFrom<IEnumerable<CategoryDto>>(ok.Value);
-            Assert.Equal(2, returned.Count());
+            var returned = Assert.IsType<GetCategoriesResult>(ok.Value);
+            Assert.Equal(2, returned.TotalCount);
+            Assert.Equal(categories[0], returned.Items.ElementAt(0));
+            Assert.Equal(categories[1], returned.Items.ElementAt(1));
         }
 
         [Fact]
         public async Task GetCategories_ReturnsOk_WithEmptyList()
         {
-            _serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(new List<CategoryDto>());
+            _serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync([]);
             var result = await _controller.GetCategories();
             var ok = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsAssignableFrom<IEnumerable<CategoryDto>>(ok.Value);
-            Assert.Empty(returned);
+            var returned = Assert.IsType<GetCategoriesResult>(ok.Value);
+            Assert.Empty(returned.Items);
+            Assert.Equal(0, returned.TotalCount);
         }
     }
 }

@@ -23,8 +23,8 @@ namespace Backend.Tests.Model
         public void RecipeIngredient_IngredientId_SetAndGet_Works()
         {
             var ri = new RecipeIngredient();
-            ri.IngredientId = 22;
-            Assert.Equal(22, ri.IngredientId);
+            ri.FoodId = 22;
+            Assert.Equal(22, ri.FoodId);
         }
 
         [Fact]
@@ -56,9 +56,9 @@ namespace Backend.Tests.Model
         public void RecipeIngredient_Ingredient_SetAndGet_Works()
         {
             var ri = new RecipeIngredient();
-            var ingredient = new Ingredient();
-            ri.Ingredient = ingredient;
-            Assert.Same(ingredient, ri.Ingredient);
+            var ingredient = new Food();
+            ri.Food = ingredient;
+            Assert.Same(ingredient, ri.Food);
         }
     }
 }

@@ -24,12 +24,12 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void UpdateRecipeDto_PropertyTest()
         {
-            var dto = new UpdateRecipeDto {
+            var dto = new CreateRecipeDtoRequest {
                 Id = 5,
                 Title = "Soup",
                 Source = "Book",
                 Instructions = "Heat water.",
-                Ingredients = new List<CreateRecipeIngredientDto>()
+                Ingredients = new List<RecipeIngredientDto>()
             };
             Assert.Equal(5, dto.Id);
             Assert.Equal("Soup", dto.Title);
@@ -45,7 +45,7 @@ namespace Backend.Tests.DTOs
                 Title = "Bread",
                 Source = "Web",
                 Instructions = "Mix flour.",
-                Ingredients = new List<CreateRecipeIngredientDto>()
+                Ingredients = new List<RecipeIngredientDto>()
             };
             Assert.Equal("Bread", dto.Title);
             Assert.Equal("Web", dto.Source);
@@ -53,7 +53,7 @@ namespace Backend.Tests.DTOs
             Assert.Empty(dto.Ingredients);
         }
 
-        private class TestCreateRecipeDto : CreateRecipeDto { }
+        private class TestCreateRecipeDto : CreateRecipeDtoRequest { }
 
         [Fact]
         public void RecipeSearchOptions_PropertyTest()

@@ -30,8 +30,8 @@ namespace Backend.Tests.Services.Impl
         public async Task CreatePantryItemAsync_CreatesItem_ReturnsDto()
         {
             // Arrange
-            var dto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" };
-            plannerContext.Ingredients.Add(new Ingredient { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
+            var dto = new PantryItemRequestDto { Food = new FoodReferenceDto { Id = 1 }, Quantity = 2, Unit = "kg" };
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
             plannerContext.SaveChanges();
             var userId = 42;
 
@@ -40,7 +40,7 @@ namespace Backend.Tests.Services.Impl
 
             // Assert
             Assert.NotNull(result);
-            Assert.Equal(dto.IngredientId, result.Ingredient.Id);
+            Assert.Equal(dto.Food.Id, result.Food.Id);
             Assert.Equal(dto.Quantity, result.Quantity);
             Assert.Equal(dto.Unit, result.Unit);
             Assert.Equal(userId, result.UserId);
@@ -50,14 +50,15 @@ namespace Backend.Tests.Services.Impl
         public async Task CreatePantryItemsAsync_CreatesMultipleItems_ReturnsDtos()
         {
             // Arrange
-            var dtos = new List<CreatePantryItemDto>
+            var dtos = new List<PantryItemRequestDto>
             {
-                new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 2, Unit = "kg" },
-                new CreatePantryItemOldIngredientDto { IngredientId = 2, Quantity = 3, Unit = "g" }
+                new() { Food = new FoodReferenceDto { Id = 1 }, Quantity = 2, Unit = "kg" },
+                new() { Food = new FoodReferenceDto { Id = 2 }, Quantity = 3, Unit = "g" }
             };
             var userId = 42;
-            plannerContext.Ingredients.Add(new Ingredient { Id = 1, Name = "banana", Category = new Category { Name = "produce"} });
-            plannerContext.Ingredients.Add(new Ingredient { Id = 2, Name = "apple", Category = new Category { Name = "produce"} });
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "banana", Category = new Category { Name = "produce"} });
+            plannerContext.Foods.Add(new Food { Id = 2, Name = "apple", Category = new Category { Name = "produce"} });
+            plannerContext.SaveChanges();
 
             // Act
             var result = await _service.CreatePantryItemsAsync(dtos, userId);
@@ -111,7 +112,8 @@ namespace Backend.Tests.Services.Impl
         public async Task GetPantryItemByIdAsync_ItemExists_ReturnsDto()
         {
             // Arrange
-            var item = new PantryItem { Id = 1, IngredientId = 2, Quantity = 3, Unit = "g", UserId = 42, Ingredient = new Ingredient { Id = 1, Name = "banana", Category = new Category { Name = "produce" }} };
+            var item = new PantryItem { Id = 1, FoodId = 2, Quantity = 3, Unit = "g", UserId = 42,
+                Food = new Food { Id = 1, Name = "banana", Category = new Category { Name = "produce" }} };
             plannerContext.PantryItems.Add(item);
 
             // Act
@@ -143,17 +145,17 @@ namespace Backend.Tests.Services.Impl
 
             // Seed ingredients
             var category = new Category { Name = "produce" };
-            var ingredient1 = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1, Category = category };
-            var ingredient2 = new Ingredient { Id = 2, Name = "Sugar", CategoryId = 1, Category = category };
-            var ingredient3 = new Ingredient { Id = 3, Name = "Pepper", CategoryId = 2, Category = category };
-            context.Ingredients.AddRange(ingredient1, ingredient2, ingredient3);
+            var ingredient1 = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = category };
+            var ingredient2 = new Food { Id = 2, Name = "Sugar", CategoryId = 1, Category = category };
+            var ingredient3 = new Food { Id = 3, Name = "Pepper", CategoryId = 2, Category = category };
+            context.Foods.AddRange(ingredient1, ingredient2, ingredient3);
 
             // Seed pantry items
             context.PantryItems.AddRange(
-                new PantryItem { Id = 1, IngredientId = 1, Quantity = 2, Unit = "g", UserId = userId, Ingredient = ingredient1 },
-                new PantryItem { Id = 2, IngredientId = 2, Quantity = 5, Unit = "g", UserId = userId, Ingredient = ingredient2 },
-                new PantryItem { Id = 3, IngredientId = 3, Quantity = 1, Unit = "g", UserId = userId, Ingredient = ingredient3 },
-                new PantryItem { Id = 4, IngredientId = 2, Quantity = 3, Unit = "g", UserId = 99, Ingredient = ingredient2 } // different user
+                new PantryItem { Id = 1, FoodId = 1, Quantity = 2, Unit = "g", UserId = userId, Food = ingredient1 },
+                new PantryItem { Id = 2, FoodId = 2, Quantity = 5, Unit = "g", UserId = userId, Food = ingredient2 },
+                new PantryItem { Id = 3, FoodId = 3, Quantity = 1, Unit = "g", UserId = userId, Food = ingredient3 },
+                new PantryItem { Id = 4, FoodId = 2, Quantity = 3, Unit = "g", UserId = 99, Food = ingredient2 } // different user
             );
             context.SaveChanges();
 
@@ -168,7 +170,7 @@ namespace Backend.Tests.Services.Impl
             var results = await service.Search("salt", userId);
 
             Assert.Single(results);
-            Assert.Equal(1, results.First().Ingredient.Id);
+            Assert.Equal(1, results.First().Food.Id);
         }
 
         [Fact]
@@ -179,7 +181,7 @@ namespace Backend.Tests.Services.Impl
             var results = await service.Search("s", userId); // matches "Sugar" and "Salt"
 
             Assert.Equal(2, results.Count());
-            var names = results.Select(r => r.Ingredient.Id).ToList();
+            var names = results.Select(r => r.Food.Id).ToList();
             Assert.Contains(1, names);
             Assert.Contains(2, names);
         }
@@ -192,7 +194,7 @@ namespace Backend.Tests.Services.Impl
             var results = await service.Search("SALT", userId);
 
             Assert.Single(results);
-            Assert.Equal(1, results.First().Ingredient.Id);
+            Assert.Equal(1, results.First().Food.Id);
         }
 
         [Fact]
@@ -226,19 +228,19 @@ namespace Backend.Tests.Services.Impl
             var context = new PlannerContext(options, null!, new LoggerFactory().CreateLogger<PlannerContext>());
             int userId = 1;
 
-            var ingredient = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce" } };
-            context.Ingredients.Add(ingredient);
+            var ingredient = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce" } };
+            context.Foods.Add(ingredient);
 
             for (int i = 0; i < 25; i++)
             {
                 context.PantryItems.Add(new PantryItem
                 {
                     Id = i + 1,
-                    IngredientId = 1,
+                    FoodId = 1,
                     Quantity = 1,
                     Unit = "g",
                     UserId = userId,
-                    Ingredient = ingredient
+                    Food = ingredient
                 });
             }
             context.SaveChanges();
@@ -262,10 +264,10 @@ namespace Backend.Tests.Services.Impl
             var user = new User { Id = userId, Email = "test@example.com", PasswordHash = Guid.NewGuid().ToString() };
             context.Users.Add(user);
 
-            var ingredient = new Ingredient { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce"} };
-            context.Ingredients.Add(ingredient);
+            var ingredient = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce"} };
+            context.Foods.Add(ingredient);
 
-            var pantryItem = new PantryItem { Id = 10, IngredientId = 1, Quantity = 2, Unit = "g", UserId = userId, Ingredient = ingredient };
+            var pantryItem = new PantryItem { Id = 10, FoodId = 1, Quantity = 2, Unit = "g", UserId = userId, Food = ingredient };
             context.PantryItems.Add(pantryItem);
 
             context.SaveChanges();
@@ -277,7 +279,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_UpdatesQuantityAndUnit()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var dto = new CreatePantryItemOldIngredientDto { Id = 10, IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new PantryItemRequestDto { Id = 10, Food = new FoodReferenceDto { Id = 1 }, Quantity = 5, Unit = "kg" };
 
             var result = await service.UpdatePantryItemAsync(dto, userId);
 
@@ -298,7 +300,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_ThrowsIfUserNotFound()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var dto = new CreatePantryItemOldIngredientDto { Id = 10, IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new PantryItemRequestDto { Id = 10, Food = new FoodReferenceDto { Id = 1 }, Quantity = 5, Unit = "kg" };
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, 999));
         }
@@ -307,7 +309,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_ThrowsIfIdIsNull()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var dto = new CreatePantryItemOldIngredientDto { IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new PantryItemRequestDto { Food = new FoodReferenceDto { Id = 1 }, Quantity = 5, Unit = "kg" };
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, userId));
         }
@@ -316,7 +318,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_ThrowsIfPantryItemNotFound()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var dto = new CreatePantryItemOldIngredientDto { Id = 999, IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new PantryItemRequestDto { Id = 999, Food = new FoodReferenceDto { Id = 1 }, Quantity = 5, Unit = "kg" };
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, userId));
         }
@@ -327,11 +329,11 @@ namespace Backend.Tests.Services.Impl
             var service = CreateServiceWithData(out int userId, out var context);
             var otherUser = new User { Id = 2, Email = "other@example.com", PasswordHash = Guid.NewGuid().ToString() };
             context.Users.Add(otherUser);
-            var pantryItem = new PantryItem { Id = 20, IngredientId = 1, Quantity = 2, Unit = "g", UserId = 2 };
+            var pantryItem = new PantryItem { Id = 20, FoodId = 1, Quantity = 2, Unit = "g", UserId = 2 };
             context.PantryItems.Add(pantryItem);
             context.SaveChanges();
 
-            var dto = new CreatePantryItemOldIngredientDto { Id = 20, IngredientId = 1, Quantity = 5, Unit = "kg" };
+            var dto = new PantryItemRequestDto { Id = 20, Food = new FoodReferenceDto { Id = 1 }, Quantity = 5, Unit = "kg" };
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, userId));
         }
@@ -340,15 +342,15 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_UpdatesIngredientIdIfProvided()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var newIngredient = new Ingredient { Id = 2, Name = "Sugar", CategoryId = 1 };
-            context.Ingredients.Add(newIngredient);
+            var newIngredient = new Food { Id = 2, Name = "Sugar", CategoryId = 1 };
+            context.Foods.Add(newIngredient);
             context.SaveChanges();
 
-            var dto = new CreatePantryItemOldIngredientDto { Id = 10, IngredientId = 2, Quantity = 5, Unit = "kg" };
+            var dto = new PantryItemRequestDto { Id = 10, Food = new FoodReferenceDto { Id = 2 }, Quantity = 5, Unit = "kg" };
 
             var result = await service.UpdatePantryItemAsync(dto, userId);
 
-            Assert.Equal(2, result.Ingredient.Id);
+            Assert.Equal(2, result.Food.Id);
         }
     }
 }

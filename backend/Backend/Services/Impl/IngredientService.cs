@@ -13,9 +13,9 @@ namespace Backend.Services.Impl
             _logger = logger;
         }
 
-        public async Task<IEnumerable<IngredientDto>> SearchIngredients(string search)
+        public async Task<IEnumerable<FoodReferenceDto>> SearchIngredients(string search)
         {
-            var ingredients = await _context.Ingredients
+            var ingredients = await _context.Foods
                 .Where(i => i.Name.Contains(search))
                 .OrderBy(i => i.Name)
                 .Take(20) // limit results for performance

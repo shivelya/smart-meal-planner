@@ -9,6 +9,8 @@ using Serilog;
 using Microsoft.AspNetCore.Diagnostics;
 using System.Reflection;
 using Backend.Helpers;
+using Backend.DTOs;
+using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -79,6 +81,17 @@ builder.Services.AddSwaggerGen(c =>
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     c.IncludeXmlComments(xmlPath);
+    c.SupportNonNullableReferenceTypes();
+
+    var subTypes = new List<Type>()
+    {
+        typeof(ExistingIngredientDto),
+        typeof(NewIngredientDto)
+    };
+    c.SchemaFilter<PolymorphismSchemaFilter<FoodReferenceDto>>(subTypes);
+
+    // Force Swagger to generate schemas for these subtypes
+    c.DocumentFilter<EnsureSubTypesDocumentFilter>();
 });
 
 builder.Services.AddScoped<ITokenService, TokenService>();

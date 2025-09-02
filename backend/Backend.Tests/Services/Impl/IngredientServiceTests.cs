@@ -29,9 +29,9 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task SearchIngredients_ReturnsMatchingIngredients()
         {
-            _context.Ingredients.Add(new Ingredient { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Id = 1, Name = "Spices" } });
-            _context.Ingredients.Add(new Ingredient { Id = 2, Name = "Pepper", CategoryId = 1, Category = new Category { Id = 3, Name = "Spices" } });
-            _context.Ingredients.Add(new Ingredient { Id = 3, Name = "Sugar", CategoryId = 2, Category = new Category { Id = 2, Name = "Sweeteners" } });
+            _context.Foods.Add(new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Id = 1, Name = "Spices" } });
+            _context.Foods.Add(new Food { Id = 2, Name = "Pepper", CategoryId = 1, Category = new Category { Id = 3, Name = "Spices" } });
+            _context.Foods.Add(new Food { Id = 3, Name = "Sugar", CategoryId = 2, Category = new Category { Id = 2, Name = "Sweeteners" } });
             await _context.SaveChangesAsync();
 
             var result = await _service.SearchIngredients("S");
@@ -52,7 +52,7 @@ namespace Backend.Tests.Services.Impl
         {
             for (int i = 0; i < 25; i++)
             {
-                _context.Ingredients.Add(new Ingredient { Id = i + 1, Name = $"Ing{i}", CategoryId = i+1,
+                _context.Foods.Add(new Food { Id = i + 1, Name = $"Ing{i}", CategoryId = i+1,
                     Category = new Category { Id = i+1, Name = "Cat" } });
             }
             await _context.SaveChangesAsync();

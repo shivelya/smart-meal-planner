@@ -4,28 +4,18 @@ namespace Backend.DTOs
     {
         public int Id { get; set; }
         public int UserId { get; set; }
-        public required IngredientDto Ingredient { get; set; }
+        public required FoodReferenceDto Food { get; set; }
         public decimal Quantity { get; set; }
         public string? Unit { get; set; }
     }
 
-    public abstract class CreatePantryItemDto
+    public class PantryItemRequestDto
     {
         // optional, used for updates but not creates
         public int? Id { get; set; }
-        public decimal Quantity { get; set; }
+        public FoodReferenceDto  Food { get; set; } = null!;
+        public required decimal Quantity { get; set; }
         public string? Unit { get; set; }
-    }
-
-    public class CreatePantryItemNewIngredientDto : CreatePantryItemDto
-    {
-        public required string IngredientName { get; set; }
-        public int CategoryId { get; set; }
-    }
-
-    public class CreatePantryItemOldIngredientDto : CreatePantryItemDto
-    {
-        public int IngredientId { get; set; }
     }
 
     public class GetPantryItemsResult

@@ -17,23 +17,24 @@ namespace Backend.DTOs
             };
         }
 
-        public static RecipeIngredientDto ToDto(this RecipeIngredient recipe)
+        public static RecipeIngredientDto ToDto(this RecipeIngredient ingredient)
         {
             return new RecipeIngredientDto
             {
-                Ingredient = recipe.Ingredient.ToDto(),
-                Quantity = recipe.Quantity,
-                Unit = recipe.Unit
+                Food = ingredient.Food.ToDto(),
+                Quantity = ingredient.Quantity,
+                Unit = ingredient.Unit
             };
         }
 
-        public static IngredientDto ToDto(this Ingredient ingredient)
+        public static FoodReferenceDto ToDto(this Food food)
         {
-            return new IngredientDto
+            return new FoodReferenceDto
             {
-                Id = ingredient.Id,
-                Name = ingredient.Name,
-                Category = ingredient.Category.ToDto()
+                Id = food.Id,
+                Name = food.Name,
+                CategoryId = food.CategoryId,
+                Category = food.Category.ToDto()
             };
         }
 
@@ -54,7 +55,7 @@ namespace Backend.DTOs
                 Quantity = entity.Quantity,
                 Unit = entity.Unit,
                 UserId = entity.UserId,
-                Ingredient = entity.Ingredient.ToDto()
+                Food = entity.Food.ToDto()
             };
         }
     }

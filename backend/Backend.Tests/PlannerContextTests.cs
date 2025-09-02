@@ -54,7 +54,7 @@ namespace Backend.Tests
             var config = new ConfigurationBuilder().Build();
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
             var context = new PlannerContext(options, config, logger);
-            Assert.NotNull(context.Ingredients);
+            Assert.NotNull(context.Foods);
         }
 
         [Fact]
@@ -165,10 +165,10 @@ namespace Backend.Tests
         {
             var builder = InitializeContext();
 
-            var entity = builder.Model.FindEntityType(typeof(Ingredient));
+            var entity = builder.Model.FindEntityType(typeof(Food));
             Assert.NotNull(entity);
 
-            Assert.NotNull(entity.FindNavigation(nameof(Ingredient.Category)));
+            Assert.NotNull(entity.FindNavigation(nameof(Food.Category)));
         }
 
         [Fact]
@@ -180,7 +180,7 @@ namespace Backend.Tests
             Assert.NotNull(entity);
 
             Assert.NotNull(entity.FindNavigation(nameof(PantryItem.User)));
-            Assert.NotNull(entity.FindNavigation(nameof(PantryItem.Ingredient)));
+            Assert.NotNull(entity.FindNavigation(nameof(PantryItem.Food)));
         }
 
         [Fact]
@@ -207,7 +207,7 @@ namespace Backend.Tests
 
             Assert.Equal(2, key.Properties.Count); // Composite key
             Assert.NotNull(entity.FindNavigation(nameof(RecipeIngredient.Recipe)));
-            Assert.NotNull(entity.FindNavigation(nameof(RecipeIngredient.Ingredient)));
+            Assert.NotNull(entity.FindNavigation(nameof(RecipeIngredient.Food)));
         }
 
         [Fact]
