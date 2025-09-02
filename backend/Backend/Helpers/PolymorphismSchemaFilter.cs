@@ -1,29 +1,35 @@
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-public class PolymorphismSchemaFilter<TBase> : ISchemaFilter
+namespace Backend.Helpers
 {
-    private readonly IEnumerable<Type> _subTypes;
-
-    public PolymorphismSchemaFilter(IEnumerable<Type> subTypes)
+    public class PolymorphismSchemaFilter<TBase>(IEnumerable<Type> subTypes) : ISchemaFilter
     {
-        _subTypes = subTypes;
-    }
+        private readonly IEnumerable<Type> _subTypes = subTypes;
 
-    public void Apply(OpenApiSchema schema, SchemaFilterContext context)
-    {
-        if (context.Type == typeof(TBase))
+        public void Apply(OpenApiSchema schema, SchemaFilterContext context)
         {
-            schema.Discriminator = new OpenApiDiscriminator { PropertyName = "type" };
-            schema.OneOf = _subTypes
-                .Select(t => new OpenApiSchema
+            if (context.Type == typeof(TBase))
+            {
+                schema.Discriminator = new OpenApiDiscriminator
                 {
-                    Reference = new OpenApiReference
+                    PropertyName = "mode",
+                    Mapping = new Dictionary<string, string>
                     {
-                        Type = ReferenceType.Schema,
-                        Id = t.Name
+                        { "existing", "#/components/schemas/ExistingIngredientDto" },
+                        { "new", "#/components/schemas/NewIngredientDto" }
                     }
-                }).ToList();
+                };
+                schema.OneOf = [.. _subTypes
+                    .Select(t => new OpenApiSchema
+                    {
+                        Reference = new OpenApiReference
+                        {
+                            Type = ReferenceType.Schema,
+                            Id = t.Name
+                        }
+                    })];
+            }
         }
     }
 }

@@ -8,9 +8,8 @@ namespace Backend.Tests.DTOs
         public void CanSetAndGetProperties()
         {
             var ing = new FoodReferenceDto { Category = new CategoryDto() };
-            var dto = new PantryItemDto { Id = 3, UserId = 1, Food = ing, Quantity = 5.5m, Unit = "kg" };
+            var dto = new PantryItemDto { Id = 3, Food = ing, Quantity = 5.5m, Unit = "kg" };
             Assert.Equal(3, dto.Id);
-            Assert.Equal(1, dto.UserId);
             Assert.Equal(ing, dto.Food);
             Assert.Equal(5.5m, dto.Quantity);
             Assert.Equal("kg", dto.Unit);
@@ -61,7 +60,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void GetPantryItemsResult_PropertyTest()
         {
-            var items = new List<PantryItemDto> { new PantryItemDto { Id = 1, UserId = 2, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 1, Unit = "g" } };
+            var items = new List<PantryItemDto> { new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 1, Unit = "g" } };
             var dto = new GetPantryItemsResult { TotalCount = 1, Items = items };
             Assert.Equal(1, dto.TotalCount);
             Assert.Equal(items, dto.Items);

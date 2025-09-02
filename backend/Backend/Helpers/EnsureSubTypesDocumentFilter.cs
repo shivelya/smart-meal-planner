@@ -2,19 +2,22 @@ using Backend.DTOs;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
 
-public class EnsureSubTypesDocumentFilter : IDocumentFilter
+namespace Backend.Helpers
 {
-    public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
+    public class EnsureSubTypesDocumentFilter : IDocumentFilter
     {
-        var subTypes = new[]
+        public void Apply(OpenApiDocument swaggerDoc, DocumentFilterContext context)
         {
-            typeof(PantryItemRequestDto),
-            typeof(CreateRecipeDtoRequest),
+            var subTypes = new[]
+            {
+            typeof(ExistingIngredientDto),
+            typeof(NewIngredientDto),
         };
 
-        foreach (var type in subTypes)
-        {
-            context.SchemaGenerator.GenerateSchema(type, context.SchemaRepository);
+            foreach (var type in subTypes)
+            {
+                context.SchemaGenerator.GenerateSchema(type, context.SchemaRepository);
+            }
         }
     }
 }
