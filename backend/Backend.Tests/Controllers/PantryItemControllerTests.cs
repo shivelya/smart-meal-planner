@@ -33,8 +33,8 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItem_ReturnsOk_WithCreatedItem()
         {
-            var dto = new PantryItemRequestDto { Food = new FoodReferenceDto { Id = 1 }, Quantity = 2, Unit = "kg" };
-            var resultDto = new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 2, Unit = "kg", UserId = 42 };
+            var dto = new PantryItemRequestDto { Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
+            var resultDto = new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Category = new CategoryDto() }, Quantity = 2, Unit = "kg" };
             _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, 42)).ReturnsAsync(resultDto);
 
             var result = await _controller.AddItem(dto);
@@ -46,8 +46,8 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItems_ReturnsOk_WithCreatedItems()
         {
-            var dtos = new List<PantryItemRequestDto> { new() { Food = new FoodReferenceDto { Id = 1 }, Quantity = 2, Unit = "kg" } };
-            var resultDtos = new List<PantryItemDto> { new() { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 2, Unit = "kg", UserId = 42 } };
+            var dtos = new List<PantryItemRequestDto> { new() { Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" } };
+            var resultDtos = new List<PantryItemDto> { new() { Id = 1, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Category = new CategoryDto() }, Quantity = 2, Unit = "kg" } };
             _serviceMock.Setup(s => s.CreatePantryItemsAsync(dtos, 42)).ReturnsAsync(resultDtos);
 
             var result = await _controller.AddItems(dtos);
@@ -59,7 +59,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GetItem_ItemExists_ReturnsOk()
         {
-            var resultDto = new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 2, Unit = "kg", UserId = 42 };
+            var resultDto = new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Category = new CategoryDto() }, Quantity = 2, Unit = "kg" };
             _serviceMock.Setup(s => s.GetPantryItemByIdAsync(1)).ReturnsAsync(resultDto);
 
             var result = await _controller.GetItem(1);
@@ -81,8 +81,8 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GetItems_ReturnsOk_WithItemsAndTotalCount()
         {
-            var items = new List<PantryItemDto> { new() { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto() },
-                Quantity = 2, Unit = "kg", UserId = 42 } };
+            var items = new List<PantryItemDto> { new() { Id = 1, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Category = new CategoryDto() },
+                Quantity = 2, Unit = "kg" } };
             _serviceMock.Setup(s => s.GetAllPantryItemsAsync(1, 10)).ReturnsAsync((items, items.Count));
 
             var result = await _controller.GetItems(1, 10);
@@ -139,8 +139,8 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItem_WithIngredientId_CreatesItem()
         {
-            var dto = new PantryItemRequestDto { Food = new FoodReferenceDto { Id = 5 }, Quantity = 2, Unit = "kg" };
-            var resultDto = new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 2, Unit = "kg", UserId = 42 };
+            var dto = new PantryItemRequestDto { Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Id = 5 }, Quantity = 2, Unit = "kg" };
+            var resultDto = new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Category = new CategoryDto() }, Quantity = 2, Unit = "kg" };
             _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, 42)).ReturnsAsync(resultDto);
 
             var result = await _controller.AddItem(dto);
@@ -151,8 +151,8 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItem_WithIngredientName_CreatesItem()
         {
-            var dto = new PantryItemRequestDto { Food = new FoodReferenceDto { Name = "Salt" }, Quantity = 1, Unit = "g" };
-            var resultDto = new PantryItemDto { Id = 2, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 1, Unit = "g", UserId = 42 };
+            var dto = new PantryItemRequestDto { Food = new FoodReferenceDto { Mode = AddFoodMode.New, Name = "Salt" }, Quantity = 1, Unit = "g" };
+            var resultDto = new PantryItemDto { Id = 2, Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Category = new CategoryDto() }, Quantity = 1, Unit = "g" };
             _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, 42)).ReturnsAsync(resultDto);
 
             var result = await _controller.AddItem(dto);
@@ -177,14 +177,14 @@ namespace Backend.Tests.Controllers
         {
             var dtos = new List<PantryItemRequestDto>
             {
-                new() { Food = new FoodReferenceDto { Id = 1 }, Quantity = 2, Unit = "kg" },
-                new() { Food = new FoodReferenceDto { Name = "Sugar", CategoryId = 1 }, Quantity = 3, Unit = "g" },
+                new() { Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" },
+                new() { Food = new FoodReferenceDto { Mode = AddFoodMode.New, Name = "Sugar", CategoryId = 1 }, Quantity = 3, Unit = "g" },
                 new() { Quantity = 5, Unit = "g" } // invalid
             };
             var resultDtos = new List<PantryItemDto>
             {
-                new() { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 2, Unit = "kg", UserId = 42 },
-                new() { Id = 2, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 3, Unit = "g", UserId = 42 }
+                new() { Id = 1, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Category = new CategoryDto() }, Quantity = 2, Unit = "kg" },
+                new() { Id = 2, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Category = new CategoryDto() }, Quantity = 3, Unit = "g" }
             };
             _serviceMock.Setup(s => s.CreatePantryItemsAsync(It.IsAny<IEnumerable<PantryItemRequestDto>>(), 42)).ReturnsAsync(resultDtos);
 
@@ -199,7 +199,7 @@ namespace Backend.Tests.Controllers
             var searchTerm = "Salt";
             var expectedResults = new List<PantryItemDto>
             {
-                new() { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 2, Unit = "g", UserId = 42 }
+                new() { Id = 1, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Category = new CategoryDto() }, Quantity = 2, Unit = "g" }
             };
             _serviceMock.Setup(s => s.Search(searchTerm, 42)).ReturnsAsync(expectedResults);
 
@@ -246,9 +246,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithValidIdAndDto_ReturnsServiceResult()
         {
-            var pantryItemDto = new PantryItemRequestDto { Food = new FoodReferenceDto { Id = 1 }, Quantity = 2, Unit = "kg" };
-            var updatedDto = new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Id = 1, Name = "", Category = new CategoryDto()},
-                Quantity = 2, Unit = "kg", UserId = 42 };
+            var pantryItemDto = new PantryItemRequestDto { Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
+            var updatedDto = new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Id = 1, Name = "", Category = new CategoryDto()},
+                Quantity = 2, Unit = "kg" };
             _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, 42)).ReturnsAsync(updatedDto);
 
             var result = await _controller.Update("1", pantryItemDto);
@@ -260,7 +260,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithNullId_ReturnsBadRequest()
         {
-            var pantryItemDto = new PantryItemRequestDto { Food = new FoodReferenceDto { Id = 1 }, Quantity = 2, Unit = "kg" };
+            var pantryItemDto = new PantryItemRequestDto { Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
 
             var result = await _controller.Update(null!, pantryItemDto);
 
@@ -271,7 +271,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithEmptyId_ReturnsBadRequest()
         {
-            var pantryItemDto = new PantryItemRequestDto { Food = new FoodReferenceDto { Id = 1 }, Quantity = 2, Unit = "kg" };
+            var pantryItemDto = new PantryItemRequestDto { Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
 
             var result = await _controller.Update("", pantryItemDto);
 

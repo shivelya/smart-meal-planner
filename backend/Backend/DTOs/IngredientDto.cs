@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json.Serialization;
 
 namespace Backend.DTOs
@@ -13,6 +14,7 @@ namespace Backend.DTOs
 
     public class FoodReferenceDto
     {
+        [Required]
         public AddFoodMode Mode { get; set; } // "existing" or "new"
         public int? Id { get; set; } // used if Mode == "existing"
 

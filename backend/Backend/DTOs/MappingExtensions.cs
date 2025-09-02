@@ -54,7 +54,6 @@ namespace Backend.DTOs
                 Id = entity.Id,
                 Quantity = entity.Quantity,
                 Unit = entity.Unit,
-                UserId = entity.UserId,
                 Food = entity.Food.ToDto()
             };
         }
