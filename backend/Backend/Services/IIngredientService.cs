@@ -4,6 +4,6 @@ namespace Backend.Services
 {
     public interface IIngredientService
     {
-        Task<IEnumerable<IngredientDto>> SearchIngredients(string search);
+        Task<IEnumerable<FoodReferenceDto>> SearchIngredients(string search);
     }
 }

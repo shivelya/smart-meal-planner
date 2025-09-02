@@ -21,7 +21,7 @@ namespace Backend
 
         public DbSet<User> Users { get; set; } = null!;
         public DbSet<Category> Categories { get; set; } = null!;
-        public DbSet<Ingredient> Ingredients { get; set; } = null!;
+        public DbSet<Food> Foods { get; set; } = null!;
         public DbSet<PantryItem> PantryItems { get; set; } = null!;
         public DbSet<Recipe> Recipes { get; set; } = null!;
         public DbSet<RecipeIngredient> RecipeIngredients { get; set; } = null!;
@@ -34,7 +34,7 @@ namespace Backend
             base.OnModelCreating(modelBuilder);
 
             // Relationships
-            SetUpIngredientRelationships(modelBuilder);
+            SetUpFoodRelationships(modelBuilder);
             SetUpPantryItemRelationships(modelBuilder);
             SetUpRecipeRelationships(modelBuilder);
             SetUpRecipeIngredientRelationships(modelBuilder);
@@ -50,7 +50,6 @@ namespace Backend
             var categories = _configuration.GetSection("Categories").Get<Category[]>();
             if (categories != null && categories.Length > 0)
                 modelBuilder.Entity<Category>().HasData(categories);
-
         }
 
         private static void SetUpMealPlanEntryRelationships(ModelBuilder modelBuilder)
@@ -77,7 +76,7 @@ namespace Backend
         private static void SetUpRecipeIngredientRelationships(ModelBuilder modelBuilder)
         {
             modelBuilder.Entity<RecipeIngredient>()
-                .HasKey(ri => new { ri.RecipeId, ri.IngredientId });
+                .HasKey(ri => new { ri.RecipeId, ri.FoodId });
 
             modelBuilder.Entity<RecipeIngredient>()
                 .HasOne(ri => ri.Recipe)
@@ -85,9 +84,9 @@ namespace Backend
                 .HasForeignKey(ri => ri.RecipeId);
 
             modelBuilder.Entity<RecipeIngredient>()
-                .HasOne(ri => ri.Ingredient)
-                .WithMany(i => i.RecipeIngredients)
-                .HasForeignKey(ri => ri.IngredientId);
+                .HasOne(ri => ri.Food)
+                .WithMany()
+                .HasForeignKey(ri => ri.FoodId);
         }
 
         private static void SetUpRecipeRelationships(ModelBuilder modelBuilder)
@@ -106,16 +105,16 @@ namespace Backend
                 .HasForeignKey(p => p.UserId);
 
             modelBuilder.Entity<PantryItem>()
-                .HasOne(p => p.Ingredient)
-                .WithMany(i => i.PantryItems)
-                .HasForeignKey(p => p.IngredientId);
+                .HasOne(p => p.Food)
+                .WithMany()
+                .HasForeignKey(p => p.FoodId);
         }
 
-        private static void SetUpIngredientRelationships(ModelBuilder modelBuilder)
+        private static void SetUpFoodRelationships(ModelBuilder modelBuilder)
         {
-            modelBuilder.Entity<Ingredient>()
+            modelBuilder.Entity<Food>()
                 .HasOne(i => i.Category)
-                .WithMany(c => c.Ingredients)
+                .WithMany()
                 .HasForeignKey(i => i.CategoryId);
         }
     }

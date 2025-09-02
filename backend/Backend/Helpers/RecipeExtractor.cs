@@ -1,14 +1,22 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using AngleSharp;
+using AngleSharp.Dom;
 
 namespace Backend.Helpers
 {
     public class ExtractedRecipe
     {
         public required string Title { get; set; }
-        public List<(string Quantity, string Unit, string Name)> Ingredients { get; set; } = [];
+        public List<ExtractedIngredient> Ingredients { get; set; } = [];
         public string? Instructions { get; set; }
+    }
+
+    public class ExtractedIngredient
+    {
+        public string? Quantity { get; set; }
+        public string? Unit { get; set; }
+        public required string Name { get; set; }
     }
 
     public interface IRecipeExtractor
@@ -53,12 +61,11 @@ namespace Backend.Helpers
                             var recipe = new ExtractedRecipe
                             {
                                 Title = item?["name"]?.ToString() ?? string.Empty,
-                                Ingredients = item?["recipeIngredient"]?.AsArray()
-                                    .Select(i => ParseIngredient(i?.ToString() ?? ""))
-                                    .Where(s => !string.IsNullOrWhiteSpace(s.Quantity) || !string.IsNullOrWhiteSpace(s.Unit))
-                                    .ToList() ?? [],
                                 Instructions = ExtractInstructions(item?["recipeInstructions"])
                             };
+                            recipe.Ingredients.AddRange(item?["recipeIngredient"]?.AsArray().Select(ParseIngredient)
+                                .Where(s => s != null && (!string.IsNullOrWhiteSpace(s.Quantity) || !string.IsNullOrWhiteSpace(s.Unit)))
+                                .Cast<ExtractedIngredient>().ToList() ?? []);
 
                             return recipe;
                         }
@@ -74,12 +81,13 @@ namespace Backend.Helpers
             return null;
         }
 
-        private (string Quantity, string Unit, string Name) ParseIngredient(string ingredient)
+        private ExtractedIngredient? ParseIngredient(JsonNode? node)
         {
+            var ingredient = node?.ToString() ?? "";
             if (string.IsNullOrWhiteSpace(ingredient))
             {
                 _logger.LogInformation("Skipping ingredient, it's empty");
-                return ("", "", "");
+                return null;
             }
 
             // Example regex: matches "1 cup sugar" -> "1" | "cup sugar"
@@ -90,19 +98,19 @@ namespace Backend.Helpers
                 RegexOptions.IgnorePatternWhitespace
             );
 
-
             var match = regex.Match(ingredient.Trim());
             if (match.Success)
             {
-                return (
-                    Quantity: match.Groups["qty"].Value.Trim(),
-                    Unit: match.Groups["unit"].Value.Trim(),
-                    Name: match.Groups["name"].Value.Trim()
-                );
+                return new ExtractedIngredient
+                {
+                    Quantity = match.Groups["qty"].Value.Trim(),
+                    Unit = match.Groups["unit"].Value.Trim(),
+                    Name = match.Groups["name"].Value.Trim()
+                };
             }
 
             // Fallback: stick everything in "Name"
-            return ("", "", ingredient.Trim());
+            return new ExtractedIngredient { Name = ingredient.Trim() };
         }
 
         private string? ExtractInstructions(JsonNode? instructionsNode)

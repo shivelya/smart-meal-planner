@@ -31,7 +31,8 @@ namespace Backend.Controllers
         /// <returns>A created pantry item DTO.</returns>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<PantryItemDto>> AddItem(CreatePantryItemDto dto)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<PantryItemDto>> AddItem(PantryItemRequestDto dto)
         {
             var userId = GetUserId();
             _logger.LogInformation("Adding pantry item for user {UserId}: {@Dto}", userId, dto);
@@ -40,7 +41,7 @@ namespace Backend.Controllers
                 var result = await _service.CreatePantryItemAsync(dto, userId);
 
                 _logger.LogInformation("Pantry item added for user {UserId}: {@Result}", userId, result);
-                return Ok(result);
+                return CreatedAtAction(nameof(GetItem), result);
             }
             catch (Exception ex)
             {
@@ -56,8 +57,9 @@ namespace Backend.Controllers
         /// <param name="dtos">A collection of DTOs containing pantry item details.</param>
         /// <returns>A collection of created pantry item DTOs.</returns>
         [HttpPost("bulk")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        public async Task<ActionResult<IEnumerable<PantryItemDto>>> AddItems(IEnumerable<CreatePantryItemDto> dtos)
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<IEnumerable<PantryItemDto>>> AddItems(IEnumerable<PantryItemRequestDto> dtos)
         {
             var userId = GetUserId();
             _logger.LogInformation("Adding multiple pantry items for user {UserId}: {@Dtos}", userId, dtos);
@@ -66,7 +68,7 @@ namespace Backend.Controllers
                 var result = await _service.CreatePantryItemsAsync(dtos, userId);
                 _logger.LogInformation("Pantry items added for user {UserId}: {@Result}", userId, result);
 
-                return Ok(result);
+                return CreatedAtAction(nameof(GetItem), result);
             }
             catch (Exception ex)
             {
@@ -83,6 +85,7 @@ namespace Backend.Controllers
         [HttpGet("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PantryItemDto>> GetItem(int id)
         {
             _logger.LogInformation("Retrieving pantry item with ID {Id}", id);
@@ -113,6 +116,7 @@ namespace Backend.Controllers
         /// <returns>An object containing the total count and the items.</returns>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetPantryItemsResult>> GetItems([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
         {
             _logger.LogInformation("Retrieving pantry items: page {PageNumber}, size {PageSize}", pageNumber, pageSize);
@@ -138,6 +142,7 @@ namespace Backend.Controllers
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteItem(int id)
         {
             _logger.LogInformation("Deleting pantry item with ID {Id}", id);
@@ -168,6 +173,7 @@ namespace Backend.Controllers
         [HttpDelete("bulk")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteItems([FromBody] IEnumerable<int> ids)
         {
             _logger.LogInformation("Deleting multiple pantry items: {@Ids}", ids);
@@ -195,10 +201,11 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="search">The search term to query on.</param>
         /// <returns>The pantry items found, or 400 if an error occurs.</returns>
-        [HttpGet]
+        [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<IEnumerable<PantryItemDto>>> Search([FromQuery] string search)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<GetPantryItemsResult>> Search([FromQuery] string search)
         {
             if (string.IsNullOrEmpty(search))
             {
@@ -209,7 +216,8 @@ namespace Backend.Controllers
             var userId = GetUserId();
             try
             {
-                return Ok(await _service.Search(search, userId));
+                var results = await _service.Search(search, userId);
+                return Ok(new GetPantryItemsResult { TotalCount = results.Count(), Items = results });
             }
             catch (Exception ex)
             {
@@ -227,7 +235,8 @@ namespace Backend.Controllers
         [HttpPut("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<ActionResult<PantryItemDto>> Update(string id, [FromBody] CreatePantryItemDto pantryItem)
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<PantryItemDto>> Update(string id, [FromBody] PantryItemRequestDto pantryItem)
         {
             if (string.IsNullOrEmpty(id))
             {

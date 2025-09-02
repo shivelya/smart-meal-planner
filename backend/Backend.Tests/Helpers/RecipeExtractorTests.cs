@@ -115,24 +115,32 @@ namespace Backend.Tests.Helpers
         public void ParseIngredient_ReturnsEmptyTuple_WhenInputIsEmpty()
         {
             var tuple = _extractor.GetType().GetMethod("ParseIngredient", BindingFlags.NonPublic | BindingFlags.Instance)!
-                .Invoke(_extractor, [""]);
-            Assert.Equal(("", "", ""), tuple);
+                .Invoke(_extractor, [JsonValue.Create("")]);
+            Assert.Null(tuple);
         }
 
         [Fact]
         public void ParseIngredient_ParsesSimpleIngredient()
         {
-            var tuple = _extractor.GetType().GetMethod("ParseIngredient", BindingFlags.NonPublic | BindingFlags.Instance)!
-                .Invoke(_extractor, ["1 cup sugar"]);
-            Assert.Equal(("1", "cup", "sugar"), tuple);
+            var actual = _extractor.GetType().GetMethod("ParseIngredient", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(_extractor, [JsonValue.Create("1 cup sugar")]);
+            var expected = new ExtractedIngredient { Quantity = "1", Unit = "cup", Name = "sugar" };
+            var ingredient = Assert.IsType<ExtractedIngredient>(actual);
+            Assert.Equal(expected.Quantity, ingredient.Quantity);
+            Assert.Equal(expected.Unit, ingredient.Unit);
+            Assert.Equal(expected.Name, ingredient.Name);
         }
 
         [Fact]
         public void ParseIngredient_FallbacksToUnit_WhenNoMatch()
         {
-            var tuple = _extractor.GetType().GetMethod("ParseIngredient", BindingFlags.NonPublic | BindingFlags.Instance)!
-                .Invoke(_extractor, ["justsomestring"]);
-            Assert.Equal(("", "", "justsomestring"), tuple);
+            var actual = _extractor.GetType().GetMethod("ParseIngredient", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(_extractor, [JsonValue.Create("justsomestring")]);
+            var expected = new ExtractedIngredient { Quantity = "", Unit = "", Name = "justsomestring" };
+            var ingredient = Assert.IsType<ExtractedIngredient>(actual);
+            Assert.Equal(expected.Quantity, ingredient.Quantity);
+            Assert.Equal(expected.Unit, ingredient.Unit);
+            Assert.Equal(expected.Name, ingredient.Name);
         }
 
         [Fact]

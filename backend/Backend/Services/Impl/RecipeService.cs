@@ -17,7 +17,7 @@ namespace Backend.Services.Impl
         /// <param name="userId">The user ID to associate with the recipe.</param>
         /// <returns>The created recipe DTO.</returns>
         /// <exception cref="ValidationException">Thrown when required fields are missing or ingredient type is unknown.</exception>
-        public async Task<RecipeDto> CreateAsync(CreateRecipeDto request, int userId)
+        public async Task<RecipeDto> CreateAsync(CreateRecipeDtoRequest request, int userId)
         {
             _logger.LogInformation("Creating recipe for user {UserId}: {@Request}", userId, request);
             Recipe recipe = new() { UserId = userId };
@@ -31,37 +31,7 @@ namespace Backend.Services.Impl
             recipe.Title = request.Title;
             recipe.Instructions = request.Instructions;
             recipe.Source = request.Source;
-
-            foreach (var ing in request.Ingredients)
-            {
-                var recipeIngredient = new RecipeIngredient
-                {
-                    Quantity = ing.Quantity,
-                    Unit = ing.Unit
-                };
-                if (ing is CreateRecipeIngredientOldIngredientDto oldIng)
-                {
-                    recipeIngredient.IngredientId = oldIng.IngredientId;
-                }
-                else if (ing is CreateRecipeIngredientNewIngredientDto newIng)
-                {
-                    var ingredient = new Ingredient
-                    {
-                        Name = newIng.IngredientName,
-                        CategoryId = newIng.CategoryId
-                    };
-                    _logger.LogInformation("Adding new ingredient {Name} with category {CategoryId}", newIng.IngredientName, newIng.CategoryId);
-                    await _context.Ingredients.AddAsync(ingredient);
-                    await _context.SaveChangesAsync();
-                    recipeIngredient.IngredientId = ingredient.Id;
-                }
-                else
-                {
-                    _logger.LogError("Unknown ingredient type found.");
-                    throw new ValidationException("Unknown ingredient type found.");
-                }
-                recipe.Ingredients.Add(recipeIngredient);
-            }
+            recipe.Ingredients = await CreateIngredients(request.Ingredients);
 
             await _context.Recipes.AddAsync(recipe);
             await _context.SaveChangesAsync();
@@ -171,14 +141,14 @@ namespace Backend.Services.Impl
             {
                 var title = options.TitleContains.Trim();
                 var pattern = $"%{title}%";
-                query = query.Where(r => r.Title != null && r.Title!.ToLower().Contains(title.ToLower()));
+                query = query.Where(r => r.Title != null && r.Title!.Contains(title, StringComparison.CurrentCultureIgnoreCase));
             }
 
             if (!string.IsNullOrWhiteSpace(options.IngredientContains))
             {
                 var ing = options.IngredientContains.Trim();
                 var pattern = $"%{ing}%";
-                query = query.Where(r => r.Ingredients.Any(i => i.Ingredient.Name.ToLower().Contains(ing.ToLower())));
+                query = query.Where(r => r.Ingredients.Any(i => i.Food.Name.Contains(ing, StringComparison.CurrentCultureIgnoreCase)));
             }
 
             if (options.Skip is > 0) query = query.Skip(options.Skip!.Value);
@@ -198,7 +168,7 @@ namespace Backend.Services.Impl
         /// <returns>The updated recipe DTO.</returns>
         /// <exception cref="ArgumentException">Thrown when the recipe is not found.</exception>
         /// <exception cref="ValidationException">Thrown when the user does not have permission to update the recipe.</exception>
-        public async Task<RecipeDto> UpdateAsync(int id, UpdateRecipeDto recipeDto, int userId)
+        public async Task<RecipeDto> UpdateAsync(int id, CreateRecipeDtoRequest recipeDto, int userId)
         {
             _logger.LogInformation("Updating recipe with ID {Id} for user {UserId}: {@RecipeDto}", id, userId, recipeDto);
             var entity = await _context.Recipes
@@ -225,25 +195,25 @@ namespace Backend.Services.Impl
             return entity.ToDto();
         }
 
-        private void ValidateIngredient(CreateRecipeIngredientDto ing)
+        private void ValidateIngredient(RecipeIngredientDto ing)
         {
-            if (ing is CreateRecipeIngredientOldIngredientDto oldIng)
+            if (ing.Food.Mode == AddFoodMode.Existing)
             {
-                if (_context.Ingredients.FirstOrDefaultAsync(i => i.Id == oldIng.IngredientId) == null)
+                if (_context.Foods.FirstOrDefaultAsync(i => i.Id == ing.Food.Id) == null)
                 {
                     _logger.LogWarning("Found ingredient with unknown ID.");
                     throw new ValidationException("Found ingredient with unknown ID.");
                 }
             }
-            else if (ing is CreateRecipeIngredientNewIngredientDto newIng)
+            else if ( ing.Food.Mode == AddFoodMode.New)
             {
-                if (_context.Categories.FirstOrDefaultAsync(i => i.Id == newIng.CategoryId) == null)
+                if (_context.Categories.FirstOrDefaultAsync(i => i.Id == ing.Food.CategoryId) == null)
                 {
                     _logger.LogWarning("Found ingredient with unknown category.");
                     throw new ValidationException("Found ingredient with unknown category.");
                 }
 
-                if (string.IsNullOrWhiteSpace(newIng.IngredientName))
+                if (string.IsNullOrWhiteSpace(ing.Food.Name))
                 {
                     _logger.LogWarning("Ingredient name required.");
                     throw new ValidationException("Ingredient name required.");
@@ -251,7 +221,7 @@ namespace Backend.Services.Impl
             }
         }
 
-        private async Task<List<RecipeIngredient>> CreateIngredients(List<CreateRecipeIngredientDto> ingredients)
+        private async Task<List<RecipeIngredient>> CreateIngredients(List<RecipeIngredientDto> ingredients)
         {
             var toReturn = new List<RecipeIngredient>();
             foreach (var ing in ingredients)
@@ -262,24 +232,24 @@ namespace Backend.Services.Impl
                     Quantity = ing.Quantity,
                     Unit = ing.Unit
                 };
-                if (ing is CreateRecipeIngredientOldIngredientDto oldIng)
+                if (ing.Food.Mode == AddFoodMode.Existing)
                 {
                     //is pre-existing ingredient, just need to create corresponding RecipeIngredient
-                    recipeIngredient.IngredientId = oldIng.IngredientId;
+                    recipeIngredient.FoodId = ing.Food.Id!.Value;
                 }
-                else if (ing is CreateRecipeIngredientNewIngredientDto newIng)
+                else if (ing.Food.Mode == AddFoodMode.New)
                 {
                     // this is a new ingredient, need to create the ingredient before creating the recipe ingredient
-                    var ingredient = new Ingredient
+                    var ingredient = new Food
                     {
-                        Name = newIng.IngredientName,
-                        CategoryId = newIng.CategoryId
+                        Name = ing.Food.Name!,
+                        CategoryId = ing.Food.CategoryId!.Value
                     };
 
-                    await _context.Ingredients.AddAsync(ingredient);
+                    await _context.Foods.AddAsync(ingredient);
                     await _context.SaveChangesAsync();
 
-                    recipeIngredient.IngredientId = ingredient.Id;
+                    recipeIngredient.FoodId = ingredient.Id;
                 }
                 else
                 {

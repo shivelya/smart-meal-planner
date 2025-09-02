@@ -30,7 +30,7 @@ namespace Backend.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RecipeDto>> Create([FromBody] CreateRecipeDto req)
+        public async Task<ActionResult<RecipeDto>> Create([FromBody] CreateRecipeDtoRequest req)
         {
             try
             {
@@ -143,7 +143,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RecipeDto>> Update(int id, [FromBody] UpdateRecipeDto req)
+        public async Task<ActionResult<RecipeDto>> Update(int id, [FromBody] CreateRecipeDtoRequest req)
         {
             try
             {

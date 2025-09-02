@@ -19,7 +19,8 @@ namespace Backend.Controllers
         }
 
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<IngredientDto>>> SearchIngredients([FromQuery] string search)
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<ActionResult<GetFoodsResult>> SearchIngredients([FromQuery] string search)
         {
             if (string.IsNullOrWhiteSpace(search))
             {
@@ -31,7 +32,7 @@ namespace Backend.Controllers
 
             _logger.LogInformation("search on {0} completed with {1} results", search, ingredients.Count());
 
-            return Ok(ingredients);
+            return Ok(new GetFoodsResult { TotalCount = ingredients.Count(), Items = ingredients });
         }
     }
 }

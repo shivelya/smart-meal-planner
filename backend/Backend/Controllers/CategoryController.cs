@@ -26,11 +26,11 @@ namespace Backend.Controllers
         /// </summary>
         /// <returns>All the existing category types.</returns>
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<CategoryDto>>> GetCategories()
+        public async Task<ActionResult<GetCategoriesResult>> GetCategories()
         {
             var categories = await _service.GetAllAsync();
             _logger.LogInformation("Retrieved {Count} categories", categories.Count());
-            return Ok(categories);
+            return Ok(new GetCategoriesResult { TotalCount = categories.Count(), Items = categories });
         }
     }
 }
