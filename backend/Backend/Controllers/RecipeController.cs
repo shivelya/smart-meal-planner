@@ -218,6 +218,31 @@ namespace Backend.Controllers
             }
         }
 
+        /// <summary>
+        /// Attempts to extract a recipe from a URL.
+        /// </summary>
+        /// <param name="source">The URL to source the recipe from.</param>
+        /// <returns>A recipe object for the user to verify. Does not insert recipe into the database. OK on success.</returns>
+        [HttpPost("extractByText")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ExtractedRecipe>> ExtractRecipeByText([FromBody] string source)
+        {
+            try
+            {
+                _logger.LogInformation("Extracting recipe from text.");
+                _logger.LogDebug(source);
+                var draft = await _extractor.ExtractRecipeByTextAsync(source);
+                _logger.LogInformation("Recipe extracted from text");
+                return Ok(draft);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in ExtractRecipeByText");
+                return StatusCode(500, ex.Message);
+            }
+        }
+
         private int GetUserId()
         {
             return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);

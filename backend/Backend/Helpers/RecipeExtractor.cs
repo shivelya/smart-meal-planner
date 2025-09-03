@@ -22,12 +22,18 @@ namespace Backend.Helpers
     public interface IRecipeExtractor
     {
         Task<ExtractedRecipe?> ExtractRecipeAsync(string url);
+        Task<ExtractedRecipe> ExtractRecipeByTextAsync(string source);
     }
 
     public class RecipeExtractor(ILogger<RecipeExtractor> logger, HttpClient httpClient) : IRecipeExtractor
     {
         private readonly ILogger<RecipeExtractor> _logger = logger;
         private readonly HttpClient _httpClient = httpClient;
+
+        public Task<ExtractedRecipe> ExtractRecipeByTextAsync(string source)
+        {
+            throw new NotImplementedException();
+        }
 
         public async Task<ExtractedRecipe?> ExtractRecipeAsync(string url)
         {

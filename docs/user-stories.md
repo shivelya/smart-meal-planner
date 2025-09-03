@@ -184,8 +184,6 @@
 
 ---
 
-## User Story: Ingredient Selection for Pantry Items
-
 **As a** user,  
 **I want** to select or add ingredients when creating a pantry item,  
 **so that** I can easily track the foods I have without worrying about duplicates or database structure.
@@ -248,27 +246,66 @@ _No content_
 
 ---
 
-## User Story: Add Pantry Items via Label Photo
+### User Story 1: Pantry Item from Packaged Food (e.g., Box of Crackers)
 
-**As a** user,  
-**I want** to take a photo of a food label and have the app automatically extract the ingredients,  
-**so that** I can quickly add multiple pantry items without typing each one manually.
+**As a** user  
+**I want** to take a picture of a packaged food item, such as a box of crackers  
+**So that** the system can read the packaging, identify it as "crackers," and automatically create a pantry item entry for me  
 
-### Acceptance Criteria
+**Acceptance Criteria:**
+- Given I take a photo of a packaged food item  
+- When the system processes the image  
+- Then it recognizes the product type (e.g., crackers)  
+- And it generates a pantry item with the appropriate name and details  
 
-1. The user can capture or upload a photo of a food product label.
-2. The client app sends the image to the OCR service (Azure Computer Vision) to extract text.
-3. The extracted text is parsed for the ingredient list.
-4. The user can review, edit, remove, or add ingredients before saving.
-5. Only after the user validates the ingredients does the app send them to the backend to create PantryItems or new Ingredients.
-6. The user should see a clear list of ingredients ready for confirmation.
-7. The backend only receives the **final validated list**, reducing errors and unnecessary processing.
+**Extended Acceptance Criteria:**
+- The system should attempt to extract additional details from the packaging (e.g., brand, weight, flavor).  
+- If the system is highly confident (above a set threshold), it auto-populates the pantry item.  
+- If confidence is low, the system should prompt the user to confirm or correct the item.  
+- The pantry item should include default quantity (e.g., 1 box) unless more detail is detected.  
+- The user should be able to edit the generated pantry item before saving.  
 
-### Notes
+---
 
-- OCR is performed client-side for immediate feedback.
-- Parsing should focus on identifying the line(s) starting with "Ingredients:".
-- Any new ingredients not already in the database will be created by the backend.
+### User Story 2: Pantry Item from Fresh Food (e.g., Banana)
+
+**As a** user  
+**I want** to take a picture of a fresh food item, such as a banana  
+**So that** the system can recognize it as "banana" and automatically create a pantry item entry for me  
+
+**Acceptance Criteria:**
+- Given I take a photo of a fresh food item  
+- When the system processes the image  
+- Then it recognizes the food type (e.g., banana)  
+- And it generates a pantry item with the appropriate name and details  
+
+**Extended Acceptance Criteria:**
+- The system should distinguish between different fresh foods (e.g., banana vs. plantain).  
+- If the system is highly confident (above a set threshold), it auto-populates the pantry item.  
+- If confidence is low, the system should prompt the user to confirm or correct the item.  
+- The pantry item should default to a unit type appropriate for fresh produce (e.g., “1 banana” or “1 bunch”).  
+- The user should be able to edit the generated pantry item before saving.  
+
+---
+
+### User Story: Search Pantry Items by Name
+
+**As a** user  
+**I want** to search for pantry items by entering their name  
+**So that** I can quickly find a specific item in my pantry list without scrolling  
+
+**Acceptance Criteria:**
+- Given I am on the pantry screen  
+- When I type a name (full or partial) into the search bar  
+- Then the pantry list updates to show only matching items  
+- And the search is case-insensitive (e.g., "Crackers" matches "crackers")  
+
+**Extended Acceptance Criteria:**
+- The system should support partial matches (e.g., typing "crack" returns "crackers").  
+- The system should update search results in real-time as the user types.  
+- If no items match the search, the system should display a "No results found" message.  
+- The user should be able to clear the search input to return to the full list.  
+- The system should handle special characters and spacing gracefully (e.g., "mac & cheese" vs "mac and cheese").  
 
 ---
 
@@ -364,7 +401,7 @@ _No content_
 
 **Acceptance Criteria**
 - When I search by a term (e.g., “chicken”), I see a list of recipes.
-- Each recipe shows title, image, and brief description.
+- Each recipe shows title and brief description.
 
 **API**
 - `GET /recipes?search=chicken`
@@ -372,8 +409,8 @@ _No content_
 **Response (200)**
 ```json
 [
-  { "id": 101, "title": "Chicken Curry", "image": "url.jpg" },
-  { "id": 102, "title": "Grilled Chicken Salad", "image": "url.jpg" }
+  { "id": 101, "title": "Chicken Curry" },
+  { "id": 102, "title": "Grilled Chicken Salad" }
 ]
 ```
 
@@ -424,3 +461,49 @@ _No content_
 
 **Response (204)**
 _No content_
+
+---
+
+### User Story: Import Recipe from URL
+
+**As a** user  
+**I want** to provide the app with a URL to a recipe  
+**So that** the app can extract the recipe details and let me verify them before saving to my collection  
+
+**Acceptance Criteria:**
+- Given I paste a valid recipe URL into the app  
+- When the system processes the URL  
+- Then it extracts recipe details (e.g., title, ingredients, steps, cooking time)  
+- And it displays the extracted recipe client-side for my review  
+- And I must confirm or edit the recipe before saving it to my collection  
+
+**Extended Acceptance Criteria:**
+- The system should validate that the URL is accessible before attempting extraction.  
+- If the recipe site is supported, the system should extract structured data (title, ingredients, instructions, nutrition info if available).  
+- If the recipe site is unsupported or parsing fails, the system should provide a clear error message.  
+- The user should be able to edit any extracted fields before saving.  
+- The system should not save the recipe to the database until the user explicitly confirms.  
+- If the user cancels, the extracted recipe should be discarded without saving.  
+
+---
+
+### User Story: Import Recipe from Text
+
+**As a** user  
+**I want** to paste or type a recipe into the app as plain text  
+**So that** the app can parse the text into structured recipe details and let me verify them before saving to my collection  
+
+**Acceptance Criteria:**
+- Given I paste or type a recipe into the app  
+- When the system processes the text  
+- Then it extracts recipe details (e.g., title, ingredients, steps, cooking time)  
+- And it displays the structured recipe client-side for my review  
+- And I must confirm or edit the recipe before saving it to my collection  
+
+**Extended Acceptance Criteria:**
+- The system should attempt to parse common recipe formats (e.g., ingredients list, numbered steps).  
+- If parsing succeeds, structured fields (title, ingredients, instructions, etc.) are pre-filled.  
+- If parsing fails or is incomplete, the system should allow me to manually adjust or add missing fields.  
+- The user should be able to freely edit any extracted fields before saving.  
+- The system should not save the recipe to the database until the user explicitly confirms.  
+- If the user cancels, the extracted recipe should be discarded without saving.  
