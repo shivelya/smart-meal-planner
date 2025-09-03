@@ -3,6 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Backend.Model;
 using Microsoft.Extensions.Logging;
+using Moq;
 
 namespace Backend.Tests
 {
@@ -231,6 +232,43 @@ namespace Backend.Tests
 
             Assert.NotNull(entity.FindNavigation(nameof(MealPlanEntry.MealPlan)));
             Assert.NotNull(entity.FindNavigation(nameof(MealPlanEntry.Recipe)));
+        }
+
+        [Fact]
+        public void RecipeEntity_HasIndexOnTitle()
+        {
+            var builder = InitializeContext();
+
+            var index = builder.Model.FindEntityType(typeof(Recipe))!
+                .GetIndexes()
+                .FirstOrDefault(i => i.GetDatabaseName() == "IX_Recipe_Title");
+            Assert.NotNull(index);
+            Assert.Contains(index.Properties, p => p.Name == "Title");
+        }
+
+        [Fact]
+        public void FoodEntity_HasIndexOnName()
+        {
+            var builder = InitializeContext();
+
+            var index = builder.Model.FindEntityType(typeof(Food))!
+                .GetIndexes()
+                .FirstOrDefault(i => i.GetDatabaseName() == "IX_Food_Name");
+            Assert.NotNull(index);
+            Assert.Contains(index.Properties, p => p.Name == "Name");
+        }
+
+        [Fact]
+        public void PantryItemEntity_HasIndexOnUserIdFoodId()
+        {
+            var builder = InitializeContext();
+
+            var index = builder.Model.FindEntityType(typeof(PantryItem))!
+                .GetIndexes()
+                .FirstOrDefault(i => i.GetDatabaseName() == "IX_PantryItem_UserIdFoodId");
+            Assert.NotNull(index);
+            Assert.Contains(index.Properties, p => p.Name == "UserId");
+            Assert.Contains(index.Properties, p => p.Name == "FoodId");
         }
     }
 

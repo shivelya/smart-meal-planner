@@ -95,6 +95,10 @@ namespace Backend
                 .HasOne(r => r.User)
                 .WithMany(u => u.Recipes)
                 .HasForeignKey(r => r.UserId);
+
+            modelBuilder.Entity<Recipe>()
+                .HasIndex(r => r.Title)
+                .HasDatabaseName("IX_Recipe_Title");
         }
 
         private static void SetUpPantryItemRelationships(ModelBuilder modelBuilder)
@@ -108,6 +112,10 @@ namespace Backend
                 .HasOne(p => p.Food)
                 .WithMany()
                 .HasForeignKey(p => p.FoodId);
+
+            modelBuilder.Entity<PantryItem>()
+                .HasIndex(pi => new { pi.UserId, pi.FoodId })
+                .HasDatabaseName("IX_PantryItem_UserIdFoodId");
         }
 
         private static void SetUpFoodRelationships(ModelBuilder modelBuilder)
@@ -116,6 +124,10 @@ namespace Backend
                 .HasOne(i => i.Category)
                 .WithMany()
                 .HasForeignKey(i => i.CategoryId);
+
+            modelBuilder.Entity<Food>()
+                .HasIndex(p => p.Name)
+                .HasDatabaseName("IX_Food_Name");
         }
     }
 }
