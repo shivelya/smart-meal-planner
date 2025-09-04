@@ -10,8 +10,8 @@ namespace Backend.Helpers
         {
             var subTypes = new[]
             {
-            typeof(ExistingIngredientDto),
-            typeof(NewIngredientDto),
+            typeof(NewFoodReferenceDto),
+            typeof(ExistingFoodReferenceDto),
         };
 
             foreach (var type in subTypes)

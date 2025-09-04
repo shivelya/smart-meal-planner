@@ -11,24 +11,33 @@ namespace Backend.DTOs
         [JsonPropertyName("new")]
         New
     }
-
-    public class FoodReferenceDto
+    public class FoodDto
     {
-        [Required]
-        public AddFoodMode Mode { get; set; } // "existing" or "new"
-        public int? Id { get; set; } // used if Mode == "existing"
-
-        // used if Mode == "new"
-        public string? Name { get; set; }
-        public int? CategoryId { get; set; }
-        public CategoryDto Category { get; set; } = null!;
+        public required int Id { get; set; }
+        public required string Name { get; set; }
+        public required CategoryDto Category { get; set; }
     }
 
+    public abstract class FoodReferenceDto
+    {
+        [Required]
+        public AddFoodMode Mode { get; set; }
+    }
 
+    public class NewFoodReferenceDto : FoodReferenceDto
+    {
+        public required string Name { get; set; }
+        public required int CategoryId { get; set; }
+    }
+
+    public class ExistingFoodReferenceDto : FoodReferenceDto
+    {
+        public required int Id { get; set; }
+    }
 
     public class GetFoodsResult
     {
         public required int TotalCount { get; set; }
-        public required IEnumerable<FoodReferenceDto> Items { get; set; } = [];
+        public required IEnumerable<FoodDto> Items { get; set; } = [];
     }
 }

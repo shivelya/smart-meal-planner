@@ -17,7 +17,7 @@ namespace Backend.Services.Impl
         /// <param name="userId">The user ID to associate with the recipe.</param>
         /// <returns>The created recipe DTO.</returns>
         /// <exception cref="ValidationException">Thrown when required fields are missing or ingredient type is unknown.</exception>
-        public async Task<RecipeDto> CreateAsync(CreateRecipeDtoRequest request, int userId)
+        public async Task<RecipeDto> CreateAsync(CreateUpdateRecipeDtoRequest request, int userId)
         {
             _logger.LogInformation("Creating recipe for user {UserId}: {@Request}", userId, request);
             Recipe recipe = new() { UserId = userId };
@@ -169,7 +169,7 @@ namespace Backend.Services.Impl
         /// <returns>The updated recipe DTO.</returns>
         /// <exception cref="ArgumentException">Thrown when the recipe is not found.</exception>
         /// <exception cref="ValidationException">Thrown when the user does not have permission to update the recipe.</exception>
-        public async Task<RecipeDto> UpdateAsync(int id, CreateRecipeDtoRequest recipeDto, int userId)
+        public async Task<RecipeDto> UpdateAsync(int id, CreateUpdateRecipeDtoRequest recipeDto, int userId)
         {
             _logger.LogInformation("Updating recipe with ID {Id} for user {UserId}: {@RecipeDto}", id, userId, recipeDto);
             var entity = await _context.Recipes
@@ -196,11 +196,12 @@ namespace Backend.Services.Impl
             return entity.ToDto();
         }
 
-        private void ValidateIngredient(RecipeIngredientDto ing)
+        private void ValidateIngredient(CreateUpdateRecipeIngredientDto ing)
         {
             if (ing.Food.Mode == AddFoodMode.Existing)
             {
-                if (_context.Foods.FirstOrDefaultAsync(i => i.Id == ing.Food.Id) == null)
+                var food = (ExistingFoodReferenceDto)ing.Food;
+                if (_context.Foods.FirstOrDefaultAsync(i => i.Id == food.Id) == null)
                 {
                     _logger.LogWarning("Found ingredient with unknown ID.");
                     throw new ValidationException("Found ingredient with unknown ID.");
@@ -208,13 +209,14 @@ namespace Backend.Services.Impl
             }
             else if ( ing.Food.Mode == AddFoodMode.New)
             {
-                if (_context.Categories.FirstOrDefaultAsync(i => i.Id == ing.Food.CategoryId) == null)
+                var food1 = (NewFoodReferenceDto)ing.Food;
+                if (_context.Categories.FirstOrDefaultAsync(i => i.Id == food1.CategoryId) == null)
                 {
                     _logger.LogWarning("Found ingredient with unknown category.");
                     throw new ValidationException("Found ingredient with unknown category.");
                 }
 
-                if (string.IsNullOrWhiteSpace(ing.Food.Name))
+                if (string.IsNullOrWhiteSpace(food1.Name))
                 {
                     _logger.LogWarning("Ingredient name required.");
                     throw new ValidationException("Ingredient name required.");
@@ -222,7 +224,7 @@ namespace Backend.Services.Impl
             }
         }
 
-        private async Task<List<RecipeIngredient>> CreateIngredients(List<RecipeIngredientDto> ingredients)
+        private async Task<List<RecipeIngredient>> CreateIngredients(List<CreateUpdateRecipeIngredientDto> ingredients)
         {
             var toReturn = new List<RecipeIngredient>();
             foreach (var ing in ingredients)
@@ -236,15 +238,16 @@ namespace Backend.Services.Impl
                 if (ing.Food.Mode == AddFoodMode.Existing)
                 {
                     //is pre-existing ingredient, just need to create corresponding RecipeIngredient
-                    recipeIngredient.FoodId = ing.Food.Id!.Value;
+                    recipeIngredient.FoodId = ((ExistingFoodReferenceDto)ing.Food).Id;
                 }
                 else if (ing.Food.Mode == AddFoodMode.New)
                 {
                     // this is a new ingredient, need to create the ingredient before creating the recipe ingredient
+                    var food = (NewFoodReferenceDto)ing.Food;
                     var ingredient = new Food
                     {
-                        Name = ing.Food.Name!,
-                        CategoryId = ing.Food.CategoryId!.Value
+                        Name = food.Name,
+                        CategoryId = food.CategoryId
                     };
 
                     await _context.Foods.AddAsync(ingredient);

@@ -13,7 +13,7 @@ namespace Backend.Services.Impl
             _logger = logger;
         }
 
-        public async Task<IEnumerable<FoodReferenceDto>> SearchFoods(string search)
+        public async Task<IEnumerable<FoodDto>> SearchFoods(string search)
         {
             var foods = await _context.Foods
                 .Where(i => i.Name.Contains(search))
