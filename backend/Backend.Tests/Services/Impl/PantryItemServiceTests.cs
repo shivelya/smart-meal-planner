@@ -142,19 +142,19 @@ namespace Backend.Tests.Services.Impl
             var context = new PlannerContext(options, null!, new LoggerFactory().CreateLogger<PlannerContext>());
             userId = 1;
 
-            // Seed ingredients
+            // Seed foods
             var category = new Category { Name = "produce" };
-            var ingredient1 = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = category };
-            var ingredient2 = new Food { Id = 2, Name = "Sugar", CategoryId = 1, Category = category };
-            var ingredient3 = new Food { Id = 3, Name = "Pepper", CategoryId = 2, Category = category };
-            context.Foods.AddRange(ingredient1, ingredient2, ingredient3);
+            var food1 = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = category };
+            var food2 = new Food { Id = 2, Name = "Sugar", CategoryId = 1, Category = category };
+            var food3 = new Food { Id = 3, Name = "Pepper", CategoryId = 2, Category = category };
+            context.Foods.AddRange(food1, food2, food3);
 
             // Seed pantry items
             context.PantryItems.AddRange(
-                new PantryItem { Id = 1, FoodId = 1, Quantity = 2, Unit = "g", UserId = userId, Food = ingredient1 },
-                new PantryItem { Id = 2, FoodId = 2, Quantity = 5, Unit = "g", UserId = userId, Food = ingredient2 },
-                new PantryItem { Id = 3, FoodId = 3, Quantity = 1, Unit = "g", UserId = userId, Food = ingredient3 },
-                new PantryItem { Id = 4, FoodId = 2, Quantity = 3, Unit = "g", UserId = 99, Food = ingredient2 } // different user
+                new PantryItem { Id = 1, FoodId = 1, Quantity = 2, Unit = "g", UserId = userId, Food = food1 },
+                new PantryItem { Id = 2, FoodId = 2, Quantity = 5, Unit = "g", UserId = userId, Food = food2 },
+                new PantryItem { Id = 3, FoodId = 3, Quantity = 1, Unit = "g", UserId = userId, Food = food3 },
+                new PantryItem { Id = 4, FoodId = 2, Quantity = 3, Unit = "g", UserId = 99, Food = food2 } // different user
             );
             context.SaveChanges();
 
@@ -227,8 +227,8 @@ namespace Backend.Tests.Services.Impl
             var context = new PlannerContext(options, null!, new LoggerFactory().CreateLogger<PlannerContext>());
             int userId = 1;
 
-            var ingredient = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce" } };
-            context.Foods.Add(ingredient);
+            var food = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce" } };
+            context.Foods.Add(food);
 
             for (int i = 0; i < 25; i++)
             {
@@ -239,7 +239,7 @@ namespace Backend.Tests.Services.Impl
                     Quantity = 1,
                     Unit = "g",
                     UserId = userId,
-                    Food = ingredient
+                    Food = food
                 });
             }
             context.SaveChanges();
@@ -263,10 +263,10 @@ namespace Backend.Tests.Services.Impl
             var user = new User { Id = userId, Email = "test@example.com", PasswordHash = Guid.NewGuid().ToString() };
             context.Users.Add(user);
 
-            var ingredient = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce"} };
-            context.Foods.Add(ingredient);
+            var food = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce"} };
+            context.Foods.Add(food);
 
-            var pantryItem = new PantryItem { Id = 10, FoodId = 1, Quantity = 2, Unit = "g", UserId = userId, Food = ingredient };
+            var pantryItem = new PantryItem { Id = 10, FoodId = 1, Quantity = 2, Unit = "g", UserId = userId, Food = food };
             context.PantryItems.Add(pantryItem);
 
             context.SaveChanges();
@@ -338,11 +338,11 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task UpdatePantryItemAsync_UpdatesIngredientIdIfProvided()
+        public async Task UpdatePantryItemAsync_UpdatesFoodIdIfProvided()
         {
             var service = CreateServiceWithData(out int userId, out var context);
-            var newIngredient = new Food { Id = 2, Name = "Sugar", CategoryId = 1 };
-            context.Foods.Add(newIngredient);
+            var newFood = new Food { Id = 2, Name = "Sugar", CategoryId = 1 };
+            context.Foods.Add(newFood);
             context.SaveChanges();
 
             var dto = new PantryItemDto { Id = 10, Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Id = 2 }, Quantity = 5, Unit = "kg" };

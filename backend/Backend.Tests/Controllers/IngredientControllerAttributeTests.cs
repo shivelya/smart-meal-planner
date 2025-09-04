@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Tests.Controllers
 {
-    public class IngredientControllerAttributeTests
+    public class FoodControllerAttributeTests
     {
         private readonly Type _controllerType = typeof(FoodController);
 
@@ -33,7 +33,7 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public void SearchIngredients_HasHttpGetAttribute()
+        public void SearchFoods_HasHttpGetAttribute()
         {
             var method = _controllerType.GetMethod("SearchFoods");
             Assert.NotNull(method);
@@ -42,7 +42,7 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public void SearchIngredients_HasProducesResponseTypeAttribute_400BadRequest()
+        public void SearchFoodts_HasProducesResponseTypeAttribute_400BadRequest()
         {
             var method = _controllerType.GetMethod("SearchFoods");
             Assert.NotNull(method);

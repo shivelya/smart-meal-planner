@@ -2,46 +2,46 @@ using Backend.Model;
 
 namespace Backend.Tests.Model
 {
-    public class IngredientTests
+    public class FoodTests
     {
         [Fact]
-        public void CanCreateIngredient()
+        public void CanCreateFood()
         {
-            var ingredient = new Food();
-            Assert.NotNull(ingredient);
+            var food = new Food();
+            Assert.NotNull(food);
         }
 
         [Fact]
-        public void Ingredient_Id_SetAndGet_Works()
+        public void Food_Id_SetAndGet_Works()
         {
-            var ingredient = new Food();
-            ingredient.Id = 101;
-            Assert.Equal(101, ingredient.Id);
+            var food = new Food();
+            food.Id = 101;
+            Assert.Equal(101, food.Id);
         }
 
         [Fact]
-        public void Ingredient_Name_SetAndGet_Works()
+        public void Food_Name_SetAndGet_Works()
         {
-            var ingredient = new Food();
-            ingredient.Name = "Tomato";
-            Assert.Equal("Tomato", ingredient.Name);
+            var food = new Food();
+            food.Name = "Tomato";
+            Assert.Equal("Tomato", food.Name);
         }
 
         [Fact]
-        public void Ingredient_CategoryId_SetAndGet_Works()
+        public void Food_CategoryId_SetAndGet_Works()
         {
-            var ingredient = new Food();
-            ingredient.CategoryId = 5;
-            Assert.Equal(5, ingredient.CategoryId);
+            var food = new Food();
+            food.CategoryId = 5;
+            Assert.Equal(5, food.CategoryId);
         }
 
         [Fact]
-        public void Ingredient_Category_SetAndGet_Works()
+        public void Food_Category_SetAndGet_Works()
         {
-            var ingredient = new Food();
+            var food = new Food();
             var category = new Category();
-            ingredient.Category = category;
-            Assert.Same(category, ingredient.Category);
+            food.Category = category;
+            Assert.Same(category, food.Category);
         }
     }
 }

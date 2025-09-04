@@ -39,8 +39,8 @@ items:
   - uid: Backend.DTOs.CategoryDto
     name: CategoryDto
     type: Class
-  - uid: Backend.DTOs.IngredientDto
-    name: IngredientDto
+  - uid: Backend.DTOs.FoodDto
+    name: FoodDto
     type: Class
   - uid: Backend.DTOs.MealPlanDto
     name: MealPlanDto
@@ -74,8 +74,8 @@ items:
   - uid: Backend.Model.Category
     name: Category
     type: Class
-  - uid: Backend.Model.Ingredient
-    name: Ingredient
+  - uid: Backend.Model.Food
+    name: Food
     type: Class
   - uid: Backend.Model.MealPlan
     name: MealPlan
@@ -108,8 +108,8 @@ items:
   - uid: Backend.Services.IEmailService
     name: IEmailService
     type: Interface
-  - uid: Backend.Services.IIngredientService
-    name: IIngredientService
+  - uid: Backend.Services.IFoodService
+    name: IFoodService
     type: Interface
   - uid: Backend.Services.IMealPlanEntryService
     name: IMealPlanEntryService
@@ -145,4 +145,7 @@ items:
   - uid: Backend.Services.Impl.TokenService
     name: TokenService
     type: Class
+- uid: Backend.Tests
+  name: Backend.Tests
+  type: Namespace
 memberLayout: SamePage

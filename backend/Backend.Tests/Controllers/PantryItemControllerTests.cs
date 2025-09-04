@@ -141,7 +141,7 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public async Task AddItem_WithIngredientId_CreatesItem()
+        public async Task AddItem_WithFoodId_CreatesItem()
         {
             var dto = new PantryItemDto { Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Id = 5 }, Quantity = 2, Unit = "kg" };
             var resultDto = new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Mode = AddFoodMode.New, Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 2, Unit = "kg" };
@@ -153,7 +153,7 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public async Task AddItem_WithIngredientName_CreatesItem()
+        public async Task AddItem_WithFoodName_CreatesItem()
         {
             var dto = new PantryItemDto { Food = new FoodReferenceDto { Mode = AddFoodMode.New, Name = "Salt" }, Quantity = 1, Unit = "g" };
             var resultDto = new PantryItemDto { Id = 2, Food = new FoodReferenceDto { Mode = AddFoodMode.Existing, Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 1, Unit = "g" };
@@ -165,7 +165,7 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public async Task AddItem_WithoutIngredientIdOrName_ReturnsBadRequest()
+        public async Task AddItem_WithoutFoodIdOrName_ReturnsBadRequest()
         {
             var dto = new PantryItemDto { Quantity = 1, Unit = "g", Food = new FoodReferenceDto() };
             _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, 42)).ThrowsAsync(new ArgumentException());

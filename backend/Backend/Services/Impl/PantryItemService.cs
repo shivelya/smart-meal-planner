@@ -11,8 +11,8 @@ namespace Backend.Services.Impl
         private readonly ILogger<PantryItemService> _logger = logger;
 
         /// <summary>
-        /// Creates a new pantry item for the specified user. Assumes an IngredientId for ingredients that already exist,
-        /// and assumes an IntredientName and CategoryId for ingredients that need to be added to the DB.
+        /// Creates a new pantry item for the specified user. Assumes a FoodId for foods that already exist,
+        /// and assumes a FoodName and CategoryId for foods that need to be added to the DB.
         /// </summary>
         /// <param name="pantryItemDto">The DTO containing pantry item details.</param>
         /// <param name="userId">The user ID to associate with the pantry item.</param>
@@ -29,8 +29,8 @@ namespace Backend.Services.Impl
         }
 
         /// <summary>
-        /// Creates multiple pantry items for the specified user. Assumes an IngredientId for ingredients that alreay exist
-        /// and assumes an IngredientName and CategoryId for ingredients that need to be added to the DB.
+        /// Creates multiple pantry items for the specified user. Assumes a FoodId for Foods that alreay exist
+        /// and assumes a FoodName and CategoryId for Foods that need to be added to the DB.
         /// </summary>
         /// <param name="pantryItemDtos">A collection of DTOs containing pantry item details.</param>
         /// <param name="userId">The user ID to associate with the pantry items.</param>
@@ -41,8 +41,8 @@ namespace Backend.Services.Impl
 
             if (pantryItemDtos.Any(dto => dto.Food == null))
             {
-                _logger.LogWarning("Pantry items with no ingredient were added. These will be filtered out.");
-                throw new ArgumentException("Pantry items with no ingredient were added. An ingredient is required.");
+                _logger.LogWarning("Pantry items with no foods were added. These will be filtered out.");
+                throw new ArgumentException("Pantry items with no food were added. A food is required.");
             }
 
             var tasks = pantryItemDtos.Select(async dto => await CreatePantryItem(dto, userId));
@@ -157,7 +157,7 @@ namespace Backend.Services.Impl
 
             item.Quantity = pantryItemDto.Quantity;
             item.Unit = pantryItemDto.Unit;
-            item.FoodId = await UpdatePantryItemingredient(pantryItemDto);
+            item.FoodId = await UpdatePantryItemFood(pantryItemDto);
 
             await _context.SaveChangesAsync();
             return item.ToDto();
@@ -181,7 +181,7 @@ namespace Backend.Services.Impl
             return items.Select(i => i.ToDto());
         }
 
-        private async Task<int> UpdatePantryItemingredient(PantryItemDto pantryItemDto)
+        private async Task<int> UpdatePantryItemFood(PantryItemDto pantryItemDto)
         {
             int foodId;
 
@@ -198,16 +198,16 @@ namespace Backend.Services.Impl
             {
                 if (await _context.Categories.FirstOrDefaultAsync(c => c.Id == pantryItemDto.Food.CategoryId) == null)
                 {
-                    _logger.LogWarning("Ingredientname was provided without CategoryId");
-                    throw new ArgumentException("CategoryId is required on pantry items with new ingredients.");
+                    _logger.LogWarning("FoodName was provided without CategoryId");
+                    throw new ArgumentException("CategoryId is required on pantry items with new foods.");
                 }
 
-                foodId = await CreateNewIngredient(pantryItemDto.Food);
+                foodId = await CreateNewFood(pantryItemDto.Food);
             }
             else
             {
-                _logger.LogError("IntredientId or IngredientName must be provided.");
-                throw new ArgumentException("IngredientId or IngredientName must be provided.");
+                _logger.LogError("FoodId or FoodName must be provided.");
+                throw new ArgumentException("FoodId or FoodName must be provided.");
             }
 
             return foodId;
@@ -215,11 +215,11 @@ namespace Backend.Services.Impl
 
         private async Task<PantryItem> CreatePantryItem(PantryItemDto pantryItemDto, int userId)
         {
-            int ingredientId = await UpdatePantryItemingredient(pantryItemDto);
+            int foodId = await UpdatePantryItemFood(pantryItemDto);
 
             var entity = new PantryItem
             {
-                FoodId = ingredientId,
+                FoodId = foodId,
                 Quantity = pantryItemDto.Quantity,
                 Unit = pantryItemDto.Unit,
                 UserId = userId
@@ -229,17 +229,17 @@ namespace Backend.Services.Impl
             return entity;
         }
 
-        private async Task<int> CreateNewIngredient(FoodReferenceDto dto)
+        private async Task<int> CreateNewFood(FoodReferenceDto dto)
         {
-            var ingredient = new Food
+            var food = new Food
             {
                 Name = dto.Name!,
                 CategoryId = dto.CategoryId!.Value
             };
 
-            _context.Foods.Add(ingredient);
+            _context.Foods.Add(food);
             await _context.SaveChangesAsync();
-            return ingredient.Id;
+            return food.Id;
         }
     }
 }

@@ -41,8 +41,8 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Could not search for ingredients: {ex}", ex.Message);
-                return StatusCode(500, "Could not search for ingredients: " + ex.Message);
+                _logger.LogWarning("Could not search for foods: {ex}", ex.Message);
+                return StatusCode(500, "Could not search for foods: " + ex.Message);
             }
         }
     }

@@ -53,12 +53,12 @@ namespace Backend.Tests.Model
         }
 
         [Fact]
-        public void RecipeIngredient_Ingredient_SetAndGet_Works()
+        public void RecipeIngredient_Food_SetAndGet_Works()
         {
             var ri = new RecipeIngredient();
-            var ingredient = new Food();
-            ri.Food = ingredient;
-            Assert.Same(ingredient, ri.Food);
+            var food = new Food();
+            ri.Food = food;
+            Assert.Same(food, ri.Food);
         }
     }
 }
