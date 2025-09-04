@@ -107,7 +107,7 @@ namespace Backend.Tests.Services.Impl
         public async Task GetByIdsAsync_ReturnsEmpty_WhenNoIds()
         {
             var result = await _service.GetByIdsAsync([], 1);
-            Assert.Empty(result);
+            Assert.Empty(result.Items);
         }
 
         [Fact]
@@ -118,7 +118,7 @@ namespace Backend.Tests.Services.Impl
             _context.Recipes.AddRange(recipe1, recipe2);
             _context.SaveChanges();
             var result = await _service.GetByIdsAsync(new List<int> { 4, 5 }, 1);
-            Assert.Equal(2, result.Count());
+            Assert.Equal(2, result.TotalCount);
         }
 
         [Fact]
@@ -129,8 +129,8 @@ namespace Backend.Tests.Services.Impl
             _context.SaveChanges();
             var options = new RecipeSearchOptions { TitleContains = "Pizza" };
             var result = await _service.SearchAsync(options, 1);
-            Assert.Single(result);
-            Assert.Equal("Pizza", result.First().Title);
+            Assert.Single(result.Items);
+            Assert.Equal("Pizza", result.Items.First().Title);
         }
 
         [Fact]

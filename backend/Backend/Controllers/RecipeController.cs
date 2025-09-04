@@ -4,6 +4,7 @@ using Backend.Helpers;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Backend.Controllers
 {
@@ -26,11 +27,11 @@ namespace Backend.Controllers
         /// Creates a new recipe on the server, given a CreateRecipeDto object.
         /// </summary>
         /// <param name="req">The requested recipe to be created.</param>
-        /// <returns>201 on creation</returns>
+        /// <remarks>Returns 201 on creation</remarks>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RecipeDto>> Create([FromBody] CreateRecipeDtoRequest req)
+        public async Task<ActionResult<RecipeDto>> Create([FromBody, BindRequired] CreateRecipeDtoRequest req)
         {
             try
             {
@@ -50,7 +51,7 @@ namespace Backend.Controllers
         /// Returns a recipe based on a given id.
         /// </summary>
         /// <param name="id">The id to return the recipe of.</param>
-        /// <returns>The found recipe. Ok on success, 404 on failure.</returns>
+        /// <remarks>Returns the found recipe. Ok on success, 404 on failure.</remarks>
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -79,18 +80,31 @@ namespace Backend.Controllers
         /// <summary>
         /// Returns a list of recipes based on a list of ids.
         /// </summary>
-        /// <param name="ids">The list of ids to return.</param>
-        /// <returns>A list of full recipe objects. Ok on success.</returns>
-        [HttpPost("batch")] // body: { "ids": ["..."] }
+        /// <param name="request">The list of ids to return.</param>
+        /// <remarks>Returns a list of full recipe objects. Ok on success.</remarks>
+        [HttpPost("bulk")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IReadOnlyList<RecipeDto>>> GetByIds([FromBody] int[] ids)
+        public async Task<ActionResult<GetRecipesResult>> GetByIds([FromBody, BindRequired] GetRecipesRequest request)
         {
+            if (request == null)
+            {
+                _logger.LogWarning("Request object is required.");
+                return BadRequest("request object is required.");
+            }
+
+            if (request.Ids == null)
+            {
+                _logger.LogWarning("Ids are required.");
+                return BadRequest("List of ids is required.");
+            }
+
             try
             {
-                _logger.LogInformation("Retrieving recipes with IDs {@Ids} for user {UserId}", ids, GetUserId());
-                var r = await _recipeService.GetByIdsAsync(ids, GetUserId());
-                _logger.LogInformation("Retrieved {Count} recipes", r.Count());
+
+                _logger.LogInformation("Retrieving recipes with IDs {@Ids} for user {UserId}", request.Ids, GetUserId());
+                var r = await _recipeService.GetByIdsAsync(request.Ids, GetUserId());
+                _logger.LogInformation("Retrieved {Count} recipes", r.TotalCount);
                 return Ok(r);
             }
             catch (Exception ex)
@@ -107,11 +121,11 @@ namespace Backend.Controllers
         /// <param name="ingredient">The string to search in the ingredients for.</param>
         /// <param name="skip">The number of responses to skip for paging.</param>
         /// <param name="take">the number of responses to take for paging.</param>
-        /// <returns>A list of full recipe objects. Ok on success.</returns>
+        /// <remarks>Returns a list of full recipe objects. Ok on success.</remarks>
         [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IReadOnlyList<RecipeDto>>> Search([FromQuery] string? title, [FromQuery] string? ingredient, [FromQuery] int? skip, [FromQuery] int? take)
+        public async Task<ActionResult<GetRecipesResult>> Search([FromQuery] string? title, [FromQuery] string? ingredient, [FromQuery] int? skip, [FromQuery] int? take)
         {
             try
             {
@@ -123,7 +137,7 @@ namespace Backend.Controllers
                     Skip = skip,
                     Take = take
                 }, GetUserId());
-                _logger.LogInformation("Search returned {Count} recipes", r.Count());
+                _logger.LogInformation("Search returned {Count} recipes", r.TotalCount);
                 return Ok(r);
             }
             catch (Exception ex)
@@ -138,12 +152,12 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="id">The id of the recipe to update.</param>
         /// <param name="req">The recipe object to update with.</param>
-        /// <returns>The updated recipe object. Ok on success, 404 if the recipe cannot be found.</returns>
+        /// <remarks>Returns the updated recipe object. Ok on success, 404 if the recipe cannot be found.</remarks>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RecipeDto>> Update(int id, [FromBody] CreateRecipeDtoRequest req)
+        public async Task<ActionResult<RecipeDto>> Update(int id, [FromBody, BindRequired] CreateRecipeDtoRequest req)
         {
             try
             {
@@ -168,7 +182,7 @@ namespace Backend.Controllers
         /// Deletes a recipe with the given id
         /// </summary>
         /// <param name="id">The id of the recipe to be deleted.</param>
-        /// <returns>201 if deleted, 404 if not found.</returns>
+        /// <remarks>Returns 201 if deleted, 404 if not found.</remarks>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -197,48 +211,35 @@ namespace Backend.Controllers
         /// <summary>
         /// Attempts to extract a recipe from a URL.
         /// </summary>
-        /// <param name="source">The URL to source the recipe from.</param>
-        /// <returns>A recipe object for the user to verify. Does not insert recipe into the database. OK on success.</returns>
+        /// <param name="request">The URL to source the recipe from.</param>
+        /// <remarks>returns a recipe object for the user to verify. Does not insert recipe into the database. OK on success.</remarks>
         [HttpPost("extract")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ExtractedRecipe>> ExtractRecipe([FromBody] string source)
+        public async Task<ActionResult<ExtractedRecipe>> ExtractRecipe([FromBody, BindRequired] ExtractRequest request)
         {
+            if (request == null)
+            {
+                _logger.LogWarning("Request object is required.");
+                return BadRequest("Request object is required.");
+            }
+
+            if (request.Source == null)
+            {
+                _logger.LogWarning("Source URL is required.");
+                return BadRequest("Source URL is required.");
+            }
+
             try
             {
-                _logger.LogInformation("Extracting recipe from source URL: {Source}", source);
-                var draft = await _extractor.ExtractRecipeAsync(source);
+                _logger.LogInformation("Extracting recipe from source URL: {Source}", request.Source);
+                var draft = await _extractor.ExtractRecipeAsync(request.Source);
                 _logger.LogInformation("Recipe extracted from source");
                 return Ok(draft);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in ExtractRecipe");
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        /// <summary>
-        /// Attempts to extract a recipe from a URL.
-        /// </summary>
-        /// <param name="source">The URL to source the recipe from.</param>
-        /// <returns>A recipe object for the user to verify. Does not insert recipe into the database. OK on success.</returns>
-        [HttpPost("extractByText")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ExtractedRecipe>> ExtractRecipeByText([FromBody] string source)
-        {
-            try
-            {
-                _logger.LogInformation("Extracting recipe from text.");
-                _logger.LogDebug(source);
-                var draft = await _extractor.ExtractRecipeByTextAsync(source);
-                _logger.LogInformation("Recipe extracted from text");
-                return Ok(draft);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error in ExtractRecipeByText");
                 return StatusCode(500, ex.Message);
             }
         }

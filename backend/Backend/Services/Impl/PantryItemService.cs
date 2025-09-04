@@ -17,7 +17,7 @@ namespace Backend.Services.Impl
         /// <param name="pantryItemDto">The DTO containing pantry item details.</param>
         /// <param name="userId">The user ID to associate with the pantry item.</param>
         /// <returns>The created pantry item DTO.</returns>
-        public async Task<PantryItemDto> CreatePantryItemAsync(PantryItemRequestDto pantryItemDto, int userId)
+        public async Task<PantryItemDto> CreatePantryItemAsync(PantryItemDto pantryItemDto, int userId)
         {
             _logger.LogInformation("Creating for user {0} pantry item {1}", userId, pantryItemDto);
             PantryItem entity = await CreatePantryItem(pantryItemDto, userId);
@@ -35,7 +35,7 @@ namespace Backend.Services.Impl
         /// <param name="pantryItemDtos">A collection of DTOs containing pantry item details.</param>
         /// <param name="userId">The user ID to associate with the pantry items.</param>
         /// <returns>A collection of created pantry item DTOs.</returns>
-        public async Task<IEnumerable<PantryItemDto>> CreatePantryItemsAsync(IEnumerable<PantryItemRequestDto> pantryItemDtos, int userId)
+        public async Task<IEnumerable<PantryItemDto>> CreatePantryItemsAsync(IEnumerable<PantryItemDto> pantryItemDtos, int userId)
         {
             _logger.LogInformation("Creating for user {id} {count} pantry items", userId, pantryItemDtos.Count());
 
@@ -78,14 +78,15 @@ namespace Backend.Services.Impl
         /// </summary>
         /// <param name="ids">A collection of pantry item IDs to delete.</param>
         /// <returns>The number of items deleted.</returns>
-        public async Task<int> DeletePantryItemsAsync(IEnumerable<int> ids)
+        public async Task<DeleteRequest> DeletePantryItemsAsync(IEnumerable<int> ids)
         {
             _logger.LogInformation("Deleting {count} pantry items", ids.Count());
             var entities = _context.PantryItems.Where(p => ids.Contains(p.Id));
+            var deletedIds = entities.Select(e => e.Id).ToList();
             _context.PantryItems.RemoveRange(entities);
             int count = await _context.SaveChangesAsync();
             _logger.LogInformation("{count} pantry items deleted", count);
-            return count;
+            return new DeleteRequest { Ids = deletedIds };
         }
 
         /// <summary>
@@ -127,7 +128,7 @@ namespace Backend.Services.Impl
         /// <param name="pantryItemDto">The pantry item DTO to update.</param>
         /// <param name="userId">The user id the item belongs to.</param>
         /// <returns>The updated pantry item DTO.</returns>
-        public async Task<PantryItemDto> UpdatePantryItemAsync(PantryItemRequestDto pantryItemDto, int userId)
+        public async Task<PantryItemDto> UpdatePantryItemAsync(PantryItemDto pantryItemDto, int userId)
         {
             if (pantryItemDto == null)
             {
@@ -180,7 +181,7 @@ namespace Backend.Services.Impl
             return items.Select(i => i.ToDto());
         }
 
-        private async Task<int> UpdatePantryItemingredient(PantryItemRequestDto pantryItemDto)
+        private async Task<int> UpdatePantryItemingredient(PantryItemDto pantryItemDto)
         {
             int foodId;
 
@@ -212,7 +213,7 @@ namespace Backend.Services.Impl
             return foodId;
         }
 
-        private async Task<PantryItem> CreatePantryItem(PantryItemRequestDto pantryItemDto, int userId)
+        private async Task<PantryItem> CreatePantryItem(PantryItemDto pantryItemDto, int userId)
         {
             int ingredientId = await UpdatePantryItemingredient(pantryItemDto);
 

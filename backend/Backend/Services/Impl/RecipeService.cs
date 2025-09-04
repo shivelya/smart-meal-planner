@@ -93,21 +93,22 @@ namespace Backend.Services.Impl
         /// <param name="ids">A collection of recipe IDs to retrieve.</param>
         /// <param name="userId">The user ID who owns the recipes.</param>
         /// <returns>A collection of recipe DTOs.</returns>
-        public async Task<IEnumerable<RecipeDto>> GetByIdsAsync(IEnumerable<int> ids, int userId)
+        public async Task<GetRecipesResult> GetByIdsAsync(IEnumerable<int> ids, int userId)
         {
             var idSet = ids.Distinct().ToList();
             _logger.LogInformation("Retrieving recipes with IDs {@Ids} for user {UserId}", idSet, userId);
             if (idSet.Count == 0)
             {
                 _logger.LogWarning("No IDs provided for GetByIds");
-                return Array.Empty<RecipeDto>();
+                return new GetRecipesResult { TotalCount = 0, Items = []};
             }
+
             var entities = await _context.Recipes
                 .Include(r => r.Ingredients)
                 .Where(r => r.UserId == userId && idSet.Contains(r.Id))
                 .ToListAsync();
             _logger.LogInformation("Retrieved {Count} recipes", entities.Count);
-            return [.. entities.Select(r => r.ToDto())];
+            return new GetRecipesResult { TotalCount = entities.Count, Items = [.. entities.Select(r => r.ToDto())] };
         }
 
         /// <summary>
@@ -116,7 +117,7 @@ namespace Backend.Services.Impl
         /// <param name="options">Search options including title, ingredient, skip, and take.</param>
         /// <param name="userId">The user ID who owns the recipes.</param>
         /// <returns>A collection of recipe DTOs matching the search criteria.</returns>
-        public async Task<IEnumerable<RecipeDto>> SearchAsync(RecipeSearchOptions options, int userId)
+        public async Task<GetRecipesResult> SearchAsync(RecipeSearchOptions options, int userId)
         {
             _logger.LogInformation("Searching recipes for user {UserId}: {@Options}", userId, options);
             if (options.Take is <= 0 or > 200)
@@ -156,7 +157,7 @@ namespace Backend.Services.Impl
 
             var list = await query.ToListAsync();
             _logger.LogInformation("Search returned {Count} recipes", list.Count);
-            return [.. list.Select(r => r.ToDto())];
+            return new GetRecipesResult { TotalCount = list.Count, Items = [.. list.Select(r => r.ToDto())] };
         }
 
         /// <summary>

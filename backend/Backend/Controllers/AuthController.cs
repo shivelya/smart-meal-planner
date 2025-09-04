@@ -2,50 +2,41 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Backend.Model;
 using Backend.Services;
-using Serilog;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
+using Backend.DTOs;
 
 namespace Backend.Controllers
 {
+    /// <summary>
+    /// Initializes a new instance of the AuthController class.
+    /// Handles user registration, login, logout, token management,
+    /// and forgotten passwords.
+    /// </summary>
+    /// <param name="tokenService">Service for token operations.</param>
+    /// <param name="userService">Service for user operations.</param>
+    /// <param name="emailService">Service for email operations.</param>
+    /// <param name="logger">Logger instance.</param>
     [ApiController]
     [Route("api/[controller]")]
-    public class AuthController : ControllerBase
+    public class AuthController(ITokenService tokenService, IUserService userService, IEmailService emailService, ILogger<AuthController> logger) : ControllerBase
     {
-        private readonly ITokenService _tokenService;
-        private readonly IUserService _userService;
-        private readonly IEmailService _emailService;
-        private readonly ILogger<AuthController> _logger;
+        private readonly ITokenService _tokenService = tokenService;
+        private readonly IUserService _userService = userService;
+        private readonly IEmailService _emailService = emailService;
+        private readonly ILogger<AuthController> _logger = logger;
 
-        /// <summary>
-        /// Initializes a new instance of the AuthController class.
-        /// Handles user registration, login, logout, token management,
-        /// and forgotten passwords.
-        /// </summary>
-        /// <param name="tokenService">Service for token operations.</param>
-        /// <param name="userService">Service for user operations.</param>
-        /// <param name="emailService">Service for email operations.</param>
-        /// <param name="logger">Logger instance.</param>
-        public AuthController(ITokenService tokenService, IUserService userService, IEmailService emailService, ILogger<AuthController> logger)
-        {
-            _tokenService = tokenService;
-            _userService = userService;
-            _emailService = emailService;
-            _logger = logger;
-        }
-
-        // POST: api/auth/register
         /// <summary>
         /// Registers a new user with the provided email and password.
         /// Returns access and refresh tokens if successful so user is immediately logged in.
         /// </summary>
         /// <param name="request">JSON object with email and password.</param>
-        /// <returns>Return access and refresh tokens if successful.</returns>
+        /// <remarks>Returns access and refresh tokens if successful.</remarks>
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Register(RegisterRequest request)
+        public async Task<ActionResult<TokenResponse>> Register(DTOs.LoginRequest request)
         {
             _logger.LogDebug("Request: {Request}", request);
             if (request.Email == null || request.Password == null)
@@ -68,45 +59,51 @@ namespace Backend.Controllers
                 return BadRequest("User already exists.");
             }
 
-            var user = await _userService.CreateUserAsync(request.Email, request.Password);
-            if (user == null)
+            User user;
+            try
             {
-                _logger.LogError("Registration failed: User creation returned null.");
-                _logger.LogDebug("Failed to create user with email {Email}.", request.Email);
-                return StatusCode(500, "Failed to create user.");
+                user = await _userService.CreateUserAsync(request.Email, request.Password);
+                if (user == null)
+                {
+                    _logger.LogError("Registration failed: User creation returned null.");
+                    _logger.LogDebug("Failed to create user with email {Email}.", request.Email);
+                    return StatusCode(500, "Failed to create user.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Registration failed: Exception thrown: {ex}", ex);
+                return StatusCode(500, ex.Message);
             }
 
-            var result = await GenerateTokens(user);
-            if (result.Error != null)
+            try
             {
-                _logger.LogError("Registration failed: {Error}", result.Error);
+                var result = await GenerateTokens(user);
+
+                _logger.LogInformation("User registered successfully with email {Email}.", request.Email);
+                _logger.LogDebug("Generated tokens for user with email {Email}.", request.Email);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Registration completed but token generation failed: {Error}", ex);
                 _logger.LogDebug("Failed to generate tokens for user with email {Email}.", request.Email);
-                return result.Error ?? StatusCode(500, "Failed to generate tokens.");
+                return StatusCode(500, "Registration completed successfully but failed to generate tokens: " + ex.Message);
             }
-
-            _logger.LogInformation("User registered successfully with email {Email}.", request.Email);
-            _logger.LogDebug("Generated tokens for user with email {Email}.", request.Email);
-
-            // Return the tokens
-            return Ok(new TokenResponse
-            {
-                AccessToken = result.AccessToken,
-                RefreshToken = result.RefreshToken?.Token!,
-            });
         }
 
-        // POST: api/auth/login
         /// <summary>
         /// Logs in a user with the provided email and password.
         /// </summary>
         /// <param name="request">JSON object with email and password.</param>
-        /// <returns>JSON object with access and refresh tokens if successful.</returns>
+        /// <remarks>Returns a JSON object with access and refresh tokens if successful.</remarks>
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Login(LoginRequest request)
+        public async Task<ActionResult<TokenResponse>> Login(DTOs.LoginRequest request)
         {
             _logger.LogDebug("Login request: {Request}", request);
             if (request.Email == null || request.Password == null)
@@ -122,49 +119,64 @@ namespace Backend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var user = await _userService.GetByEmailAsync(request.Email);
-            if (user == null)
+            User user;
+            try
             {
-                _logger.LogWarning("Login failed: User with email {Email} not found.", request.Email);
-                return Unauthorized("Invalid email or password.");
+                user = await _userService.GetByEmailAsync(request.Email);
+                if (user == null)
+                {
+                    _logger.LogWarning("Login failed: User with email {Email} not found.", request.Email);
+                    return Unauthorized("Invalid email or password.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Login failed: Exception thrown: {ex}", ex);
+                return StatusCode(500, ex.Message);
             }
 
-            if (!_userService.VerifyPasswordHash(request.Password, user))
+            try
             {
-                _logger.LogWarning("Login failed: Invalid password for user with email {Email}.", request.Email);
-                return Unauthorized("Invalid email or password.");
+                if (!_userService.VerifyPasswordHash(request.Password, user))
+                {
+                    _logger.LogWarning("Login failed: Invalid password for user with email {Email}.", request.Email);
+                    return Unauthorized("Invalid email or password.");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Login failed verifying password: Exception thrown: {ex}", ex);
+                return StatusCode(500, ex.Message);
             }
 
-            var result = await GenerateTokens(user);
-            if (result.Error != null)
+            try
             {
-                _logger.LogError("Login failed: {Error}", result.Error);
+                var result = await GenerateTokens(user);
+
+                _logger.LogInformation("User logged in successfully with email {Email}.", request.Email);
+
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Login failed: {Error}", ex.Message);
                 _logger.LogDebug("Failed to generate tokens for user with email {Email}.", request.Email);
-                return result.Error ?? StatusCode(500, "Failed to generate tokens.");
+                return StatusCode(500, "Failed to generate tokens: " + ex.Message);
             }
-
-            _logger.LogInformation("User logged in successfully with email {Email}.", request.Email);
-
-            return Ok(new TokenResponse
-            {
-                AccessToken = result.AccessToken,
-                RefreshToken = result.RefreshToken?.Token!,
-            });
         }
 
-        // POST: api/auth/refresh
         /// <summary>
         /// Refreshes the access and refresh tokens using a valid refresh token.
         /// </summary>
         /// <param name="refreshToken">A refresh token string.</param>
-        /// <returns>JSON object with new access and refresh tokens if successful.</returns>
+        /// <remarks>Returns a JSON object with new access and refresh tokens if successful.</remarks>
         [Authorize]
         [HttpPost("refresh")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> Refresh([FromBody] string refreshToken)
+        public async Task<ActionResult<TokenResponse>> Refresh([FromBody] string refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
             {
@@ -202,37 +214,41 @@ namespace Backend.Controllers
             oldRefreshToken.IsRevoked = true;
             _logger.LogDebug("Revoking old refresh token: {RefreshToken}", refreshToken);
 
-            // Generate new tokens
-            var result = await GenerateTokens(user);
-            if (result.Error != null)
+            try
             {
-                _logger.LogError("Failed to generate new tokens: {Error}", result.Error);
-                _logger.LogDebug("Failed to generate new tokens for user with email {Email}.", user.Email);
-                return result.Error ?? StatusCode(500, "Failed to generate tokens.");
+                // Generate new tokens
+                var result = await GenerateTokens(user);
+
+                _logger.LogInformation("Tokens refreshed successfully for user with email {Email}.", user.Email);
+
+                return Ok(result);
             }
-
-            _logger.LogInformation("Tokens refreshed successfully for user with email {Email}.", user.Email);
-
-            return Ok(new TokenResponse
+            catch (Exception ex)
             {
-                AccessToken = result.AccessToken,
-                RefreshToken = result.RefreshToken.Token!
-            });
+                _logger.LogError("Failed to generate new tokens: {Error}", ex.Message);
+                _logger.LogDebug("Failed to generate new tokens for user with email {Email}.", user.Email);
+                return StatusCode(500, "Failed to generate tokens: " + ex.Message);
+            }
         }
 
-        // POST: api/auth/logout
         /// <summary>
         /// Logs out the user by revoking the provided refresh token.
         /// </summary>
-        /// <param name="refreshToken">A refresh token string.</param>
-        /// <returns>OK status upon logout.</returns>
+        /// <param name="request">A refresh request containing a refresh token.</param>
+        /// <remarks>Returns an OK status upon logout.</remarks>
         [Authorize]
         [HttpPost("logout")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> Logout([FromBody] string refreshToken)
+        public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
-            if (string.IsNullOrEmpty(refreshToken))
+            if (request == null)
+            {
+                _logger.LogWarning("Logout failed: Null refresh token provided.");
+                return BadRequest("Refresh token is required.");
+            }
+
+            if (string.IsNullOrEmpty(request.RefreshToken))
             {
                 _logger.LogWarning("Logout failed: Null refresh token provided.");
                 return BadRequest("Refresh token is required.");
@@ -242,28 +258,34 @@ namespace Backend.Controllers
             {
                 _logger.LogWarning("Logout failed: Model state is invalid.");
                 _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                _logger.LogDebug("Refresh token: {RefreshToken}", refreshToken);
+                _logger.LogDebug("Refresh token: {RefreshToken}", request);
                 return BadRequest(ModelState);
             }
 
-            var refreshTokenObj = await _tokenService.FindRefreshToken(refreshToken);
+            try
+            {
+                var refreshTokenObj = await _tokenService.FindRefreshToken(request.RefreshToken);
 
-            // If the refresh token is not found, we can still return OK
-            // This is to ensure that the client can safely call logout without worrying about the token's existence
-            // This is a common practice to avoid leaking information about token validity
-            if (refreshTokenObj == null)
+                // If the refresh token is not found, we can still return OK
+                // This is to ensure that the client can safely call logout without worrying about the token's existence
+                // This is a common practice to avoid leaking information about token validity
+                if (refreshTokenObj == null)
+                    return Ok();
+
+                await _tokenService.RevokeRefreshToken(refreshTokenObj);
                 return Ok();
-
-            await _tokenService.RevokeRefreshToken(refreshTokenObj);
-            return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, ex.Message);
+            }
         }
 
-        // PUT: api/auth/change-password
         /// <summary>
         /// Allows an authenticated user to change their password
         /// </summary>
         /// <param name="request">JSON object with old password and new password.</param>
-        /// <returns>OK status upon success.</returns>
+        /// <remarks>Returns an OK status upon success.</remarks>
         [Authorize]
         [HttpPut("change-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -284,7 +306,6 @@ namespace Backend.Controllers
                 _logger.LogWarning("Change password failed: Old password or new password is null or empty.");
                 return BadRequest("Old password and new password are required.");
             }
-
 
             var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             if (string.IsNullOrEmpty(userId))
@@ -310,14 +331,14 @@ namespace Backend.Controllers
 
             _logger.LogInformation("Password changed successfully for user ID {UserId}.", userId);
 
-            return Ok(new { message = "Password updated successfully" });
+            return Ok("Password updated successfully");
         }
 
         /// <summary>
         /// Allows a user to request to reset their password. Sends an email to a valid user to allow them to reset password.
         /// </summary>
         /// <param name="request">JSON object with email.</param>
-        /// <returns>OK status on success.</returns>
+        /// <remarks>Returns an OK status on success or if email isn't recognized.</remarks>
         [HttpPost("forgot-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -357,12 +378,12 @@ namespace Backend.Controllers
         /// Allows a valid user to reset their password.
         /// </summary>
         /// <param name="request">JSON object with reset token and email.</param>
-        /// <returns>OK status upon success.</returns>
+        /// <remarks>Returns an OK status upon success.</remarks>
         [HttpPost("reset-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ResetPassword(ResetPasswordRequest request)
+        public async Task<IActionResult> ResetPassword(DTOs.ResetPasswordRequest request)
         {
             var userId = _tokenService.ValidateResetToken(request.ResetCode);
             if (userId == null)
@@ -372,76 +393,47 @@ namespace Backend.Controllers
                 return BadRequest("Invalid or expired token");
             }
 
-            var success = await _userService.UpdatePasswordAsync(userId.Value, request.NewPassword);
-            if (!success)
-            {
-                _logger.LogError("Failed to reset password for user ID {UserId}.", userId);
-                _logger.LogDebug("Reset token: {Token}", request.ResetCode);
-                return StatusCode(500, "Could not reset password");
-            }
-
-            _logger.LogInformation("Password reset successfully for user ID {UserId}.", userId);
-            return Ok("Password has been reset successfully.");
-        }
-
-        private async Task<TokenGenerateResult> GenerateTokens(User user)
-        {
-            var result = new TokenGenerateResult();
             try
             {
-                var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-                result.AccessToken = _tokenService.GenerateAccessToken(user);
-                result.RefreshToken = await _tokenService.GenerateRefreshToken(user, ip);
+                var success = await _userService.UpdatePasswordAsync(userId.Value, request.NewPassword);
+                if (!success)
+                {
+                    _logger.LogError("Failed to reset password for user ID {UserId}.", userId);
+                    _logger.LogDebug("Reset token: {Token}", request.ResetCode);
+                    return StatusCode(500, "Could not reset password");
+                }
+
+                _logger.LogInformation("Password reset successfully for user ID {UserId}.", userId);
+                return Ok("Password has been reset successfully.");
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error generating token for user with email {Email}: {message}", user.Email, ex.Message);
-                result.Error = StatusCode(500, $"Internal server error: Failed to generate token.");
-                return result;
+                _logger.LogWarning("Failed to reset password for user, exception thrown. {ex}", ex.Message);
+                return StatusCode(500, "Could not reset password: {0}" + ex.Message);
             }
+        }
 
-            if (result.AccessToken == null || result.RefreshToken == null)
+        private async Task<TokenResponse> GenerateTokens(User user)
+        {
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
+            var refreshToken = await _tokenService.GenerateRefreshToken(user, ip);
+            var accessToken = _tokenService.GenerateAccessToken(user);
+
+            if (accessToken == null || refreshToken == null)
             {
                 _logger.LogError("Failed to generate access token or refresh token for user with email {Email}.", user.Email);
-                _logger.LogDebug("AccessToken: {AccessToken}, RefreshToken: {RefreshToken}", result.AccessToken, result.RefreshToken);
-                result.Error = StatusCode(500, "Failed to generate token.");
-                return result;
+                _logger.LogDebug("AccessToken: {AccessToken}, RefreshToken: {RefreshToken}", accessToken, refreshToken);
+                throw new NullReferenceException("Failed to generate access token or refresh token for user");
             }
 
             _logger.LogDebug("Generated access token and refresh token for user with email {Email}.", user.Email);
-            _logger.LogDebug("AccessToken: {AccessToken}, RefreshToken: {RefreshToken}", result.AccessToken, result.RefreshToken.Token);
-            return result;
+            _logger.LogDebug("AccessToken: {AccessToken}, RefreshToken: {RefreshToken}", accessToken, refreshToken.Token);
+
+            return new TokenResponse
+            {
+                AccessToken = _tokenService.GenerateAccessToken(user),
+                RefreshToken = refreshToken.Token!
+            };
         }
-    }
-
-    public class TokenGenerateResult
-    {
-        public IActionResult? Error { get; set; }
-        public string AccessToken { get; set; } = null!;
-        public RefreshToken RefreshToken { get; set; } = null!;
-    }
-
-    public class LoginRequest
-    {
-        public required string Email { get; set; }
-        public required string Password { get; set; }
-    }
-
-    public class TokenResponse
-    {
-        public required string AccessToken { get; set; }
-        public required string RefreshToken { get; set; }
-    }
-
-    public class ChangePasswordRequest
-    {
-        public required string OldPassword { get; set; }
-        public required string NewPassword { get; set; }
-    }
-
-    public class ResetPasswordRequest
-    {
-        public required string ResetCode { get; set; }
-        public required string NewPassword { get; set; }
     }
 }

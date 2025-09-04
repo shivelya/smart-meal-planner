@@ -3,9 +3,9 @@ using Backend.Controllers;
 using Backend.Model;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Identity.Data;
-using LoginRequest = Backend.Controllers.LoginRequest;
 using Microsoft.AspNetCore.Http;
+using Backend.DTOs;
+using LoginRequest = Backend.DTOs.LoginRequest;
 
 namespace Backend.Tests.Controllers
 {
@@ -22,7 +22,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Refresh(null!);
 
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -37,7 +37,7 @@ namespace Backend.Tests.Controllers
             controller.ModelState.AddModelError("RefreshToken", "Required");
             var result = await controller.Refresh(null!);
 
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -52,7 +52,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Refresh("badtoken");
 
-            Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
         }
 
         [Fact]
@@ -68,7 +68,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Refresh("badtoken");
 
-            Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
         }
 
         [Fact]
@@ -84,7 +84,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Refresh("badtoken");
 
-            Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
         }
 
         [Fact]
@@ -101,7 +101,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Refresh("token");
 
-            Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.IsType<UnauthorizedObjectResult>(result.Result);
         }
 
         [Fact]
@@ -120,7 +120,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Refresh("token");
 
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -140,7 +140,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Refresh("token");
 
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -160,7 +160,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Refresh("token");
 
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -180,7 +180,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Refresh("token");
 
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -208,7 +208,7 @@ namespace Backend.Tests.Controllers
             };
             var result = await controller.Refresh("token");
 
-            var okResult = Assert.IsType<OkObjectResult>(result);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
             TokenResponse? value = okResult.Value as TokenResponse;
             Assert.Equal(accesstoken, value?.AccessToken);
             Assert.Equal(refreshTokenStr, value?.RefreshToken);
@@ -229,9 +229,9 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new RegisterRequest { Email = null!, Password = "pass" });
+            var result = await controller.Register(new LoginRequest { Email = null!, Password = "pass" });
 
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -243,9 +243,9 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = null! });
+            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = null! });
 
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -258,9 +258,9 @@ namespace Backend.Tests.Controllers
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             controller.ModelState.AddModelError("RefreshToken", "Required");
-            var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
+            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
 
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -273,9 +273,9 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
+            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
 
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("User already exists.", badRequest.Value);
         }
 
@@ -290,9 +290,9 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
+            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
 
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -309,9 +309,9 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
+            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
 
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -333,12 +333,13 @@ namespace Backend.Tests.Controllers
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
-            var result = await controller.Register(new RegisterRequest { Email = "test@example.com", Password = "pass" });
+            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
 
-            var okResult = Assert.IsType<OkObjectResult>(result);
-            TokenResponse? value = okResult.Value as TokenResponse;
-            Assert.Equal(accessTokenStr, value?.AccessToken);
-            Assert.Equal(refreshTokenStr, value?.RefreshToken);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var value = (TokenResponse?)okResult.Value;
+            Assert.NotNull(value);
+            Assert.Equal(accessTokenStr, value.AccessToken);
+            Assert.Equal(refreshTokenStr, value.RefreshToken);
             
             var dict = okResult.Value as IDictionary<string, object?> ??
                 okResult.Value?.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(okResult.Value));
@@ -356,7 +357,7 @@ namespace Backend.Tests.Controllers
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = null!, Password = "pass" });
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -368,7 +369,7 @@ namespace Backend.Tests.Controllers
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = null! });
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -381,7 +382,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             controller.ModelState.AddModelError("Email", "Required");
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "pass" });
-            Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -396,7 +397,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "pass" });
 
-            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result.Result);
             Assert.Equal("Invalid email or password.", unauthorized.Value);
         }
 
@@ -414,7 +415,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "wrong" });
 
-            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result.Result);
             Assert.Equal("Invalid email or password.", unauthorized.Value);
         }
 
@@ -433,7 +434,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "right" });
 
-            var unauthorized = Assert.IsType<ObjectResult>(result);
+            var unauthorized = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, unauthorized.StatusCode);
         }
 
@@ -457,7 +458,7 @@ namespace Backend.Tests.Controllers
             controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
             var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "pass" });
 
-            var okResult = Assert.IsType<OkObjectResult>(result);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
             TokenResponse? value = okResult.Value as TokenResponse;
             Assert.Equal(accessTokenStr, value?.AccessToken);
             Assert.Equal(refreshTokenStr, value?.RefreshToken);
@@ -479,7 +480,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Logout("badtoken");
+            var result = await controller.Logout(new LogoutRequest { RefreshToken = "badtoken" });
 
             Assert.IsType<OkResult>(result);
         }
@@ -496,7 +497,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Logout("token");
+            var result = await controller.Logout(new LogoutRequest { RefreshToken = "token" });
 
             Assert.IsType<OkResult>(result);
         }

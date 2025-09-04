@@ -99,7 +99,7 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<IUserService, UserSerivce>();
 builder.Services.AddScoped<IEmailService, BrevoEmailService>();
 builder.Services.AddScoped<IPantryItemService, PantryItemService>();
-builder.Services.AddScoped<IIngredientService, IngredientService>();
+builder.Services.AddScoped<IFoodService, FoodService>();
 builder.Services.AddScoped<IRecipeExtractor, RecipeExtractor>();
 builder.Services.AddScoped<ISmtpClient, SmtpClientAdapter>();
 builder.Services.AddHttpClient<RecipeExtractor>();

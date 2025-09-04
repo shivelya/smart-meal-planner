@@ -9,19 +9,19 @@ namespace Backend.Tests.Controllers
 {
     public class IngredientControllerTests
     {
-        private readonly Mock<IIngredientService> _serviceMock = new();
-        private readonly Mock<ILogger<IngredientController>> _loggerMock = new();
-        private readonly IngredientController _controller;
+        private readonly Mock<IFoodService> _serviceMock = new();
+        private readonly Mock<ILogger<FoodController>> _loggerMock = new();
+        private readonly FoodController _controller;
 
         public IngredientControllerTests()
         {
-            _controller = new IngredientController(_serviceMock.Object, _loggerMock.Object);
+            _controller = new FoodController(_serviceMock.Object, _loggerMock.Object);
         }
 
         [Fact]
         public async Task SearchIngredients_ReturnsBadRequest_WhenSearchIsNullOrWhitespace()
         {
-            var result = await _controller.SearchIngredients("");
+            var result = await _controller.SearchFoods("");
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("Search term is required.", badRequest.Value);
         }
@@ -29,11 +29,11 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task SearchFoods_ReturnsOk_WithResults()
         {
-            var foods = new List<FoodReferenceDto> { new() { Id = 1, Name = "Salt", Category = new CategoryDto { Name = "produce" }},
-                new() { Id = 2, Name = "Pepper", Category = new CategoryDto { Name = "produce" }}};
-            _serviceMock.Setup(s => s.SearchIngredients("spice")).ReturnsAsync(foods);
+            var foods = new List<FoodReferenceDto> { new() { Id = 1, Name = "Salt", Category = new CategoryDto { Id = 1, Name = "produce" }},
+                new() { Id = 2, Name = "Pepper", Category = new CategoryDto { Id = 1, Name = "produce" }}};
+            _serviceMock.Setup(s => s.SearchFoods("spice")).ReturnsAsync(foods);
 
-            var result = await _controller.SearchIngredients("spice");
+            var result = await _controller.SearchFoods("spice");
 
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetFoodsResult>(ok.Value);
@@ -43,9 +43,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task SearchFoods_ReturnsOk_WithEmptyResults()
         {
-            _serviceMock.Setup(s => s.SearchIngredients("none")).ReturnsAsync([]);
+            _serviceMock.Setup(s => s.SearchFoods("none")).ReturnsAsync([]);
 
-            var result = await _controller.SearchIngredients("none");
+            var result = await _controller.SearchFoods("none");
 
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetFoodsResult>(ok.Value);

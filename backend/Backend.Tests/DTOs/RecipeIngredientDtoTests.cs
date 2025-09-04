@@ -9,7 +9,7 @@ namespace Backend.Tests.DTOs
         public void CanSetAndGetProperties()
         {
             var dto = new RecipeIngredientDto { Quantity = 1.5m, Unit = "cup",
-                Food = new FoodReferenceDto{ Name = "name", Id = 1, Category = new CategoryDto()} };
+                Food = new FoodReferenceDto{ Name = "name", Id = 1, Category = new CategoryDto { Id = 1, Name = "produce "}} };
             Assert.Equal(1.5m, dto.Quantity);
             Assert.Equal("cup", dto.Unit);
         }

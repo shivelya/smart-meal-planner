@@ -76,19 +76,23 @@ namespace Backend.Tests.Controllers
         public async Task GetByIds_ReturnsOk_WhenSuccess()
         {
             var ids = new[] { 1, 2 };
-            var recipes = new List<RecipeDto> { new RecipeDto { Id = 1 }, new RecipeDto { Id = 2 } };
-            _serviceMock.Setup(s => s.GetByIdsAsync(ids, 1)).ReturnsAsync(recipes);
-            var result = await _controller.GetByIds(ids);
+            var recipesRequest = new GetRecipesRequest { Ids = ids };
+            var recipes = new List<RecipeDto> { new() { Id = 1 }, new() { Id = 2 } };
+            var recipesResult = new GetRecipesResult { TotalCount = 2, Items = recipes };
+            _serviceMock.Setup(s => s.GetByIdsAsync(ids, 1)).ReturnsAsync(recipesResult);
+            var result = await _controller.GetByIds(recipesRequest);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
-            Assert.Equal(recipes, ok.Value);
+            var r = Assert.IsType<GetRecipesResult>(ok.Value);
+            Assert.Equal(recipes, r.Items);
         }
 
         [Fact]
         public async Task GetByIds_Returns500_OnException()
         {
             var ids = new[] { 1, 2 };
+            var recipesRequest = new GetRecipesRequest { Ids = ids };
             _serviceMock.Setup(s => s.GetByIdsAsync(ids, 1)).ThrowsAsync(new Exception("fail"));
-            var result = await _controller.GetByIds(ids);
+            var result = await _controller.GetByIds(recipesRequest);
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
@@ -97,10 +101,12 @@ namespace Backend.Tests.Controllers
         public async Task Search_ReturnsOk_WhenSuccess()
         {
             var recipes = new List<RecipeDto> { new RecipeDto { Id = 1 } };
-            _serviceMock.Setup(s => s.SearchAsync(It.IsAny<RecipeSearchOptions>(), 1)).ReturnsAsync(recipes);
+            var recipesResult = new GetRecipesResult { TotalCount = 1, Items = recipes };
+            _serviceMock.Setup(s => s.SearchAsync(It.IsAny<RecipeSearchOptions>(), 1)).ReturnsAsync(recipesResult);
             var result = await _controller.Search("Pizza", null, 0, 10);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
-            Assert.Equal(recipes, ok.Value);
+            var r = Assert.IsType<GetRecipesResult>(ok.Value);
+            Assert.Equal(recipes, r.Items);
         }
 
         [Fact]
@@ -172,7 +178,8 @@ namespace Backend.Tests.Controllers
         {
             var extracted = new ExtractedRecipe { Title = "test"};
             _extractorMock.Setup(e => e.ExtractRecipeAsync("url")).ReturnsAsync(extracted);
-            var result = await _controller.ExtractRecipe("url");
+            var request = new ExtractRequest { Source = "url" };
+            var result = await _controller.ExtractRecipe(request);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(extracted, ok.Value);
         }
@@ -181,7 +188,8 @@ namespace Backend.Tests.Controllers
         public async Task ExtractRecipe_Returns500_OnException()
         {
             _extractorMock.Setup(e => e.ExtractRecipeAsync("url")).ThrowsAsync(new Exception("fail"));
-            var result = await _controller.ExtractRecipe("url");
+            var request = new ExtractRequest { Source = "url" };
+            var result = await _controller.ExtractRecipe(request);
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }

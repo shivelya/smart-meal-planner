@@ -2,24 +2,26 @@ namespace Backend.DTOs
 {
     public class PantryItemDto
     {
-        public int Id { get; set; }
-        public required FoodReferenceDto Food { get; set; }
-        public decimal Quantity { get; set; }
-        public string? Unit { get; set; }
-    }
-
-    public class PantryItemRequestDto
-    {
-        // optional, used for updates but not creates
+        // optional since there won't be one during creates
         public int? Id { get; set; }
-        public FoodReferenceDto  Food { get; set; } = null!;
+        public required FoodReferenceDto Food { get; set; }
         public required decimal Quantity { get; set; }
         public string? Unit { get; set; }
     }
 
     public class GetPantryItemsResult
     {
-        public int TotalCount { get; set; }
+        public required int TotalCount { get; set; }
         public required IEnumerable<PantryItemDto> Items { get; set; }
+    }
+
+    public class DeleteRequest
+    {
+        public required IEnumerable<int> Ids { get; set; }
+    }
+
+    public class PantrySearchRequest
+    {
+        public required string Query { get; set; }
     }
 }

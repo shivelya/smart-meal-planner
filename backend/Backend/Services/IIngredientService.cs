@@ -2,8 +2,8 @@ using Backend.DTOs;
 
 namespace Backend.Services
 {
-    public interface IIngredientService
+    public interface IFoodService
     {
-        Task<IEnumerable<FoodReferenceDto>> SearchIngredients(string search);
+        Task<IEnumerable<FoodReferenceDto>> SearchFoods(string search);
     }
 }
