@@ -7,14 +7,14 @@ using Moq;
 
 namespace Backend.Tests.Services.Impl
 {
-    public class IngredientServiceTests
+    public class FoodServiceTests
     {
         private readonly DbContextOptions<PlannerContext> _dbOptions;
         private readonly PlannerContext _context;
         private readonly Mock<ILogger<FoodService>> _loggerMock;
         private readonly FoodService _service;
 
-        public IngredientServiceTests()
+        public FoodServiceTests()
         {
             _dbOptions = new DbContextOptionsBuilder<PlannerContext>()
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
@@ -27,7 +27,7 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task SearchIngredients_ReturnsMatchingIngredients()
+        public async Task SearchsFoods_ReturnsMatchingFoods()
         {
             _context.Foods.Add(new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Id = 1, Name = "Spices" } });
             _context.Foods.Add(new Food { Id = 2, Name = "Pepper", CategoryId = 1, Category = new Category { Id = 3, Name = "Spices" } });
@@ -41,14 +41,14 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task SearchIngredients_ReturnsEmpty_WhenNoMatch()
+        public async Task SearchFoods_ReturnsEmpty_WhenNoMatch()
         {
             var result = await _service.SearchFoods("xyz");
             Assert.Empty(result);
         }
 
         [Fact]
-        public async Task SearchIngredients_LimitsResultsTo20()
+        public async Task SearchFoods_LimitsResultsTo20()
         {
             for (int i = 0; i < 25; i++)
             {

@@ -2,7 +2,7 @@ using Backend.DTOs;
 
 namespace Backend.Tests.DTOs
 {
-    public class IngredientDtoTests
+    public class FoodDtoTests
     {
         [Fact]
         public void CanSetAndGetProperties()

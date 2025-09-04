@@ -17,14 +17,14 @@ namespace Backend.Services
         Task<(IEnumerable<PantryItemDto> Items, int TotalCount)> GetAllPantryItemsAsync(int pageNumber, int pageSize);
 
         /// <summary>
-        /// Creates a new pantry item. Assumes that the corresponding Ingredient object has already been created.
+        /// Creates a new pantry item. Assumes that the corresponding Food object has already been created.
         /// </summary>
         /// <param name="pantryItemDto">The pantry item DTO to create.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>The created pantry item DTO.</returns>
         Task<PantryItemDto> CreatePantryItemAsync(PantryItemDto pantryItemDto, int userId);
         /// <summary>
-        /// Creates multiple new pantry items, such as after a grocery trip. Assumes ingredient objects have already been created.
+        /// Creates multiple new pantry items, such as after a grocery trip. Assumes Food objects have already been created.
         /// </summary>
         /// <param name="pantryItemDtos">The list of pantry items to be created.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
@@ -52,7 +52,7 @@ namespace Backend.Services
         /// <returns>The number of items that were deleted.</returns>
         Task<DeleteRequest> DeletePantryItemsAsync(IEnumerable<int> ids);
         /// <summary>
-        /// Performs a text search on pantry item names (ingredient names) for the current user.
+        /// Performs a text search on pantry item names (food names) for the current user.
         /// </summary>
         /// <param name="search">The string to search on.</param>
         /// <param name="userId">The id of the current user.</param>

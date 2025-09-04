@@ -47,10 +47,10 @@ namespace Backend.Tests
         }
 
         [Fact]
-        public void PlannerContext_Ingredients_Property_Works()
+        public void PlannerContext_Foods_Property_Works()
         {
             var options = new DbContextOptionsBuilder<PlannerContext>()
-                .UseInMemoryDatabase(databaseName: "TestDb_Ingredients")
+                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
             var config = new ConfigurationBuilder().Build();
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
@@ -162,7 +162,7 @@ namespace Backend.Tests
         }
 
         [Fact]
-        public void IngredientRelationships_AreConfigured()
+        public void FoodRelationships_AreConfigured()
         {
             var builder = InitializeContext();
 

@@ -15,13 +15,13 @@ namespace Backend.Services.Impl
 
         public async Task<IEnumerable<FoodReferenceDto>> SearchFoods(string search)
         {
-            var ingredients = await _context.Foods
+            var foods = await _context.Foods
                 .Where(i => i.Name.Contains(search))
                 .OrderBy(i => i.Name)
                 .Take(20) // limit results for performance
                 .ToListAsync();
 
-            return ingredients.Select(i => i.ToDto());
+            return foods.Select(i => i.ToDto());
         }
     }
 }

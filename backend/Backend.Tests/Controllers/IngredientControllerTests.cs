@@ -7,19 +7,19 @@ using Moq;
 
 namespace Backend.Tests.Controllers
 {
-    public class IngredientControllerTests
+    public class FoodControllerTests
     {
         private readonly Mock<IFoodService> _serviceMock = new();
         private readonly Mock<ILogger<FoodController>> _loggerMock = new();
         private readonly FoodController _controller;
 
-        public IngredientControllerTests()
+        public FoodControllerTests()
         {
             _controller = new FoodController(_serviceMock.Object, _loggerMock.Object);
         }
 
         [Fact]
-        public async Task SearchIngredients_ReturnsBadRequest_WhenSearchIsNullOrWhitespace()
+        public async Task SearchFoods_ReturnsBadRequest_WhenSearchIsNullOrWhitespace()
         {
             var result = await _controller.SearchFoods("");
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
