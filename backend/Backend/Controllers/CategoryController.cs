@@ -11,26 +11,28 @@ namespace Backend.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class CategoriesController : ControllerBase
+    public class CategoriesController(ICategoryService service, ILogger<CategoriesController> logger) : ControllerBase
     {
-        private readonly ICategoryService _service;
-        private readonly ILogger<CategoriesController> _logger;
-        public CategoriesController(ICategoryService service, ILogger<CategoriesController> logger)
-        {
-            _service = service;
-            _logger = logger;
-        }
+        private readonly ICategoryService _service = service;
+        private readonly ILogger<CategoriesController> _logger = logger;
 
         /// <summary>
         /// Lists all category types. They are currently static.
         /// </summary>
-        /// <returns>All the existing category types.</returns>
+        /// <remarks>Returns all the existing category types.</remarks>
         [HttpGet]
         public async Task<ActionResult<GetCategoriesResult>> GetCategories()
         {
-            var categories = await _service.GetAllAsync();
-            _logger.LogInformation("Retrieved {Count} categories", categories.Count());
-            return Ok(new GetCategoriesResult { TotalCount = categories.Count(), Items = categories });
+            try
+            {
+                var categories = await _service.GetAllAsync();
+                _logger.LogInformation("Retrieved {Count} categories", categories.Count());
+                return Ok(new GetCategoriesResult { TotalCount = categories.Count(), Items = categories });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, "Could not retrieve categories: " + ex.Message);
+            }
         }
     }
 }

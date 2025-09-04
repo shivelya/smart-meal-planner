@@ -3,17 +3,17 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services.Impl
 {
-    public class IngredientService : IIngredientService
+    public class FoodService : IFoodService
     {
         private readonly PlannerContext _context;
-        private readonly ILogger<IngredientService> _logger;
-        public IngredientService(PlannerContext context, ILogger<IngredientService> logger)
+        private readonly ILogger<FoodService> _logger;
+        public FoodService(PlannerContext context, ILogger<FoodService> logger)
         {
             _context = context;
             _logger = logger;
         }
 
-        public async Task<IEnumerable<FoodReferenceDto>> SearchIngredients(string search)
+        public async Task<IEnumerable<FoodReferenceDto>> SearchFoods(string search)
         {
             var ingredients = await _context.Foods
                 .Where(i => i.Name.Contains(search))

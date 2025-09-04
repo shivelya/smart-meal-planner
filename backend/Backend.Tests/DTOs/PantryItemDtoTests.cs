@@ -7,7 +7,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void CanSetAndGetProperties()
         {
-            var ing = new FoodReferenceDto { Category = new CategoryDto() };
+            var ing = new FoodReferenceDto { Category = new CategoryDto { Id = 1, Name = "produce "} };
             var dto = new PantryItemDto { Id = 3, Food = ing, Quantity = 5.5m, Unit = "kg" };
             Assert.Equal(3, dto.Id);
             Assert.Equal(ing, dto.Food);
@@ -18,7 +18,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void CreatePantryItemDto_PropertyTest()
         {
-            var dto = new PantryItemRequestDto { Id = 7, Quantity = 2.5m, Unit = "g" };
+            var dto = new PantryItemDto { Id = 7, Quantity = 2.5m, Unit = "g", Food = new FoodReferenceDto() };
             Assert.Equal(7, dto.Id);
             Assert.Equal(2.5m, dto.Quantity);
             Assert.Equal("g", dto.Unit);
@@ -27,7 +27,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void CreatePantryItemNewIngredientDto_PropertyTest()
         {
-            var dto = new PantryItemRequestDto
+            var dto = new PantryItemDto
             {
                 Id = 8,
                 Quantity = 1.1m,
@@ -44,7 +44,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void CreatePantryItemOldIngredientDto_PropertyTest()
         {
-            var dto = new PantryItemRequestDto
+            var dto = new PantryItemDto
             {
                 Id = 9,
                 Quantity = 3.3m,
@@ -60,7 +60,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void GetPantryItemsResult_PropertyTest()
         {
-            var items = new List<PantryItemDto> { new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto() }, Quantity = 1, Unit = "g" } };
+            var items = new List<PantryItemDto> { new PantryItemDto { Id = 1, Food = new FoodReferenceDto { Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 1, Unit = "g" } };
             var dto = new GetPantryItemsResult { TotalCount = 1, Items = items };
             Assert.Equal(1, dto.TotalCount);
             Assert.Equal(items, dto.Items);

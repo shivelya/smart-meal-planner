@@ -1,5 +1,6 @@
 using System.Security.Claims;
 using Backend.Controllers;
+using Backend.DTOs;
 using Backend.Model;
 using Backend.Services;
 using Microsoft.AspNetCore.Http;
@@ -7,6 +8,7 @@ using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
+using ResetPasswordRequest = Backend.DTOs.ResetPasswordRequest;
 
 namespace Backend.Tests.Controllers
 {
@@ -157,7 +159,7 @@ namespace Backend.Tests.Controllers
             var tokenService = new Mock<ITokenService>();
             tokenService.Setup(s => s.ValidateResetToken(It.IsAny<string>())).Returns((int?)null);
             var controller = CreateController(tokenService: tokenService);
-            var result = await controller.ResetPassword(new Backend.Controllers.ResetPasswordRequest { ResetCode = "badtoken", NewPassword = "newpass" });
+            var result = await controller.ResetPassword(new ResetPasswordRequest { ResetCode = "badtoken", NewPassword = "newpass" });
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Contains("Invalid or expired token", badRequest.Value?.ToString());
         }
@@ -170,7 +172,7 @@ namespace Backend.Tests.Controllers
             tokenService.Setup(s => s.ValidateResetToken(It.IsAny<string>())).Returns(1);
             userService.Setup(s => s.UpdatePasswordAsync(1, It.IsAny<string>())).ReturnsAsync(false);
             var controller = CreateController(tokenService: tokenService, userService: userService);
-            var result = await controller.ResetPassword(new Backend.Controllers.ResetPasswordRequest { ResetCode = "goodtoken", NewPassword = "newpass" });
+            var result = await controller.ResetPassword(new ResetPasswordRequest { ResetCode = "goodtoken", NewPassword = "newpass" });
             var error = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, error.StatusCode);
         }
@@ -183,7 +185,7 @@ namespace Backend.Tests.Controllers
             tokenService.Setup(s => s.ValidateResetToken(It.IsAny<string>())).Returns(1);
             userService.Setup(s => s.UpdatePasswordAsync(1, It.IsAny<string>())).ReturnsAsync(true);
             var controller = CreateController(tokenService: tokenService, userService: userService);
-            var result = await controller.ResetPassword(new Backend.Controllers.ResetPasswordRequest { ResetCode = "goodtoken", NewPassword = "newpass" });
+            var result = await controller.ResetPassword(new ResetPasswordRequest { ResetCode = "goodtoken", NewPassword = "newpass" });
             var ok = Assert.IsType<OkObjectResult>(result);
             Assert.Contains("Password has been reset successfully", ok.Value?.ToString());
         }

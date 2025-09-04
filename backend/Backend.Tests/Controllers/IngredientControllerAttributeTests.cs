@@ -8,7 +8,7 @@ namespace Backend.Tests.Controllers
 {
     public class IngredientControllerAttributeTests
     {
-        private readonly Type _controllerType = typeof(IngredientController);
+        private readonly Type _controllerType = typeof(FoodController);
 
         [Fact]
         public void Controller_HasApiControllerAttribute()
@@ -35,7 +35,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public void SearchIngredients_HasHttpGetAttribute()
         {
-            var method = _controllerType.GetMethod("SearchIngredients");
+            var method = _controllerType.GetMethod("SearchFoods");
             Assert.NotNull(method);
             var attr = method.GetCustomAttribute<HttpGetAttribute>();
             Assert.NotNull(attr);
@@ -44,7 +44,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public void SearchIngredients_HasProducesResponseTypeAttribute_400BadRequest()
         {
-            var method = _controllerType.GetMethod("SearchIngredients");
+            var method = _controllerType.GetMethod("SearchFoods");
             Assert.NotNull(method);
             var attrs = method.GetCustomAttributes<ProducesResponseTypeAttribute>();
             Assert.Contains(attrs, a => a.StatusCode == StatusCodes.Status400BadRequest);

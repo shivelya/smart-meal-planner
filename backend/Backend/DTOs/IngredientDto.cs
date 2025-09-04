@@ -28,7 +28,7 @@ namespace Backend.DTOs
 
     public class GetFoodsResult
     {
-        public int TotalCount { get; set; }
-        public IEnumerable<FoodReferenceDto> Items { get; set; } = [];
+        public required int TotalCount { get; set; }
+        public required IEnumerable<FoodReferenceDto> Items { get; set; } = [];
     }
 }

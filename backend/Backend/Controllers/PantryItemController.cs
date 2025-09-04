@@ -3,6 +3,7 @@ using Backend.DTOs;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Backend.Controllers
 {
@@ -24,15 +25,15 @@ namespace Backend.Controllers
         private readonly ILogger<PantryItemController> _logger = logger;
 
         /// <summary>
-        /// Adds a pantry item for the authenticated user. Assumes an IngredientId for ingredients that already exist,
-        /// and assumes an Ingredientname and CategoryId for ingredients that need to be added.
+        /// Adds a pantry item for the authenticated user. Assumes a FoodId in the Food property for foods that already exist,
+        /// and assumes a FoodName and CategoryId in the Food property for foods that need to be added.
         /// </summary>
         /// <param name="dto">A DTO containing pantry item details.</param>
-        /// <returns>A created pantry item DTO.</returns>
+        /// <remarks>Return a created pantry item DTO.</remarks>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> AddItem(PantryItemRequestDto dto)
+        public async Task<ActionResult<PantryItemDto>> AddItem(PantryItemDto dto)
         {
             var userId = GetUserId();
             _logger.LogInformation("Adding pantry item for user {UserId}: {@Dto}", userId, dto);
@@ -51,15 +52,15 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Adds multiple pantry items for the authenticated user. Assumes an IngredientId for ingredients which already exist,
-        /// and assumes an IngredientName and a CategoryId for ingredients which need to be added.
+        /// Adds multiple pantry items for the authenticated user. Assumes a FoodId in the Food property for foods that already exist,
+        /// and assumes a FoodName and CategoryId in the Food property for foods that need to be added.
         /// </summary>
         /// <param name="dtos">A collection of DTOs containing pantry item details.</param>
-        /// <returns>A collection of created pantry item DTOs.</returns>
+        /// <remarks>Return a collection of created pantry item DTOs.</remarks>
         [HttpPost("bulk")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<PantryItemDto>>> AddItems(IEnumerable<PantryItemRequestDto> dtos)
+        public async Task<ActionResult<IEnumerable<PantryItemDto>>> AddItems(IEnumerable<PantryItemDto> dtos)
         {
             var userId = GetUserId();
             _logger.LogInformation("Adding multiple pantry items for user {UserId}: {@Dtos}", userId, dtos);
@@ -81,7 +82,7 @@ namespace Backend.Controllers
         /// Retrieves a pantry item by its unique ID.
         /// </summary>
         /// <param name="id">The pantry item's unique identifier.</param>
-        /// <returns>The pantry item DTO if found, otherwise 404 Not Found.</returns>
+        /// <remarks>Returns the pantry item DTO if found, otherwise 404 Not Found.</remarks>
         [HttpGet("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -113,11 +114,11 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="pageNumber">The page number to retrieve.</param>
         /// <param name="pageSize">The number of items per page.</param>
-        /// <returns>An object containing the total count and the items.</returns>
+        /// <remarks>Return a GetPantryItemsResult object containing the total count and fully constituted items.</remarks>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> GetItems([FromQuery] int pageNumber = 1, [FromQuery] int pageSize = 10)
+        public async Task<ActionResult<GetPantryItemsResult>> GetItems([FromQuery, BindRequired] int pageNumber = 1, [FromQuery, BindRequired] int pageSize = 10)
         {
             _logger.LogInformation("Retrieving pantry items: page {PageNumber}, size {PageSize}", pageNumber, pageSize);
             try
@@ -138,7 +139,7 @@ namespace Backend.Controllers
         /// Deletes a pantry item by its unique ID.
         /// </summary>
         /// <param name="id">The pantry item's unique identifier.</param>
-        /// <returns>No content if deleted, otherwise 404 Not Found.</returns>
+        /// <remarks> Returns No content if deleted, otherwise 404 Not Found.</remarks>
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -168,25 +169,31 @@ namespace Backend.Controllers
         /// <summary>
         /// Deletes multiple pantry items by their IDs.
         /// </summary>
-        /// <param name="ids">A collection of pantry item IDs to delete.</param>
-        /// <returns>Ok with the number of deleted items, otherwise 404 Not Found.</returns>
+        /// <param name="request">A collection of pantry item IDs to delete.</param>
+        /// <remarks>Returns Ok with the ids of deleted items, otherwise 404 if none are found.</remarks>
         [HttpDelete("bulk")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(typeof(DeleteRequest), StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeleteItems([FromBody] IEnumerable<int> ids)
+        public async Task<ActionResult<DeleteRequest>> DeleteItems([FromBody, BindRequired] DeleteRequest request)
         {
-            _logger.LogInformation("Deleting multiple pantry items: {@Ids}", ids);
+            if (request == null)
+            {
+                _logger.LogWarning("Delete request object is required.");
+                return BadRequest("Delete request object is required.");
+            }
+
+            _logger.LogInformation("Deleting multiple pantry items: {@Ids}", request.Ids);
             try
             {
-                var deleted = await _service.DeletePantryItemsAsync(ids);
-                if (deleted > 0)
+                var deleted = await _service.DeletePantryItemsAsync(request.Ids);
+                if (deleted.Ids.Count() > 0)
                 {
-                    _logger.LogInformation("Deleted {Count} pantry items", deleted);
-                    return Ok(deleted);
+                    _logger.LogInformation("Deleted {Count} pantry items", deleted.Ids.Count());
+                    return StatusCode(204, deleted);
                 }
 
-                _logger.LogWarning("No pantry items deleted for IDs: {@Ids}", ids);
+                _logger.LogWarning("No pantry items deleted for IDs: {@Ids}", request.Ids);
                 return NotFound();
             }
             catch (Exception ex)
@@ -200,14 +207,20 @@ namespace Backend.Controllers
         /// Searches the current user's pantry items for the given name.
         /// </summary>
         /// <param name="search">The search term to query on.</param>
-        /// <returns>The pantry items found, or 400 if an error occurs.</returns>
+        /// <remarks>Returns the pantry items found, or 400 if an error occurs.</remarks>
         [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> Search([FromQuery] string search)
+        public async Task<ActionResult<GetPantryItemsResult>> Search([FromQuery, BindRequired] PantrySearchRequest search)
         {
-            if (string.IsNullOrEmpty(search))
+            if (search == null)
+            {
+                _logger.LogWarning("A search term is required.");
+                return BadRequest("A search term is required.");
+            }
+
+            if (string.IsNullOrEmpty(search.Query))
             {
                 _logger.LogWarning("A search term is required.");
                 return BadRequest("A search term is required.");
@@ -216,7 +229,7 @@ namespace Backend.Controllers
             var userId = GetUserId();
             try
             {
-                var results = await _service.Search(search, userId);
+                var results = await _service.Search(search.Query, userId);
                 return Ok(new GetPantryItemsResult { TotalCount = results.Count(), Items = results });
             }
             catch (Exception ex)
@@ -227,16 +240,16 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Searches the current user's pantry items for the given name.
+        /// Updates a given pantry item in the DB.
         /// </summary>
         /// <param name="id">The id of the pantryItem to update</param>
         /// <param name="pantryItem">The pantry item to update</param>
-        /// <returns>The pantry items found, or 400 if an error occurs.</returns>
+        /// <remarks>Returns the updated pantry item DTO, or 400 if an error occurs.</remarks>
         [HttpPut("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> Update(string id, [FromBody] PantryItemRequestDto pantryItem)
+        public async Task<ActionResult<PantryItemDto>> Update(string id, [FromBody, BindRequired] PantryItemDto pantryItem)
         {
             if (string.IsNullOrEmpty(id))
             {

@@ -25,14 +25,14 @@ namespace Backend.Services
         /// <param name="ids">A list of recipe's unique identifiers.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>An enumerable collection of recipe DTOs.</returns>
-        Task<IEnumerable<RecipeDto>> GetByIdsAsync(IEnumerable<int> ids, int userId);
+        Task<GetRecipesResult> GetByIdsAsync(IEnumerable<int> ids, int userId);
         /// <summary>
         /// Searches for recipes by title or by ingredient.
         /// </summary>
         /// <param name="options">Contains all the options for searching on.</param>
         /// <param name="userId">The currently logged in user.</param>
         /// <returns>The matching recipe ids.</returns>
-        Task<IEnumerable<RecipeDto>> SearchAsync(RecipeSearchOptions options, int userId);
+        Task<GetRecipesResult> SearchAsync(RecipeSearchOptions options, int userId);
         /// <summary>
         /// Updates an existing recipe.
         /// </summary>

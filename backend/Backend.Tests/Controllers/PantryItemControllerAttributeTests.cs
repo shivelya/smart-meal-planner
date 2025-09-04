@@ -60,7 +60,7 @@ namespace Backend.Tests.Controllers
         [InlineData("DeleteItem", StatusCodes.Status204NoContent)]
         [InlineData("DeleteItem", StatusCodes.Status404NotFound)]
         [InlineData("DeleteItem", StatusCodes.Status500InternalServerError)]
-        [InlineData("DeleteItems", StatusCodes.Status200OK)]
+        [InlineData("DeleteItems", StatusCodes.Status204NoContent)]
         [InlineData("DeleteItems", StatusCodes.Status404NotFound)]
         [InlineData("DeleteItems", StatusCodes.Status500InternalServerError)]
         public void Endpoint_HasCorrectProducesResponseType(string methodName, int statusCode)

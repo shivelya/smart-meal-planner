@@ -22,14 +22,14 @@ namespace Backend.Services
         /// <param name="pantryItemDto">The pantry item DTO to create.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>The created pantry item DTO.</returns>
-        Task<PantryItemDto> CreatePantryItemAsync(PantryItemRequestDto pantryItemDto, int userId);
+        Task<PantryItemDto> CreatePantryItemAsync(PantryItemDto pantryItemDto, int userId);
         /// <summary>
         /// Creates multiple new pantry items, such as after a grocery trip. Assumes ingredient objects have already been created.
         /// </summary>
         /// <param name="pantryItemDtos">The list of pantry items to be created.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>The created pantry items.</returns>
-        Task<IEnumerable<PantryItemDto>> CreatePantryItemsAsync(IEnumerable<PantryItemRequestDto> pantryItemDtos, int userId);
+        Task<IEnumerable<PantryItemDto>> CreatePantryItemsAsync(IEnumerable<PantryItemDto> pantryItemDtos, int userId);
 
         /// <summary>
         /// Updates an existing pantry item.
@@ -37,7 +37,7 @@ namespace Backend.Services
         /// <param name="pantryItemDto">The pantry item DTO to update.</param>
         /// <param name="userId">The userId the pantry item belongs to.</param>
         /// <returns>The updated pantry item DTO.</returns>
-        Task<PantryItemDto> UpdatePantryItemAsync(PantryItemRequestDto pantryItemDto, int userId);
+        Task<PantryItemDto> UpdatePantryItemAsync(PantryItemDto pantryItemDto, int userId);
 
         /// <summary>
         /// Deletes a pantry item by its unique ID.
@@ -50,7 +50,7 @@ namespace Backend.Services
         /// </summary>
         /// <param name="ids">The list of pantry item ids to be deleted.</param>
         /// <returns>The number of items that were deleted.</returns>
-        Task<int> DeletePantryItemsAsync(IEnumerable<int> ids);
+        Task<DeleteRequest> DeletePantryItemsAsync(IEnumerable<int> ids);
         /// <summary>
         /// Performs a text search on pantry item names (ingredient names) for the current user.
         /// </summary>
