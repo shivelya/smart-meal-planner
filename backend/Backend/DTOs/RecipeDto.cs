@@ -10,7 +10,7 @@ namespace Backend.DTOs
         public List<RecipeIngredientDto> Ingredients { get; set; } = [];
     }
 
-    public class CreateRecipeDtoRequest
+    public class CreateUpdateRecipeDtoRequest
     { 
         //required for update but not for create
         public int? Id { get; set; }
@@ -18,7 +18,7 @@ namespace Backend.DTOs
         public required string Title { get; set; }
         public required string Instructions { get; set; }
         // if provided, replaces all existing ingredients
-        public required List<RecipeIngredientDto> Ingredients { get; set; } = [];
+        public required List<CreateUpdateRecipeIngredientDto> Ingredients { get; set; } = [];
     }
 
     public class GetRecipesResult

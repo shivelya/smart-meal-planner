@@ -85,8 +85,8 @@ builder.Services.AddSwaggerGen(c =>
 
     var subTypes = new List<Type>()
     {
-        typeof(ExistingIngredientDto),
-        typeof(NewIngredientDto)
+        typeof(ExistingFoodReferenceDto),
+        typeof(NewFoodReferenceDto)
     };
     c.SchemaFilter<PolymorphismSchemaFilter<FoodReferenceDto>>(subTypes);
 

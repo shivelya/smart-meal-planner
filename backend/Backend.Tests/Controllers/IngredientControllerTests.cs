@@ -29,7 +29,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task SearchFoods_ReturnsOk_WithResults()
         {
-            var foods = new List<FoodReferenceDto> { new() { Id = 1, Name = "Salt", Category = new CategoryDto { Id = 1, Name = "produce" }},
+            var foods = new List<FoodDto> { new() { Id = 1, Name = "Salt", Category = new CategoryDto { Id = 1, Name = "produce" }},
                 new() { Id = 2, Name = "Pepper", Category = new CategoryDto { Id = 1, Name = "produce" }}};
             _serviceMock.Setup(s => s.SearchFoods("spice")).ReturnsAsync(foods);
 

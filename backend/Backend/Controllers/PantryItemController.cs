@@ -33,7 +33,7 @@ namespace Backend.Controllers
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> AddItem(PantryItemDto dto)
+        public async Task<ActionResult<PantryItemDto>> AddItem(CreateUpdatePantryItemRequestDto dto)
         {
             var userId = GetUserId();
             _logger.LogInformation("Adding pantry item for user {UserId}: {@Dto}", userId, dto);
@@ -60,7 +60,7 @@ namespace Backend.Controllers
         [HttpPost("bulk")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<PantryItemDto>>> AddItems(IEnumerable<PantryItemDto> dtos)
+        public async Task<ActionResult<IEnumerable<PantryItemDto>>> AddItems(IEnumerable<CreateUpdatePantryItemRequestDto> dtos)
         {
             var userId = GetUserId();
             _logger.LogInformation("Adding multiple pantry items for user {UserId}: {@Dtos}", userId, dtos);
@@ -249,7 +249,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> Update(string id, [FromBody, BindRequired] PantryItemDto pantryItem)
+        public async Task<ActionResult<PantryItemDto>> Update(string id, [FromBody, BindRequired] CreateUpdatePantryItemRequestDto pantryItem)
         {
             if (string.IsNullOrEmpty(id))
             {

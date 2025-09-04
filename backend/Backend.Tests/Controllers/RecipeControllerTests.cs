@@ -27,7 +27,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Create_ReturnsCreated_WhenSuccess()
         {
-            var dto = new Mock<CreateRecipeDtoRequest>().Object;
+            var dto = new Mock<CreateUpdateRecipeDtoRequest>().Object;
             var resultDto = new RecipeDto { Id = 1 };
             _serviceMock.Setup(s => s.CreateAsync(dto, 1)).ReturnsAsync(resultDto);
             var result = await _controller.Create(dto);
@@ -38,7 +38,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Create_Returns500_OnException()
         {
-            var dto = new Mock<CreateRecipeDtoRequest>().Object;
+            var dto = new Mock<CreateUpdateRecipeDtoRequest>().Object;
             _serviceMock.Setup(s => s.CreateAsync(dto, 1)).ThrowsAsync(new Exception("fail"));
             var result = await _controller.Create(dto);
             var status = Assert.IsType<ObjectResult>(result.Result);
@@ -121,7 +121,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_ReturnsOk_WhenSuccess()
         {
-            var dto = new CreateRecipeDtoRequest { Id = 1, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<RecipeIngredientDto>() };
+            var dto = new CreateUpdateRecipeDtoRequest { Id = 1, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateUpdateRecipeIngredientDto>() };
             var updated = new RecipeDto { Id = 1 };
             _serviceMock.Setup(s => s.UpdateAsync(1, dto, 1)).ReturnsAsync(updated);
             var result = await _controller.Update(1, dto);
@@ -132,7 +132,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_ReturnsNotFound_WhenNull()
         {
-            var dto = new CreateRecipeDtoRequest { Id = 2, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<RecipeIngredientDto>() };
+            var dto = new CreateUpdateRecipeDtoRequest { Id = 2, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateUpdateRecipeIngredientDto>() };
             _serviceMock.Setup(s => s.UpdateAsync(2, dto, 1)).ReturnsAsync((RecipeDto)null!);
             var result = await _controller.Update(2, dto);
             Assert.IsType<NotFoundResult>(result.Result);
@@ -141,7 +141,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_Returns500_OnException()
         {
-            var dto = new CreateRecipeDtoRequest { Id = 3, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<RecipeIngredientDto>() };
+            var dto = new CreateUpdateRecipeDtoRequest { Id = 3, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateUpdateRecipeIngredientDto>() };
             _serviceMock.Setup(s => s.UpdateAsync(3, dto, 1)).ThrowsAsync(new Exception("fail"));
             var result = await _controller.Update(3, dto);
             var status = Assert.IsType<ObjectResult>(result.Result);

@@ -16,8 +16,8 @@ namespace Backend.Helpers
                     PropertyName = "mode",
                     Mapping = new Dictionary<string, string>
                     {
-                        { "existing", "#/components/schemas/ExistingIngredientDto" },
-                        { "new", "#/components/schemas/NewIngredientDto" }
+                        { "existing", "#/components/schemas/ExistingFoodReferenceDto" },
+                        { "new", "#/components/schemas/NewFoodReferenceDto" }
                     }
                 };
                 schema.OneOf = [.. _subTypes

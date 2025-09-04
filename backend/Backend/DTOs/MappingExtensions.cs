@@ -27,13 +27,12 @@ namespace Backend.DTOs
             };
         }
 
-        public static FoodReferenceDto ToDto(this Food food)
+        public static FoodDto ToDto(this Food food)
         {
-            return new FoodReferenceDto
+            return new FoodDto
             {
                 Id = food.Id,
                 Name = food.Name,
-                CategoryId = food.CategoryId,
                 Category = food.Category.ToDto()
             };
         }
