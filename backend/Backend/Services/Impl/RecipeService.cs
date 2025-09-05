@@ -120,17 +120,6 @@ namespace Backend.Services.Impl
         public async Task<GetRecipesResult> SearchAsync(RecipeSearchOptions options, int userId)
         {
             _logger.LogInformation("Searching recipes for user {UserId}: {@Options}", userId, options);
-            if (options.Take is <= 0 or > 200)
-            {
-                options.Take = 50;
-                _logger.LogWarning("Resetting the Take to 50 because it was negative or over 200");
-            }
-
-            if (options.Skip is < 0)
-            {
-                options.Skip = 0;
-                _logger.LogWarning("Resetting the Skip because it was negative.");
-            }
 
             var query = _context.Recipes
                 .AsNoTracking()
@@ -152,12 +141,33 @@ namespace Backend.Services.Impl
                 query = query.Where(r => r.Ingredients.Any(i => i.Food.Name.Contains(ing, StringComparison.CurrentCultureIgnoreCase)));
             }
 
-            if (options.Skip is > 0) query = query.Skip(options.Skip!.Value);
-            if (options.Take is > 0) query = query.Take(options.Take!.Value);
+            var count = await query.CountAsync();
+
+            if (options.Skip != null)
+            {
+                if (options.Skip < 0)
+                {
+                    _logger.LogWarning("Negative skip used for search.");
+                    throw new ArgumentException("Skip must be non-negative");
+                }
+
+                query = query.Skip(options.Skip!.Value);
+            }
+
+            if (options.Take != null)
+            {
+                if (options.Take < 0)
+                {
+                    _logger.LogWarning("Negative take used for search.");
+                    throw new ArgumentException("Take must be non-negative.");
+                }
+
+                query = query.Take(options.Take!.Value);
+            }
 
             var list = await query.ToListAsync();
             _logger.LogInformation("Search returned {Count} recipes", list.Count);
-            return new GetRecipesResult { TotalCount = list.Count, Items = [.. list.Select(r => r.ToDto())] };
+            return new GetRecipesResult { TotalCount = count, Items = [.. list.Select(r => r.ToDto())] };
         }
 
         /// <summary>

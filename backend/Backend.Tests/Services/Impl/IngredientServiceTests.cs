@@ -34,17 +34,17 @@ namespace Backend.Tests.Services.Impl
             _context.Foods.Add(new Food { Id = 3, Name = "Sugar", CategoryId = 2, Category = new Category { Id = 2, Name = "Sweeteners" } });
             await _context.SaveChangesAsync();
 
-            var result = await _service.SearchFoods("S");
-            Assert.Contains(result, i => i.Name == "Salt");
-            Assert.Contains(result, i => i.Name == "Sugar");
-            Assert.DoesNotContain(result, i => i.Name == "Pepper");
+            var result = await _service.SearchFoods("S", null, null);
+            Assert.Contains(result.Items, i => i.Name == "Salt");
+            Assert.Contains(result.Items, i => i.Name == "Sugar");
+            Assert.DoesNotContain(result.Items, i => i.Name == "Pepper");
         }
 
         [Fact]
         public async Task SearchFoods_ReturnsEmpty_WhenNoMatch()
         {
-            var result = await _service.SearchFoods("xyz");
-            Assert.Empty(result);
+            var result = await _service.SearchFoods("xyz", null, null);
+            Assert.Empty(result.Items);
         }
 
         [Fact]
@@ -56,8 +56,8 @@ namespace Backend.Tests.Services.Impl
                     Category = new Category { Id = i+1, Name = "Cat" } });
             }
             await _context.SaveChangesAsync();
-            var result = await _service.SearchFoods("Ing");
-            Assert.Equal(20, result.Count());
+            var result = await _service.SearchFoods("Ing", null, null);
+            Assert.Equal(20, result.TotalCount);
         }
     }
 }

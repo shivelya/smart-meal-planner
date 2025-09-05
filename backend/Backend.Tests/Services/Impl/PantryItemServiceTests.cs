@@ -167,10 +167,10 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("salt", userId);
+            var results = await service.Search("salt", userId, null, null);
 
-            Assert.Single(results);
-            Assert.Equal(1, results.First().Food.Id);
+            Assert.Single(results.Items);
+            Assert.Equal(1, results.Items.First().Food.Id);
         }
 
         [Fact]
@@ -178,10 +178,10 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("s", userId); // matches "Sugar" and "Salt"
+            var results = await service.Search("s", userId, null, null); // matches "Sugar" and "Salt"
 
-            Assert.Equal(2, results.Count());
-            var names = results.Select(r => r.Food.Id).ToList();
+            Assert.Equal(2, results.TotalCount);
+            var names = results.Items.Select(r => r.Food.Id).ToList();
             Assert.Contains(1, names);
             Assert.Contains(2, names);
         }
@@ -191,10 +191,10 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("SALT", userId);
+            var results = await service.Search("SALT", userId, null, null);
 
-            Assert.Single(results);
-            Assert.Equal(1, results.First().Food.Id);
+            Assert.Single(results.Items);
+            Assert.Equal(1, results.Items.First().Food.Id);
         }
 
         [Fact]
@@ -202,9 +202,9 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("flour", userId);
+            var results = await service.Search("flour", userId, null, null);
 
-            Assert.Empty(results);
+            Assert.Empty(results.Items);
         }
 
         [Fact]
@@ -212,10 +212,10 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("Sugar", userId);
+            var results = await service.Search("Sugar", userId, null, null);
 
-            Assert.Single(results);
-            Assert.Equal(2, results.First().Id);  // should return 2 and not 4
+            Assert.Single(results.Items);
+            Assert.Equal(2, results.Items.First().Id);  // should return 2 and not 4
         }
 
         [Fact]
@@ -247,9 +247,9 @@ namespace Backend.Tests.Services.Impl
 
             var service = new PantryItemService(context, logger);
 
-            var results = await service.Search("Salt", userId);
+            var results = await service.Search("Salt", userId, null, null);
 
-            Assert.Equal(20, results.Count());
+            Assert.Equal(20, results.TotalCount);
         }
 
         private PantryItemService CreateServiceWithData(out int userId, out PlannerContext context)

@@ -27,9 +27,4 @@ namespace Backend.DTOs
     {
         public required IEnumerable<int> Ids { get; set; }
     }
-
-    public class PantrySearchRequest
-    {
-        public required string Query { get; set; }
-    }
 }

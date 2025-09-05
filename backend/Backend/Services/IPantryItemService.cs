@@ -56,7 +56,9 @@ namespace Backend.Services
         /// </summary>
         /// <param name="search">The string to search on.</param>
         /// <param name="userId">The id of the current user.</param>
+        /// <param name="take">The number of responses to take for pagination.</param>
+        /// <param name="skip">The number of responses to skip for pagination.</param>
         /// <returns>The matching pentry items.</returns>
-        Task<IEnumerable<PantryItemDto>> Search(string search, int userId);
+        Task<GetPantryItemsResult> Search(string search, int userId, int? take, int? skip);
     }
 }
