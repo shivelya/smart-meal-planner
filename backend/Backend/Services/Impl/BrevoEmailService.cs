@@ -13,7 +13,11 @@ namespace Backend.Services.Impl
 
     public class SmtpClientAdapter : ISmtpClient
     {
-        private readonly SmtpClient _client = new();
+        public SmtpClientAdapter() { _client = new(); }
+
+        public SmtpClientAdapter(SmtpClient client) { _client = client; }
+
+        private readonly SmtpClient _client;
         public Task ConnectAsync(string host, int port, MailKit.Security.SecureSocketOptions options) => _client.ConnectAsync(host, port, options);
         public Task AuthenticateAsync(string user, string password) => _client.AuthenticateAsync(user, password);
         public Task SendAsync(MimeMessage message) => _client.SendAsync(message);
