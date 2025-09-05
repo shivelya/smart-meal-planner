@@ -176,7 +176,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task ExtractRecipe_ReturnsOk_WhenSuccess()
         {
-            var extracted = new ExtractedRecipe { Title = "test"};
+            var extracted = new ExtractedRecipe { Title = "test" };
             _extractorMock.Setup(e => e.ExtractRecipeAsync("url")).ReturnsAsync(extracted);
             var request = new ExtractRequest { Source = "url" };
             var result = await _controller.ExtractRecipe(request);
@@ -192,6 +192,38 @@ namespace Backend.Tests.Controllers
             var result = await _controller.ExtractRecipe(request);
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetByIds_ReturnsBadRequest_WhenRequestIsNull()
+        {
+            var result = await _controller.GetByIds(null!);
+            var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal(400, objResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GetByIds_ReturnsBadRequest_WhenIdsIsNull()
+        {
+            var result = await _controller.GetByIds(new GetRecipesRequest { Ids = null! });
+            var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal(400, objResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task ExtractRecipe_ReturnsBadRequest_WhenRequestIsNull()
+        {
+            var result = await _controller.ExtractRecipe(null);
+            var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal(400, objResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task ExtractRecipe_ReturnsBadRequest_WhenSourceIsNull()
+        {
+            var result = await _controller.ExtractRecipe(new ExtractRequest { Source = null! });
+            var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal(400, objResult.StatusCode);
         }
     }
 }

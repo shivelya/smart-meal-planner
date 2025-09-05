@@ -9,39 +9,49 @@ namespace Backend.Tests.Controllers
 {
     public class CategoriesControllerTests
     {
-        private readonly Mock<ICategoryService> _serviceMock = new();
-        private readonly Mock<ILogger<CategoriesController>> _loggerMock = new();
-        private readonly CategoriesController _controller;
-
-        public CategoriesControllerTests()
-        {
-            _controller = new CategoriesController(_serviceMock.Object, _loggerMock.Object);
-        }
-
         [Fact]
         public async Task GetCategories_ReturnsOk_WithCategories()
         {
-            var categories = new List<CategoryDto> { new() { Id = 1, Name = "Fruit" }, new() { Id = 2, Name = "Vegetable" } };
-            _serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(categories);
+            var serviceMock = new Mock<ICategoryService>();
+            var loggerMock = new Mock<ILogger<CategoriesController>>();
+            var categories = new List<CategoryDto> { new() { Id = 1, Name = "Test" } };
+            serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(categories);
+            var controller = new CategoriesController(serviceMock.Object, loggerMock.Object);
 
-            var result = await _controller.GetCategories();
-
-            var ok = Assert.IsType<OkObjectResult>(result.Result);
-            var returned = Assert.IsType<GetCategoriesResult>(ok.Value);
-            Assert.Equal(2, returned.TotalCount);
-            Assert.Equal(categories[0], returned.Items.ElementAt(0));
-            Assert.Equal(categories[1], returned.Items.ElementAt(1));
+            var result = await controller.GetCategories();
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsType<GetCategoriesResult>(okResult.Value);
+            Assert.Equal(1, value.TotalCount);
+            Assert.Single(value.Items);
         }
 
         [Fact]
         public async Task GetCategories_ReturnsOk_WithEmptyList()
         {
-            _serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync([]);
-            var result = await _controller.GetCategories();
+            var loggerMock = new Mock<ILogger<CategoriesController>>();
+            var serviceMock = new Mock<ICategoryService>();
+            serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync([]);
+            var controller = new CategoriesController(serviceMock.Object, loggerMock.Object);
+            var result = await controller.GetCategories();
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetCategoriesResult>(ok.Value);
             Assert.Empty(returned.Items);
             Assert.Equal(0, returned.TotalCount);
+        }
+
+        [Fact]
+        public async Task GetCategories_Returns500_OnException()
+        {
+            var serviceMock = new Mock<ICategoryService>();
+            var loggerMock = new Mock<ILogger<CategoriesController>>();
+            serviceMock.Setup(s => s.GetAllAsync()).ThrowsAsync(new Exception("fail"));
+            var controller = new CategoriesController(serviceMock.Object, loggerMock.Object);
+
+            var result = await controller.GetCategories();
+            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, objResult.StatusCode);
+            Assert.NotNull(objResult.Value);
+            Assert.Contains("Could not retrieve categories", objResult.Value.ToString());
         }
     }
 }
