@@ -56,8 +56,9 @@ namespace Backend.Tests.Services.Impl
                     Category = new Category { Id = i+1, Name = "Cat" } });
             }
             await _context.SaveChangesAsync();
-            var result = await _service.SearchFoods("Ing", null, null);
-            Assert.Equal(20, result.TotalCount);
+            var result = await _service.SearchFoods("Ing", 0, 20);
+            Assert.Equal(25, result.TotalCount);
+            Assert.Equal(20, result.Items.Count());
         }
     }
 }
