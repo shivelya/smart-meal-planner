@@ -6,10 +6,15 @@
         {
             "label": "test-with-coverage",
             "type": "shell",
-            "command": "dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=/TestResults/coverage.cobertura.xml; reportgenerator -reports:/TestResults/coverage.cobertura.xml -targetdir:/coveragereport; start /coveragereport/index.html",
+            "command": "dotnet test /p:CollectCoverage=true /p:CoverletOutputFormat=cobertura /p:CoverletOutput=TestResults/coverage.cobertura.xml && reportgenerator -reports:TestResults/coverage.cobertura.xml -targetdir:coveragereport && start coveragereport/index.html",
             "options": {
-                "cwd": "${workspaceFolder}/backend/Backend.Tests"
-            }
+                "cwd": "${workspaceFolder}/backend/Backend.Tests",
+                "shell": {
+                    "executable": "cmd.exe",
+                    "args": ["/d", "/c"]
+                }
+            },
+            "problemMatcher": []
         },
         {
             "label": "build",
