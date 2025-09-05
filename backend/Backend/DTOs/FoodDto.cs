@@ -26,12 +26,22 @@ namespace Backend.DTOs
 
     public class NewFoodReferenceDto : FoodReferenceDto
     {
+        public NewFoodReferenceDto()
+        {
+            Mode = AddFoodMode.New;
+        }
+
         public required string Name { get; set; }
         public required int CategoryId { get; set; }
     }
 
     public class ExistingFoodReferenceDto : FoodReferenceDto
     {
+        public ExistingFoodReferenceDto()
+        {
+            Mode = AddFoodMode.Existing;
+        }
+
         public required int Id { get; set; }
     }
 

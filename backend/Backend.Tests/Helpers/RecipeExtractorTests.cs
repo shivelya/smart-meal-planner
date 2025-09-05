@@ -144,14 +144,6 @@ namespace Backend.Tests.Helpers
         }
 
         [Fact]
-        public void ExtractInstructions_ReturnsNull_WhenNodeIsNull()
-        {
-            var result = _extractor.GetType().GetMethod("ExtractInstructions", BindingFlags.NonPublic | BindingFlags.Instance)!
-                .Invoke(_extractor, [null]);
-            Assert.Null(result);
-        }
-
-        [Fact]
         public void ExtractInstructions_HandlesStringNode()
         {
             var node = JsonValue.Create("Step 1. Do something.");
@@ -176,6 +168,111 @@ namespace Backend.Tests.Helpers
             var result = _extractor.GetType().GetMethod("ExtractInstructions", BindingFlags.NonPublic | BindingFlags.Instance)!
                 .Invoke(_extractor, [arr]);
             Assert.Equal("Step 1\nStep 2", result);
+        }
+
+        [Fact]
+        public async Task ExtractRecipeAsync_ReturnsNull_OnParseError()
+        {
+            // Simulate HTML with invalid JSON-LD
+            var html = "<script type='application/ld+json'>{ invalid json }</script>";
+            handlerMock
+                .Protected()
+                .Setup<Task<HttpResponseMessage>>(
+                    "SendAsync",
+                    ItExpr.IsAny<HttpRequestMessage>(),
+                    ItExpr.IsAny<CancellationToken>())
+                .ReturnsAsync(new HttpResponseMessage
+                {
+                    StatusCode = HttpStatusCode.OK,
+                    Content = new StringContent(html),
+                });
+
+            // AngleSharp mock
+            // You may need to mock BrowsingContext and document.QuerySelectorAll to return the script content
+
+            // This test will hit the catch branch and return null
+            var result = await _extractor.ExtractRecipeAsync("http://test");
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ParseIngredient_ReturnsNull_OnEmptyString()
+        {
+            var result = _extractor.GetType()
+                .GetMethod("ParseIngredient", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(_extractor, [JsonValue.Create("")]);
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ParseIngredient_RegexMatch_ReturnsParsed()
+        {
+            var result = _extractor.GetType()
+                .GetMethod("ParseIngredient", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(_extractor, [JsonValue.Create("1 cup sugar")]) as ExtractedIngredient;
+
+            Assert.Equal("1", result!.Quantity);
+            Assert.Equal("cup", result.Unit);
+            Assert.Equal("sugar", result.Name);
+        }
+
+        [Fact]
+        public void ParseIngredient_Fallback_ReturnsName()
+        {
+            var result = _extractor.GetType()
+                .GetMethod("ParseIngredient", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(_extractor, [JsonValue.Create("justsomename")]) as ExtractedIngredient;
+
+            Assert.Equal("justsomename", result!.Name);
+        }
+
+        [Fact]
+        public void ExtractInstructions_ReturnsNull_WhenNodeIsNull()
+        {
+            var result = _extractor.GetType()
+                .GetMethod("ExtractInstructions", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(_extractor, [null]);
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void ExtractInstructions_ArrayOfObjects_ReturnsJoinedText()
+        {
+            var arr = new JsonArray
+            {
+                new JsonObject { ["text"] = "Step 1" },
+                new JsonObject { ["text"] = "Step 2" }
+            };
+
+            var result = _extractor.GetType()
+                .GetMethod("ExtractInstructions", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(_extractor, [arr]) as string;
+
+            Assert.Equal("Step 1\nStep 2", result);
+        }
+
+        [Fact]
+        public void ExtractInstructions_ArrayOfStrings_ReturnsJoinedText()
+        {
+            var arr = new JsonArray { "Step 1", "Step 2" };
+
+            var result = _extractor.GetType()
+                .GetMethod("ExtractInstructions", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(_extractor, [arr]) as string;
+
+            Assert.Equal("Step 1\nStep 2", result);
+        }
+
+        [Fact]
+        public void ExtractInstructions_SingleString_ReturnsText()
+        {
+            var result = _extractor.GetType()
+                .GetMethod("ExtractInstructions", BindingFlags.NonPublic | BindingFlags.Instance)!
+                .Invoke(_extractor, [JsonValue.Create("Step 1")]) as string;
+
+            Assert.Equal("Step 1", result);
         }
     }
 }

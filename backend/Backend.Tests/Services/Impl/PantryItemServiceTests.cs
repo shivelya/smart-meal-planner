@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using Backend.DTOs;
 using Backend.Model;
 using Backend.Services.Impl;
@@ -56,8 +57,8 @@ namespace Backend.Tests.Services.Impl
                 new() { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 2 }, Quantity = 3, Unit = "g" }
             };
             var userId = 42;
-            plannerContext.Foods.Add(new Food { Id = 1, Name = "banana", Category = new Category { Name = "produce"} });
-            plannerContext.Foods.Add(new Food { Id = 2, Name = "apple", Category = new Category { Name = "produce"} });
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "banana", Category = new Category { Name = "produce" } });
+            plannerContext.Foods.Add(new Food { Id = 2, Name = "apple", Category = new Category { Name = "produce" } });
             plannerContext.SaveChanges();
 
             // Act
@@ -112,8 +113,15 @@ namespace Backend.Tests.Services.Impl
         public async Task GetPantryItemByIdAsync_ItemExists_ReturnsDto()
         {
             // Arrange
-            var item = new PantryItem { Id = 1, FoodId = 2, Quantity = 3, Unit = "g", UserId = 42,
-                Food = new Food { Id = 1, Name = "banana", Category = new Category { Name = "produce" }} };
+            var item = new PantryItem
+            {
+                Id = 1,
+                FoodId = 2,
+                Quantity = 3,
+                Unit = "g",
+                UserId = 42,
+                Food = new Food { Id = 1, Name = "banana", Category = new Category { Name = "produce" } }
+            };
             plannerContext.PantryItems.Add(item);
 
             // Act
@@ -265,7 +273,7 @@ namespace Backend.Tests.Services.Impl
             var user = new User { Id = userId, Email = "test@example.com", PasswordHash = Guid.NewGuid().ToString() };
             context.Users.Add(user);
 
-            var food = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce"} };
+            var food = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce" } };
             context.Foods.Add(food);
 
             var pantryItem = new PantryItem { Id = 10, FoodId = 1, Quantity = 2, Unit = "g", UserId = userId, Food = food };
@@ -352,6 +360,101 @@ namespace Backend.Tests.Services.Impl
             var result = await service.UpdatePantryItemAsync(dto, userId);
 
             Assert.Equal(2, result.Food.Id);
+        }
+
+        [Fact]
+        public async Task CreatePantryItemsAsync_Throws_WhenFoodIsNull()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            var dtos = new[] { new CreateUpdatePantryItemRequestDto { Food = null!, Quantity = 1 } };
+            await Assert.ThrowsAsync<ArgumentException>(() => service.CreatePantryItemsAsync(dtos, 1));
+        }
+
+        [Fact]
+        public async Task UpdatePantryItemAsync_Throws_WhenDtoIsNull()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(null!, 1));
+        }
+
+        [Fact]
+        public async Task UpdatePantryItemAsync_Throws_WhenIdIsNull()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            var dto = new CreateUpdatePantryItemRequestDto { Quantity = 1, Id = null, Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 } };
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, 1));
+        }
+
+        [Fact]
+        public async Task UpdatePantryItemAsync_Throws_WhenItemNotFound()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            var dto = new CreateUpdatePantryItemRequestDto { Quantity = 1, Id = 999, Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 } };
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, 1));
+        }
+
+        [Fact]
+        public async Task UpdatePantryItemAsync_Throws_WhenUserIdMismatch()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+            var item = new PantryItem { Id = 1, UserId = 2, FoodId = 1, Quantity = 1, Unit = "g" };
+            context.PantryItems.Add(item);
+            context.SaveChanges();
+
+            var dto = new CreateUpdatePantryItemRequestDto { Quantity = 1, Id = 1, Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 } };
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(dto, 1));
+        }
+
+        [Fact]
+        public async Task UpdatePantryItemFood_Throws_WhenFoodIdInvalid()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            var dto = new CreateUpdatePantryItemRequestDto { Quantity = 1, Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 999 } };
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(new CreateUpdatePantryItemRequestDto { Quantity = 1, Id = 1, Food = dto.Food }, 1));
+        }
+
+        [Fact]
+        public async Task UpdatePantryItemFood_Throws_WhenCategoryIdInvalid()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            var dto = new CreateUpdatePantryItemRequestDto { Quantity = 1, Food = new NewFoodReferenceDto { Mode = AddFoodMode.New, CategoryId = 999, Name = "Test" } };
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(new CreateUpdatePantryItemRequestDto { Quantity = 1, Id = 1, Food = dto.Food }, 1));
+        }
+
+        [Fact]
+        public async Task UpdatePantryItemFood_Throws_WhenModeIsUnknown()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            var food = new ExistingFoodReferenceDto
+            {
+                Id = 1,
+                Mode = (AddFoodMode)2
+            };
+            var dto = new CreateUpdatePantryItemRequestDto { Quantity = 1, Food = food };
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdatePantryItemAsync(new CreateUpdatePantryItemRequestDto { Quantity = 1, Id = 1, Food = dto.Food }, 1));
+        }
+
+        [Fact]
+        public async Task Search_Throws_WhenSkipIsNegative()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.Search("test", 1, null, -1));
+        }
+
+        [Fact]
+        public async Task Search_Throws_WhenTakeIsNegative()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.Search("test", 1, -1, null));
         }
     }
 }
