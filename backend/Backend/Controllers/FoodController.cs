@@ -17,15 +17,17 @@ namespace Backend.Controllers
         /// <summary>
         /// Search foods by name based on the search term provided.
         /// </summary>
-        /// <param name="search">The search term used to search foods by name.</param>
-        /// <remarks>Returns a list of foods matching the given query.</remarks>
+        /// <param name="query">The search term used to search foods by name.</param>
+        /// <param name="skip">The number of results to skip for pagination.</param>
+        /// <param name="take">The number of results to take for pagination.</param>
+        /// <remarks>Returns a list of foods matching the given query, as well as the total count.</remarks>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetFoodsResult>> SearchFoods([FromQuery, BindRequired] string search)
+        public async Task<ActionResult<GetFoodsResult>> SearchFoods([FromQuery, BindRequired] string query, int? skip = null, int? take = null)
         {
-            if (string.IsNullOrWhiteSpace(search))
+            if (string.IsNullOrWhiteSpace(query))
             {
                 _logger.LogWarning("Search term is required.");
                 return BadRequest("Search term is required.");
@@ -33,11 +35,11 @@ namespace Backend.Controllers
 
             try
             {
-                var foods = await _service.SearchFoods(search);
+                var foods = await _service.SearchFoods(query, skip, take);
 
-                _logger.LogInformation("search on {search} completed with {count} results", search, foods.Count());
+                _logger.LogInformation("search on {search} completed with {count} results", query, foods.TotalCount);
 
-                return Ok(new GetFoodsResult { TotalCount = foods.Count(), Items = foods });
+                return Ok(foods);
             }
             catch (Exception ex)
             {

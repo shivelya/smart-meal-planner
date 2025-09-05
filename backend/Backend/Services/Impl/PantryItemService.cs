@@ -163,22 +163,39 @@ namespace Backend.Services.Impl
             return item.ToDto();
         }
 
-        /// <summary>
-        /// Search for pantry items for the current user whose name matches the given search string.
-        /// </summary>
-        /// <param name="search">The string to search on.</param>
-        /// <param name="userId">The id of the current user.</param>
-        /// <returns>The pantry items which are a match.</returns>
-        public async Task<IEnumerable<PantryItemDto>> Search(string search, int userId)
+        public async Task<GetPantryItemsResult> Search(string search, int userId, int? take, int? skip)
         {
-            var items = await _context.PantryItems
+            var items = _context.PantryItems
                 .Where(i => i.UserId == userId)
-                .Where(i => i.Food.Name.Contains(search.ToLower(), StringComparison.InvariantCultureIgnoreCase))
-                .OrderBy(i => i.Food.Name)
-                .Take(20) // limit results for performance
-                .ToListAsync();
+                .Where(i => i.Food.Name.Contains(search.ToLower(), StringComparison.InvariantCultureIgnoreCase));
 
-            return items.Select(i => i.ToDto());
+            var count = await items.CountAsync();
+
+            if (skip != null)
+            {
+                if (skip < 0)
+                {
+                    _logger.LogWarning("Negative skip used for search.");
+                    throw new ArgumentException("Non-negative skip must be used for pagination.");
+                }
+
+                items = items.Skip(skip.Value);
+            }
+
+            if (take != null)
+            {
+                if (take < 0)
+                {
+                    _logger.LogWarning("Negative take used for search.");
+                    throw new ArgumentException("Non-negative take must be used for pagination.");
+                }
+
+                items = items.Take(take.Value);
+            }
+
+            var results = await items.OrderBy(i => i.Food.Name).ToListAsync();
+
+            return new GetPantryItemsResult { TotalCount = count, Items = items.Select(i => i.ToDto()) };
         }
 
         private async Task<int> UpdatePantryItemFood(CreateUpdatePantryItemRequestDto pantryItemDto)

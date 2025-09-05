@@ -204,23 +204,19 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Searches the current user's pantry items for the given name.
+        /// Searches the current user's pantry items for the given name, with pagination.
         /// </summary>
-        /// <param name="search">The search term to query on.</param>
-        /// <remarks>Returns the pantry items found, or 400 if an error occurs.</remarks>
+        /// <param name="query">The search term to query on.</param>
+        /// <param name="take">The number of responses to return for pagination.</param>
+        /// <param name="skip">The number of responses to skip for pagination.</param>
+        /// <remarks>Returns the pantry items found, along with the total number of responses.</remarks>
         [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> Search([FromQuery, BindRequired] PantrySearchRequest search)
+        public async Task<ActionResult<GetPantryItemsResult>> Search([FromQuery, BindRequired] string query, int? take = null, int? skip = null)
         {
-            if (search == null)
-            {
-                _logger.LogWarning("A search term is required.");
-                return BadRequest("A search term is required.");
-            }
-
-            if (string.IsNullOrEmpty(search.Query))
+            if (string.IsNullOrEmpty(query))
             {
                 _logger.LogWarning("A search term is required.");
                 return BadRequest("A search term is required.");
@@ -229,8 +225,8 @@ namespace Backend.Controllers
             var userId = GetUserId();
             try
             {
-                var results = await _service.Search(search.Query, userId);
-                return Ok(new GetPantryItemsResult { TotalCount = results.Count(), Items = results });
+                var results = await _service.Search(query, userId, take, skip);
+                return Ok(results);
             }
             catch (Exception ex)
             {

@@ -31,7 +31,7 @@ namespace Backend.Tests.Controllers
         {
             var foods = new List<FoodDto> { new() { Id = 1, Name = "Salt", Category = new CategoryDto { Id = 1, Name = "produce" }},
                 new() { Id = 2, Name = "Pepper", Category = new CategoryDto { Id = 1, Name = "produce" }}};
-            _serviceMock.Setup(s => s.SearchFoods("spice")).ReturnsAsync(foods);
+            _serviceMock.Setup(s => s.SearchFoods("spice", null, null)).ReturnsAsync(new GetFoodsResult { TotalCount = foods.Count, Items = foods });
 
             var result = await _controller.SearchFoods("spice");
 
@@ -43,7 +43,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task SearchFoods_ReturnsOk_WithEmptyResults()
         {
-            _serviceMock.Setup(s => s.SearchFoods("none")).ReturnsAsync([]);
+            _serviceMock.Setup(s => s.SearchFoods("none", null, null)).ReturnsAsync(new GetFoodsResult { TotalCount = 0, Items = [] });
 
             var result = await _controller.SearchFoods("none");
 

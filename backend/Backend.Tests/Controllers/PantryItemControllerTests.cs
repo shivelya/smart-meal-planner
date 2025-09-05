@@ -207,10 +207,9 @@ namespace Backend.Tests.Controllers
             {
                 new() { Id = 1, Food = new FoodDto { Id = 1, Name = "tomato", Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 2, Unit = "g" }
             };
-            _serviceMock.Setup(s => s.Search(searchTerm, 42)).ReturnsAsync(expectedResults);
-            var searchRequest = new PantrySearchRequest { Query = searchTerm };
+            _serviceMock.Setup(s => s.Search(searchTerm, 42, null, null)).ReturnsAsync(new GetPantryItemsResult { TotalCount = expectedResults.Count, Items = expectedResults });
 
-            var result = await _controller.Search(searchRequest);
+            var result = await _controller.Search(searchTerm);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetPantryItemsResult>(okResult.Value);
@@ -221,8 +220,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Search_WithEmptyTerm_ReturnsBadRequest()
         {
-            var request = new PantrySearchRequest { Query = "" };
-            var result = await _controller.Search(request);
+            var result = await _controller.Search("");
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("A search term is required.", badRequest.Value);
@@ -241,10 +239,9 @@ namespace Backend.Tests.Controllers
         public async Task Search_ReturnsEmptyListIfNoResults()
         {
             var searchTerm = "NotFound";
-            _serviceMock.Setup(s => s.Search(searchTerm, 42)).ReturnsAsync([]);
-            var request = new PantrySearchRequest { Query = searchTerm };
+            _serviceMock.Setup(s => s.Search(searchTerm, 42, null, null)).ReturnsAsync(new GetPantryItemsResult { TotalCount = 0, Items = [] });
 
-            var result = await _controller.Search(request);
+            var result = await _controller.Search(searchTerm);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var value = Assert.IsType<GetPantryItemsResult>(okResult.Value, exactMatch: false);

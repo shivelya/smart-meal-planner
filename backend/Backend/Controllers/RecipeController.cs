@@ -125,7 +125,7 @@ namespace Backend.Controllers
         [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetRecipesResult>> Search([FromQuery] string? title, [FromQuery] string? ingredient, [FromQuery] int? skip, [FromQuery] int? take)
+        public async Task<ActionResult<GetRecipesResult>> Search([FromQuery] string? title, [FromQuery] string? ingredient, [FromQuery] int? skip = null, [FromQuery] int? take = null)
         {
             try
             {
