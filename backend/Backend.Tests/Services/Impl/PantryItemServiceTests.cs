@@ -247,9 +247,10 @@ namespace Backend.Tests.Services.Impl
 
             var service = new PantryItemService(context, logger);
 
-            var results = await service.Search("Salt", userId, null, null);
+            var results = await service.Search("Salt", userId, 20, null);
 
-            Assert.Equal(20, results.TotalCount);
+            Assert.Equal(25, results.TotalCount);
+            Assert.Equal(20, results.Items.Count());
         }
 
         private PantryItemService CreateServiceWithData(out int userId, out PlannerContext context)
