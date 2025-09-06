@@ -1,4 +1,4 @@
-# Meal Planner App - User Stories & API Contracts
+# Smart Meal Planner - User Stories & API Contracts
 
 Since this is a solo project, the main stakeholders I wrote user stories for are the end users (to capture their needs) and myself in the developer/maintainer role (to capture technical and sustainability needs).
 

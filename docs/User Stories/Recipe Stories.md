@@ -2,9 +2,9 @@
 
 ## Story: View Recipes
 
-**As a** user
-**I want** to view my recipes
-**so that** I can look through what I have saved
+***As a*** user
+***I want*** to view my recipes
+***so that*** I can look through what I have saved
 
 **Acceptance criteria**
 | Task | Backend | Frontend |
@@ -26,9 +26,9 @@
 
 ## Story: Update Recipe
 
-**As a** user
-**I want** to be able to update my recipes
-**so that** I can make changes as I see fit.
+***As a*** user
+***I want*** to be able to update my recipes
+***so that*** I can make changes as I see fit.
 
 **Acceptance criteria**
 | Task | Backend | Frontend |
@@ -89,9 +89,9 @@
 
 ## Story: Search Recipes by Keyword
 
-**As a** user
-**I want** to search for recipes by title and ingredient
-**So that** I can find new meal ideas.
+***As a*** user
+***I want*** to search for recipes by title and ingredient
+***So that*** I can find new meal ideas.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -137,9 +137,9 @@
 
 ## Story: Search Recipes by Pantry Items
 
-**As a** logged-in user
-**I want** to search for recipes using my pantry items
-**So that** I can cook meals with what I have.
+***As a*** logged-in user
+***I want**** to search for recipes using my pantry items
+***So that*** I can cook meals with what I have.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -150,9 +150,9 @@
 ---
 
 ## Story: Save Recipes
-**As a** logged-in user
-**I want** to save recipes I’ve found
-**so that** I can access them later.
+***As a*** logged-in user
+***I want*** to save recipes I’ve found
+***so that*** I can access them later.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -186,9 +186,9 @@
 
 ## Story: Delete Recipes
 
-**As a** user
-**I want** to delete recipes I no longer want
-**So that** I can keep my list of recipes clean
+***As a*** user
+***I want*** to delete recipes I no longer want
+***So that*** I can keep my list of recipes clean
 
 **Acceptance criteria**
 | Task | Backend | Frontend |
@@ -206,9 +206,9 @@ _No content_
 
 ## Story: Import Recipe from URL
 
-**As a** user
-**I want** to provide the app with a URL to a recipe
-**So that** the app can extract the recipe details and let me verify them before saving to my collection
+***As a*** user
+***I want*** to provide the app with a URL to a recipe
+***So that*** the app can extract the recipe details and let me verify them before saving to my collection
 
 **Acceptance Criteria:**
 | Task | Backend | Frontend |
@@ -255,9 +255,9 @@ _No content_
 
 ## Story: Import Recipe from Text
 
-**As a** user  
-**I want** to paste or type a recipe into the app as plain text  
-**So that** the app can parse the text into structured recipe details and let me verify them before saving to my collection  
+***As a*** user  
+***I want*** to paste or type a recipe into the app as plain text  
+***So that*** the app can parse the text into structured recipe details and let me verify them before saving to my collection  
 
 **Acceptance Criteria:**
 | Task | Backend | Frontend |
