@@ -1,9 +1,9 @@
 # 🛒 Shopping List
 
 ## Story: View Shopping List
-***As a** logged-in user
-**I want** to view the shopping list for a meal plan
-**so that** I know what additional items to buy.*
+***As a*** logged-in user  
+***I want*** to view the shopping list for a meal plan  
+***so that*** I know what additional items to buy.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
