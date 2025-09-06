@@ -145,7 +145,7 @@ namespace Backend.Services.Impl
             var item = _context.PantryItems.FirstOrDefault(item => item.Id == pantryItemDto.Id);
             if (item == null)
             {
-                _logger.LogWarning("Could not find pantry item {0} to update.", pantryItemDto.Id);
+                _logger.LogWarning("Could not find pantry item {id} to update.", pantryItemDto.Id);
                 throw new ArgumentException("Could not find pantry item {0} to update.", pantryItemDto.Id.ToString());
             }
 
@@ -153,6 +153,12 @@ namespace Backend.Services.Impl
             {
                 _logger.LogWarning("Cannot update pantry items for other users.");
                 throw new ArgumentException("Cannot update pantry items for other users.");
+            }
+
+            if (pantryItemDto.Quantity < 0)
+            {
+                _logger.LogWarning("Cannot set pantry item with negative quantity.");
+                throw new ArgumentException("Cannot set pantry item with negative quantity.");
             }
 
             item.Quantity = pantryItemDto.Quantity;
@@ -234,6 +240,12 @@ namespace Backend.Services.Impl
 
         private async Task<PantryItem> CreatePantryItem(CreateUpdatePantryItemRequestDto pantryItemDto, int userId)
         {
+            if (pantryItemDto.Quantity < 0)
+            {
+                _logger.LogWarning("Cannot set pantry item with negative quantity.");
+                throw new ArgumentException("Cannot set pantry item with negative quantity.");
+            }
+
             int foodId = await UpdatePantryItemFood(pantryItemDto);
 
             var entity = new PantryItem
