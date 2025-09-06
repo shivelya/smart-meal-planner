@@ -1,9 +1,9 @@
 # 🥫 Pantry Management
 
 ## Story: View Pantry
-**As a** logged-in user
-**I want** to view all my pantry items
-**so that** I can see what ingredients I currently have.
+***As a*** logged-in user
+***I want*** to view all my pantry items
+***so that*** I can see what ingredients I currently have.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -39,9 +39,9 @@
 ---
 
 ## Story: Add Pantry Item
-**As a** logged-in user
-**I want** to add items to my pantry
-**so that** I can track ingredients I have on hand.
+***As a*** logged-in user
+***I want*** to add items to my pantry
+***so that*** I can track ingredients I have on hand.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -121,9 +121,9 @@
 
 ## Story: Reuse list of foods
 
-**As a** user,
-**I want** to select or add ingredients when creating a pantry item,
-**so that** I can easily track the foods I have without worrying about duplicates or database structure.
+***As a*** user,
+***I want*** to select or add ingredients when creating a pantry item,
+***so that*** I can easily track the foods I have without worrying about duplicates or database structure.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -160,9 +160,9 @@
 ---
 
 ## Story: Edit Pantry Item
-**As a** logged-in user
-**I want** to edit a pantry item
-**So that** I can adjust quantities or fix mistakes.
+***As a*** logged-in user
+***I want*** to edit a pantry item
+***So that*** I can adjust quantities or fix mistakes.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -205,9 +205,9 @@
 ---
 
 ## Story: Remove Pantry Item
-**As a** logged-in user
-**I want** to remove items from my pantry
-**so that** I can keep my pantry up to date.
+***As a*** logged-in user
+***I want*** to remove items from my pantry
+***so that*** I can keep my pantry up to date.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -248,9 +248,9 @@ _No content_
 
 ## Story: Pantry Item from Packaged Food (e.g., Box of Crackers)
 
-**As a** user
-**I want** to take a picture of a packaged food item, such as a box of crackers
-**So that** the system can read the packaging, identify it as "crackers," and automatically create a pantry item entry for me
+***As a*** user
+***I want*** to take a picture of a packaged food item, such as a box of crackers
+***So that*** the system can read the packaging, identify it as "crackers," and automatically create a pantry item entry for me
 
 **Acceptance Criteria:**
 | Task | Backend | Frontend |
@@ -272,9 +272,9 @@ _No content_
 
 ## Story: Pantry Item from Fresh Food (e.g., Banana)
 
-**As a** user
-**I want** to take a picture of a fresh food item, such as a banana
-**So that** the system can recognize it as "banana" and automatically create a pantry item entry for me
+***As a*** user
+***I want*** to take a picture of a fresh food item, such as a banana
+***So that*** the system can recognize it as "banana" and automatically create a pantry item entry for me
 
 **Acceptance Criteria:**
 | Task | Backend | Frontend |
@@ -289,9 +289,9 @@ _No content_
 
 ## Story: Search Pantry Items by Name
 
-**As a** user
-**I want** to search for pantry items by entering their name
-**So that** I can quickly find a specific item in my pantry list without scrolling
+***As a*** user
+***I wan*t** to search for pantry items by entering their name
+***So that8** I can quickly find a specific item in my pantry list without scrolling
 
 **Acceptance Criteria:**
 | Task | Backend | Frontend |

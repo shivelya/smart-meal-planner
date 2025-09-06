@@ -2,9 +2,9 @@
 
 ## Story: Testing
 
-**As a** developer
-**I want** automated unit tests
-**So that** I can quickly verify that changes don’t break existing functionality.
+***As a*** developer
+***I want*** automated unit tests
+***So that*** I can quickly verify that changes don’t break existing functionality.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -17,9 +17,9 @@
 
 ## Story: Error Handling
 
-**As a** maintainer
-**I want** clear error messages and logs
-**So that** I can diagnose problems efficiently when they occur.
+***As a*** maintainer
+***I want*** clear error messages and logs
+***So that*** I can diagnose problems efficiently when they occur.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -33,9 +33,9 @@
 
 ## Story: Configuration
 
-**As a** developer
-**I want** environment-specific configuration files
-**So that** I can run the application locally without affecting production data.
+***As a*** developer
+***I want*** environment-specific configuration files
+***So that*** I can run the application locally without affecting production data.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -48,9 +48,9 @@
 
 ## Story: Code Quality
 
-**As a** maintainer
-**I want** consistent coding style and linting rules
-**So that** the project stays readable over time.
+***As a*** maintainer
+***I want*** consistent coding style and linting rules
+***So that*** the project stays readable over time.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -63,9 +63,9 @@
 
 ## Story: Monitoring / Stability
 
-**As a** maintainer
-**I want** to track performance metrics
-**So that** I can ensure the system runs reliably under load.
+***As a*** maintainer
+**I want*** to track performance metrics
+***So that*** I can ensure the system runs reliably under load.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -78,9 +78,9 @@
 
 ## Story: Documentation
 
-**As a** future developer
-**I want** setup instructions documented
-**so that** I can get the project running quickly without guesswork.
+***As a*** future developer
+***I want*** setup instructions documented
+***so that*** I can get the project running quickly without guesswork.
 
 **Acceptance Criteria**
 

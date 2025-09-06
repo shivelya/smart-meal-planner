@@ -1,9 +1,9 @@
 # 📅 Meal Plans
 
 ## Story: View Saved Meal Plans
-**As a** logged-in user
-**I want** to view my saved meal plans
-**so that** I can reuse or review them.
+***As a*** logged-in user
+***I want*** to view my saved meal plans
+***so that*** I can reuse or review them.
 
 **Acceptance Criteria**
 | When I open meal plans, I see a list of all my saved plans | ⬜ | ⬜ |
@@ -67,9 +67,9 @@
 
 ## Story: Add Meal Plan
 
-**As a** user
-**I want** to add meal plans
-**So that** I can create my own based on what I feel like eating
+***As a*** user
+***I want*** to add meal plans
+***So that*** I can create my own based on what I feel like eating
 
 **Acceptance criteria**
 | Task | Backend | Frontend |
@@ -119,9 +119,9 @@
 
 ## Story: Update Meal Plan
 
-**As a** user
-**I want** to customize my meal plans
-**So that** I can best accommodate my needs
+***As a*** user
+***I want*** to customize my meal plans
+***So that*** I can best accommodate my needs
 
 **Acceptance criteria**
 | Task | Backend | Frontend |
@@ -177,9 +177,9 @@
 
 ## Story: Delete Meal Plan
 
-**As a** user
-**I want** to delete my meal plans
-**So that** I can keep my list of meal plans clean
+***As a*** user
+***I want*** to delete my meal plans
+***So that*** I can keep my list of meal plans clean
 
 **Acceptance criteria**
 | Task | Backend | Frontend |
@@ -197,9 +197,9 @@ _No Content_
 ---
 
 ## Story: Generate Meal Plan from Pantry
-**As a** logged-in user
-**I want** to generate a meal plan based on my pantry items
-**So that** I can make meals with ingredients I already have.
+***As a*** logged-in user
+***I want*** to generate a meal plan based on my pantry items
+***So that*** I can make meals with ingredients I already have.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -232,9 +232,9 @@ _No Content_
 
 ## Story: Customize Meal Plan
 
-**As a** user,
-**I want** to be able to write blobs of text instead of add recipes
-**so that** I can remind myself what I'm making without needing a whole recipe.
+***As a*** user,
+***I want*** to be able to write blobs of text instead of add recipes
+***so that*** I can remind myself what I'm making without needing a whole recipe.
 - Maybe I'm just making spaghetti and I know I have the ingredients on hand, so I just need to write "spaghetti" as a remidner of what I'm doing Tuesday night.
 - Maybe I just need to write in a reminder about a dinner out with friends, or that I'll be too busy to cook that night and need a reminder to pick something up.
 

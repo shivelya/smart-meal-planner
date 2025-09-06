@@ -1,9 +1,9 @@
 # 🔐 Authentication & Account Management User Stories
 
 ## Story: User Registration
-**As a** Non-registered user
-**I want** to create an account
-**so that** I can access the website.
+***As a*** Non-registered user
+***I want*** to create an account
+***so that*** I can access the website.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -33,9 +33,9 @@
 ---
 
 ## Story: User Login
-**As a** registered user
-**I want** to log in with my email and password
-**so that** I can access my information securely and others cannot.
+***As a*** registered user
+***I want*** to log in with my email and password
+***so that*** I can access my information securely and others cannot.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -65,9 +65,9 @@
 ---
 
 ## Story: User Logout
-**As a** logged-in user
-**I want** to log out
-**so that** my session is closed and my account is secure.
+***As a*** logged-in user
+***I want*** to log out
+***so that*** my session is closed and my account is secure.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -88,9 +88,9 @@
 ---
 
 ## Story: Change Password
-**As a** logged-in user
-**I want** to change my password
-**so that** I can keep my account secure.
+***As a*** logged-in user
+***I want*** to change my password
+***so that*** I can keep my account secure.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -114,9 +114,9 @@
 ---
 
 ## Story: Reset Forgotten Password
-**As a** Registered user who forgot my password
-**I want** to reset it
-**so that** I can regain access to my account.
+***As a*** Registered user who forgot my password
+***I want*** to reset it
+****so that*** I can regain access to my account.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
@@ -146,9 +146,9 @@
 ---
 
 ## Story: Token Management
-**As a** registered user
-**I want** to not have to log in every time I visit the site
-**so that** my time isn't wasted on unndeeded tasks.
+***As a*** registered user
+***I want*** to not have to log in every time I visit the site
+***so that*** my time isn't wasted on unndeeded tasks.
 
 **Acceptance Criteria**
 | Task | Backend | Frontend |
