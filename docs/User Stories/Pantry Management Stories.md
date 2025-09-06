@@ -128,14 +128,12 @@
 **Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-
 |  When creating a new pantry item, the user can start typing the name of an ingredient, and system should search the database for matching ingredients and suggest them in real-time (autocomplete) | ✅ | ⬜ |
 |  If the ingredient exists, selecting it will populate the pantry item with the corresponding `IngredientId` | ✅ | ⬜ |
-|  If the ingredient does not exist:
-   - The user can enter the new ingredient name and category | ✅ | ⬜ |
-   - The system will create the new ingredient in the database before creating the pantry item | ✅ | ⬜ |
+|  If the ingredient does not exist: The user can enter the new ingredient name and category | ✅ | ⬜ |
+|  If the ingredient does not exist: The system will create the new ingredient in the database before creating the pantry item | ✅ | ⬜ |
 |  From the user’s perspective, they do not need to distinguish between ingredients and pantry items; they only interact with ingredient names | ✅ | ⬜ |
-|  On the backend, all ingredients are stored in a single table for searchability and consistency | ✅ | ⬜ |
+|  On the backend, all ingredients are stored in a single table for searchability and consistency | ✅ |  |
 
 **API**
 - `GET /api/food?query={search}&skip={skip}&take={take}`

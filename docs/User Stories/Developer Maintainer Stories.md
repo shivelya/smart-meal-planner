@@ -9,9 +9,9 @@
 **Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| Tests can be run with a single command (e.g. dotnet test) | ✅ | ⬜ |
+| Tests can be run with a single command (e.g. dotnet test) | ✅ | ✅ |
 | At least one unit test exists for each major feature | ✅ | ⬜ |
-| Tests run successfully in the CI/CD pipeline | ✅ | ⬜ |
+| Tests run successfully in the CI/CD pipeline | ✅ | ✅ |
 
 ---
 
@@ -24,7 +24,6 @@
 **Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-
 | All exceptions are logged with a timestamp and stack trace | ✅ | ⬜ |
 | Logs are stored in a consistent location (e.g. /logs folder) | ✅ | ⬜ |
 | User-facing errors do not expose sensitive information | ✅ | ⬜ |
@@ -42,7 +41,7 @@
 |------|---------|----------|
 | Config files exist for at least two environments (e.g. Development, Production) | ✅ | ⬜ |
 | Switching environments does not require code changes | ✅ | ⬜ |
-| Local development uses a separate database or data store from production | ✅ | ⬜ |
+| Local development uses a separate database or data store from production | ✅ |  |
 
 ---
 
