@@ -6,6 +6,8 @@
 ***so that*** I can reuse or review them.
 
 **Acceptance Criteria**
+| Task | Backend | Frontend |
+|------|---------|----------|
 | When I open meal plans, I see a list of all my saved plans | ⬜ | ⬜ |
 | Each plan shows its creation date meals included | ⬜ | ⬜ |
 
@@ -74,8 +76,8 @@
 **Acceptance criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| When I go to the meal plan screen, I can create a new one with no recipes
-| I can search for recipes and add them to a chosen meal plan
+| When I go to the meal plan screen, I can create a new one with no recipes | ⬜ | ⬜ |
+| I can search for recipes and add them to a chosen meal plan | ⬜ | ⬜ |
 
 **API**
 - `POST /api/meal-plan`
@@ -126,9 +128,9 @@
 **Acceptance criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| When I choose a meal plan, I can select recipes
-| I can delete those selected recipes
-| I can search for recipes and add them to a chosen meal plan
+| When I choose a meal plan, I can select recipes | ⬜ | ⬜ |
+| I can delete those selected recipes | ⬜ | ⬜ |
+| I can search for recipes and add them to a chosen meal plan | ⬜ | ⬜ |
 
 **API**
 - `PUT /api/meal-plan/{id}`
@@ -184,9 +186,9 @@
 **Acceptance criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| When I choose a meal plan, I can select recipes
-| I can delete those selected recipes
-| I can search for recipes and add them to a chosen meal plan
+| When I choose a meal plan, I can select recipes | ⬜ | ⬜ |
+| I can delete those selected recipes | ⬜ | ⬜ |
+| I can search for recipes and add them to a chosen meal plan | ⬜ | ⬜ |
 
 **API**
 - `DELETE /api/meal-plan/{id}`
