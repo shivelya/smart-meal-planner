@@ -456,5 +456,35 @@ namespace Backend.Tests.Services.Impl
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.Search("test", 1, -1, null));
         }
+
+        [Fact]
+        public async Task CreatePantryItemAsync_Throws_WhenQuantityIsNegative()
+        {
+            // Arrange
+            var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
+            var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = -5, Unit = "kg" };
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
+            plannerContext.SaveChanges();
+            var userId = 42;
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePantryItemAsync(dto, userId));
+        }
+
+        [Fact]
+        public async Task UpdatePantryItemAsync_Throws_WhenQuantityIsNegative()
+        {
+            // Arrange
+            var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
+            var pantryItem = new PantryItem { Id = 1, FoodId = 1, Quantity = 2, Unit = "kg", UserId = 42 };
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
+            plannerContext.PantryItems.Add(pantryItem);
+            plannerContext.SaveChanges();
+            var dto = new CreateUpdatePantryItemRequestDto { Id = 1, Food = food, Quantity = -10, Unit = "kg" };
+            var userId = 42;
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdatePantryItemAsync(dto, userId));
+        }
     }
 }

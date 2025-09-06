@@ -10,8 +10,10 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **so that** I can access the website.
 
 **Acceptance Criteria**
-- [ ] Given valid credentials, I create an account and am authenticated and receive a token/session.
-- [ ] Given invalid credentials, when I submit the login form, then I see an error message and an account is not created.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| Given valid credentials, I create an account and am authenticated and receive a token/session | ✅ | ⬜ |
+| Given invalid credentials, when I submit the login form, then I see an error message and an account is not created | ✅ | ⬜ |
 
 **API**
 - `POST /api/auth/register`
@@ -40,8 +42,10 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **so that** I can access my information securely and others cannot.
 
 **Acceptance Criteria**
-- [ ] Given valid credentials, when I submit the login form, then I am authenticated and receive a token/session.
-- [ ] Given invalid credentials, when I submit the login form, then I see an error message and I am not logged in.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| Given valid credentials, when I submit the login form, then I am authenticated and receive a token/session | ✅ | ⬜ |
+| Given invalid credentials, when I submit the login form, then I see an error message and I am not logged in | ✅ | ⬜ |
 
 **API**
 - `POST /api/auth/login`
@@ -70,8 +74,10 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **so that** my session is closed and my account is secure.
 
 **Acceptance Criteria**
-- [ ] When I log out, my session token is invalidated.
-- [ ] After logging out, I cannot access protected routes without logging in again.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I log out, my session token is invalidated | ✅ | ⬜ |
+| After logging out, I cannot access protected routes without logging in again | ✅ | ⬜ |
 
 **API**
 - `POST /api/auth/logout`
@@ -91,8 +97,10 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **so that** I can keep my account secure.
 
 **Acceptance Criteria**
-- [ ] When I provide my old password and a new password, my password is updated.
-- [ ] If my old password is incorrect, I get an error.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I provide my old password and a new password, my password is updated | ✅ | ⬜ |
+| If my old password is incorrect, I get an error | ✅ | ⬜ |
 
 **API**
 - `PUT /api/auth/change-password`
@@ -115,9 +123,11 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **so that** I can regain access to my account.
 
 **Acceptance Criteria**
-- [ ] When I request a reset, I receive a reset link via email.
-- [ ] When I submit a new password with a valid token, my password is updated.
-- [ ] If the token is expired or invalid, I get an error.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I request a reset, I receive a reset link via email | ✅ | ⬜ |
+| When I submit a new password with a valid token, my password is updated | ✅ | ⬜ |
+| If the token is expired or invalid, I get an error | ✅ | ⬜ |
 
 **API**
 - `POST /api/auth/forgot-password`
@@ -145,9 +155,11 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **so that** my time isn't wasted on unndeeded tasks.
 
 **Acceptance Criteria**
-- [ ] While using the system, I am not suddenly logged out.
-- [ ] If I come back to the system the next day, I am not logged out.
-- [ ] If I come back to the system a week later, I am logged out.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| While using the system, I am not suddenly logged out | ✅ | ⬜ |
+| If I come back to the system the next day, I am not logged out | ✅ | ⬜ |
+| If I come back to the system a week later, I am logged out | ✅ | ⬜ |
 
 **API**
 - `POST /api/auth/refresh`
@@ -173,8 +185,10 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **so that** I can see what ingredients I currently have.
 
 **Acceptance Criteria**
-- [ ] When I open the pantry screen, I see a list of all my pantry items.
-- [ ] Each item shows name, quantity, unit, and category.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I open the pantry screen, I see a list of all my pantry items | ✅ | ⬜ |
+| Each item shows name, quantity, unit, and category | ✅ | ⬜ |
 
 **API**
 - `GET /api/pantryItem?skip=1&take=1`
@@ -209,8 +223,10 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **so that** I can track ingredients I have on hand.
 
 **Acceptance Criteria**
-- [ ] When I submit a new item, it is added to my pantry list.
-- [ ] The item must have at least a name and quantity.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I submit a new item, it is added to my pantry list | ✅ | ⬜ |
+| The item must have at least a name, category, and quantity | ✅ | ⬜ |
 
 **API Single**
 - `POST /pantryItem`
@@ -282,20 +298,23 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 
 ---
 
+### Story: Reuse list of foods
+
 **As a** user,
 **I want** to select or add ingredients when creating a pantry item,
 **so that** I can easily track the foods I have without worrying about duplicates or database structure.
 
 **Acceptance Criteria**
+| Task | Backend | Frontend |
+|------|---------|----------|
 
-- [ ]  When creating a new pantry item, the user can start typing the name of an ingredient.
-- [ ]  The system should search the database for matching ingredients and suggest them in real-time (autocomplete).
-- [ ]  If the ingredient exists, selecting it will populate the pantry item with the corresponding `IngredientId`.
-- [ ]  If the ingredient does not exist:
-   - The user can enter the new ingredient name.
-   - The system will create the new ingredient in the database before creating the pantry item.
-- [ ]  From the user’s perspective, they do not need to distinguish between ingredients and pantry items; they only interact with ingredient names.
-- [ ]  On the backend, all ingredients are stored in a single table for searchability and consistency.
+|  When creating a new pantry item, the user can start typing the name of an ingredient, and system should search the database for matching ingredients and suggest them in real-time (autocomplete) | ✅ | ⬜ |
+|  If the ingredient exists, selecting it will populate the pantry item with the corresponding `IngredientId` | ✅ | ⬜ |
+|  If the ingredient does not exist:
+   - The user can enter the new ingredient name and category | ✅ | ⬜ |
+   - The system will create the new ingredient in the database before creating the pantry item | ✅ | ⬜ |
+|  From the user’s perspective, they do not need to distinguish between ingredients and pantry items; they only interact with ingredient names | ✅ | ⬜ |
+|  On the backend, all ingredients are stored in a single table for searchability and consistency | ✅ | ⬜ |
 
 **API**
 - `GET /api/food?query={search}&skip={skip}&take={take}`
@@ -325,8 +344,10 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **So that** I can adjust quantities or fix mistakes.
 
 **Acceptance Criteria**
-- [ ] When I edit an item and save, the pantry list updates with new values.
-- [ ] If I try to save invalid data (e.g., negative quantity), I get an error.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I edit an item and save, the pantry list updates with new values | ✅ | ⬜ |
+| If I try to save invalid data (e.g., negative quantity), I get an error | ✅ | ⬜ |
 
 **API**
 - `PUT /api/pantryItem/{id}`
@@ -368,8 +389,10 @@ Since this is a solo project, the main stakeholders I wrote user stories for are
 **so that** I can keep my pantry up to date.
 
 **Acceptance Criteria**
-- [ ] When I delete an item, it no longer appears in my pantry list.
-- [ ] If the item doesn’t exist, I get an error.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I delete an item, it no longer appears in my pantry list | ✅ | ⬜ |
+| If the item doesn’t exist, I get an error | ✅ | ⬜ |
 
 **API Single**
 - `DELETE /api/pantryItem/{id}`
@@ -409,16 +432,20 @@ _No content_
 **So that** the system can read the packaging, identify it as "crackers," and automatically create a pantry item entry for me
 
 **Acceptance Criteria:**
-- [ ] Given I take a photo of a packaged food item
-- [ ] When the system processes the image
-- [ ] Then it recognizes the product type (e.g., crackers)
-- [ ] And it generates a pantry item with the appropriate name and details
+| Task | Backend | Frontend |
+|------|---------|----------|
+| Given I take a photo of a packaged food item | ⬜ | ⬜ |
+| When the system processes the image | ⬜ | ⬜ |
+| Then it recognizes the product type (e.g., crackers) | ⬜ | ⬜ |
+| And it generates a pantry item with the appropriate name and details | ⬜ | ⬜ |
 
 **Extended Acceptance Criteria:**
-- [ ] The system should attempt to extract additional details from the packaging (e.g., brand, weight, flavor).
-- [ ] The system should auto-populate the pantry item.
-- [ ] The system should prompt the user to confirm or correct the item.
-- [ ] The pantry item should include default quantity (e.g., 1 box) unless more detail is detected.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| The system should attempt to extract additional details from the packaging (e.g., brand, weight, flavor) | ⬜ | ⬜ |
+| The system should auto-populate the pantry item | ⬜ | ⬜ |
+| The system should prompt the user to confirm or correct the item | ⬜ | ⬜ |
+| The pantry item should include default quantity (e.g., 1 box) unless more detail is detected | ⬜ | ⬜ |
 
 ---
 
@@ -429,11 +456,13 @@ _No content_
 **So that** the system can recognize it as "banana" and automatically create a pantry item entry for me
 
 **Acceptance Criteria:**
-- [ ] The user can upload a photo for detection.
-- [ ] The system should attempt to detect the type of food in the image.
-- [ ] The system should auto-populate the pantry item.
-- [ ] The system should prompt the user to confirm or correct the item.
-- [ ] The pantry item should include default quantity (e.g., 1 box) unless more detail is detected.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| The user can upload a photo for detection | ⬜ | ⬜ |
+| The system should attempt to detect the type of food in the image | ⬜ | ⬜ |
+| The system should auto-populate the pantry item | ⬜ | ⬜ |
+| The system should prompt the user to confirm or correct the item | ⬜ | ⬜ |
+| The pantry item should include default quantity (e.g., 1 box) unless more detail is detected | ⬜ | ⬜ |
 
 ---
 
@@ -444,15 +473,16 @@ _No content_
 **So that** I can quickly find a specific item in my pantry list without scrolling
 
 **Acceptance Criteria:**
-- [ ] Given I am on the pantry screen
-- [ ] When I type a name (full or partial) into the search bar
-- [ ] Then the pantry list updates to show only matching items
-- [ ] And the search is case-insensitive (e.g., "Crackers" matches "crackers")
-- [ ] The system should support partial matches (e.g., typing "crack" returns "crackers").
-- [ ] The system should update search results in real-time as the user types.
-- [ ] If no items match the search, the system should display a "No results found" message.
-- [ ] The user should be able to clear the search input to return to the full list.
-- [ ] The system should handle special characters and spacing gracefully (e.g., "mac & cheese" vs "mac and cheese").
+| Task | Backend | Frontend |
+|------|---------|----------|
+| Given I am on the pantry screen, I can type a name (full of partial) into a search bar. | ✅ | ⬜ |
+| The the pantry list updates to show only matching items. | ✅ | ⬜ |
+| And the search is case-insensitive (e.g., "Crackers" matches "crackers"). | ✅ | ⬜ |
+| The system should support partial matches (e.g., typing "crack" returns "crackers") | ✅ | ⬜ |
+| The system should update search results in real-time as the user types |  | ⬜ |
+| If no items match the search, the system should display a "No results found" message |  | ⬜ |
+| The user should be able to clear the search input to return to the full list |  | ⬜ |
+| The system should handle special characters and spacing gracefully (e.g., "mac & cheese" vs "mac and cheese") | ⬜ | ⬜ |
 
 **API**
 - `GET /api/pantryItem/search?query={search}&skip={skip}&take={take}`
@@ -489,8 +519,8 @@ _No content_
 **so that** I can reuse or review them.
 
 **Acceptance Criteria**
-- [ ] When I open meal plans, I see a list of all my saved plans.
-- [ ] Each plan shows its creation date meals included.
+| When I open meal plans, I see a list of all my saved plans | ⬜ | ⬜ |
+| Each plan shows its creation date meals included | ⬜ | ⬜ |
 
 **API**
 - `GET /api/meal-plan?skip={skip}&take={take}`
@@ -555,8 +585,10 @@ _No content_
 **So that** I can create my own based on what I feel like eating
 
 **Acceptance criteria**
-- [ ] When I go to the meal plan screen, I can create a new one with no recipes
-- [ ] I can search for recipes and add them to a chosen meal plan
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I go to the meal plan screen, I can create a new one with no recipes
+| I can search for recipes and add them to a chosen meal plan
 
 **API**
 - `POST /api/meal-plan`
@@ -605,9 +637,11 @@ _No content_
 **So that** I can best accommodate my needs
 
 **Acceptance criteria**
-- [ ] When I choose a meal plan, I can select recipes
-- [ ] I can delete those selected recipes
-- [ ] I can search for recipes and add them to a chosen meal plan
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I choose a meal plan, I can select recipes
+| I can delete those selected recipes
+| I can search for recipes and add them to a chosen meal plan
 
 **API**
 - `PUT /api/meal-plan/{id}`
@@ -661,9 +695,11 @@ _No content_
 **So that** I can keep my list of meal plans clean
 
 **Acceptance criteria**
-- [ ] When I choose a meal plan, I can select recipes
-- [ ] I can delete those selected recipes
-- [ ] I can search for recipes and add them to a chosen meal plan
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I choose a meal plan, I can select recipes
+| I can delete those selected recipes
+| I can search for recipes and add them to a chosen meal plan
 
 **API**
 - `DELETE /api/meal-plan/{id}`
@@ -679,9 +715,11 @@ _No Content_
 **So that** I can make meals with ingredients I already have.
 
 **Acceptance Criteria**
-- [ ] When I request a generated plan, meals are suggested that use my pantry items.
-- [ ] The plan is saved and can be viewed later.
-- [ ] If no suitable meals are found, I see a message.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I request a generated plan, meals are suggested that use my pantry items | ⬜ | ⬜ |
+| The plan is saved and can be viewed later | ⬜ | ⬜ |
+| If no suitable meals are found, I see a message | ⬜ | ⬜ |
 
 **API**
 - `POST /meal-plan/generate`
@@ -714,9 +752,11 @@ _No Content_
 - Maybe I just need to write in a reminder about a dinner out with friends, or that I'll be too busy to cook that night and need a reminder to pick something up.
 
 **Acceptance Criteria**
-- [ ] User can add recipes to certain days, or just add notes to certain days.
-- [ ] User can later edit that text, or delete it and add a recipe.
-- [ ] User can also have both text and a recipe.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| User can add recipes to certain days, or just add notes to certain days | ⬜ | ⬜ |
+| User can later edit that text, or delete it and add a recipe | ⬜ | ⬜ |
+| User can also have both text and a recipe | ⬜ | ⬜ |
 
 ---
 
@@ -726,9 +766,11 @@ _No Content_
 *As a logged-in user, I want to view the shopping list for a meal plan, so that I know what additional items to buy.*
 
 **Acceptance Criteria**
-- [ ] When I select a meal plan, I can see a generated shopping list.
-- [ ] Items already in my pantry are marked as available (and not added to the list).
-- [ ] The shopping list shows item names, quantities, and units.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I select a meal plan, I can see a generated shopping list | ⬜ | ⬜ |
+| Items already in my pantry are marked as available (and not added to the list) | ⬜ | ⬜ |
+| The shopping list shows item names, quantities, and units | ⬜ | ⬜ |
 
 **API**
 - `GET /meal-plans/{id}/shopping-list`
@@ -755,8 +797,10 @@ _No Content_
 **so that** I can look through what I have saved
 
 **Acceptance criteria**
-- [ ] User can navigate to the recipes page
-- [ ] User can view all their recipes
+| Task | Backend | Frontend |
+|------|---------|----------|
+| User can navigate to the recipes page |  | ⬜ |
+| User can view all their recipes | ✅ | ⬜ |
 
 **API
 - `GET /api/recipe?skip={skip}&take={take}`
@@ -777,8 +821,10 @@ _No Content_
 **so that** I can make changes as I see fit.
 
 **Acceptance criteria**
-- [ ] I can make changes to titles, ingredients, and instructions
-- [ ] Changes are saved to the DB and able to be retrieved.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| I can make changes to titles, ingredients, and instructions | ✅ | ⬜ |
+| Changes are saved to the DB and able to be retrieved | ✅ | ⬜ |
 
 **API**
 - `PUT /api/recipe/{id}`
@@ -838,8 +884,10 @@ _No Content_
 **So that** I can find new meal ideas.
 
 **Acceptance Criteria**
-- [ ] When I search by a term (e.g., “chicken”), I see a list of recipes.
-- [ ] Each recipe shows title and brief description.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I search by a term (e.g., “chicken”), I see a list of recipes | ✅ | ⬜ |
+| Each recipe shows title and brief description | ✅ | ⬜ |
 
 **API**
 - `GET /api/recipe/search?title={search}&ingredient={ingredient}&skip={skip}&take={take}`
@@ -878,13 +926,16 @@ _No Content_
 ---
 
 ### Story: Search Recipes by Pantry Items
+
 **As a** logged-in user
 **I want** to search for recipes using my pantry items
 **So that** I can cook meals with what I have.
 
 **Acceptance Criteria**
-- [ ] When I search by pantry ingredients, I see recipes that use those items.
-- [ ] Recipes that use more of my pantry items are ranked higher.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I search by pantry ingredients, I see recipes that use those items | ✅ | ⬜ |
+| Recipes that use more of my pantry items are ranked higher | ⬜ | ⬜ |
 
 ---
 
@@ -894,9 +945,10 @@ _No Content_
 **so that** I can access them later.
 
 **Acceptance Criteria**
-- [ ] When I save a recipe, it appears in my saved recipes list.
-- [ ] I can view saved recipes at any time.
-- [ ] I can remove recipes from my saved list.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When I save a recipe, it appears in my saved recipes list | ✅ | ⬜ |
+| I can view saved recipes at any time | ✅ | ⬜ |
 
 **API**
 - `POST /api/recipe`
@@ -929,9 +981,10 @@ _No Content_
 **So that** I can keep my list of recipes clean
 
 **Acceptance criteria**
-
-- [ ] A user selects one or more recipes and deltes them
-- [ ] Deleted recipes no longer exist within their account for meal plans or searches
+| Task | Backend | Frontend |
+|------|---------|----------|
+| A user selects one or more recipes and deletes them | ✅ | ⬜ |
+| Deleted recipes no longer exist within their account for meal plans or searches | ✅ | ⬜ |
 
 **API**
 - `DELETE /api/recipe/{id}`
@@ -948,17 +1001,20 @@ _No content_
 **So that** the app can extract the recipe details and let me verify them before saving to my collection
 
 **Acceptance Criteria:**
-- [ ] Given I paste a valid recipe URL into the app
-- [ ] When the system processes the URL
-- [ ] Then it extracts recipe details (e.g., title, ingredients, steps, cooking time)
-- [ ] And it displays the extracted recipe client-side for my review
-- [ ] And I must confirm or edit the recipe before saving it to my collection
+| Task | Backend | Frontend |
+|------|---------|----------|
+| I can paste a recipe URL into the app |  | ⬜ |
+| The system extracts recipe details (e.g., title, ingredients, steps, cooking time) | ✅ | ⬜ |
+| And it displays the extracted recipe client-side for my review | ✅ | ⬜ |
+| And I must confirm or edit the recipe before saving it to my collection |  | ⬜ |
 
 **Extended Acceptance Criteria:**
-- [ ] The system should validate that the URL is accessible before attempting extraction.
-- [ ] If the recipe site is supported, the system should extract structured data (title, ingredients, instructions, nutrition info if available).
-- [ ] If the recipe site is unsupported or parsing fails, the system should provide a clear error message.
-- [ ] If the user cancels, the extracted recipe should be discarded without saving.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| The system should validate that the URL is accessible before attempting extraction | ✅ | ⬜ |
+| The system should extract structured data (title, ingredients, instructions) | ✅ | ⬜ |
+| If the recipe site is unsupported or parsing fails, the system should provide a clear error message | ✅ | ⬜ |
+| If the user cancels, the extracted recipe should be discarded without saving | ✅ | ⬜ |
 
 **API**
 - `POST /api/recipe/extract`
@@ -994,19 +1050,23 @@ _No content_
 **So that** the app can parse the text into structured recipe details and let me verify them before saving to my collection  
 
 **Acceptance Criteria:**
-- [ ] Given I paste or type a recipe into the app  
-- [ ] When the system processes the text  
-- [ ] Then it extracts recipe details (e.g., title, ingredients, steps, cooking time)  
-- [ ] And it displays the structured recipe client-side for my review  
-- [ ] And I must confirm or edit the recipe before saving it to my collection  
+| Task | Backend | Frontend |
+|------|---------|----------|
+| Given I paste or type a recipe into the app | ⬜ | ⬜ |
+| When the system processes the text | ⬜ | ⬜ |
+| Then it extracts recipe details (e.g., title, ingredients, steps, cooking time) | ⬜ | ⬜ |
+| And it displays the structured recipe client-side for my review | ⬜ | ⬜ |
+| And I must confirm or edit the recipe before saving it to my collection | ⬜ | ⬜ |
 
 **Extended Acceptance Criteria:**
-- [ ] The system should attempt to parse common recipe formats (e.g., ingredients list, numbered steps).  
-- [ ] If parsing succeeds, structured fields (title, ingredients, instructions, etc.) are pre-filled.  
-- [ ] If parsing fails or is incomplete, the system should allow me to manually adjust or add missing fields.  
-- [ ] The user should be able to freely edit any extracted fields before saving.  
-- [ ] The system should not save the recipe to the database until the user explicitly confirms.  
-- [ ] If the user cancels, the extracted recipe should be discarded without saving.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| The system should attempt to parse common recipe formats (e.g., ingredients list, numbered steps) | ⬜ | ⬜ |
+| If parsing succeeds, structured fields (title, ingredients, instructions, etc.) are pre-filled | ⬜ | ⬜ |
+| If parsing fails or is incomplete, the system should allow me to manually adjust or add missing fields | ⬜ | ⬜ |
+| The user should be able to freely edit any extracted fields before saving | ⬜ | ⬜ |
+| The system should not save the recipe to the database until the user explicitly confirms | ⬜ | ⬜ |
+| If the user cancels, the extracted recipe should be discarded without saving | ⬜ | ⬜ |
 
 ---
 
@@ -1019,9 +1079,11 @@ _No content_
 **So that** I can quickly verify that changes don’t break existing functionality.
 
 **Acceptance Criteria**
-- [ ] Tests can be run with a single command (e.g. dotnet test).
-- [ ] At least one unit test exists for each major feature.
-- [ ] Tests run successfully in the CI/CD pipeline.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| Tests can be run with a single command (e.g. dotnet test) | ✅ | ⬜ |
+| At least one unit test exists for each major feature | ✅ | ⬜ |
+| Tests run successfully in the CI/CD pipeline | ✅ | ⬜ |
 
 ---
 
@@ -1032,10 +1094,12 @@ _No content_
 **So that** I can diagnose problems efficiently when they occur.
 
 **Acceptance Criteria**
+| Task | Backend | Frontend |
+|------|---------|----------|
 
-- [ ] All exceptions are logged with a timestamp and stack trace.
-- [ ] Logs are stored in a consistent location (e.g. /logs folder).
-- [ ] User-facing errors do not expose sensitive information.
+| All exceptions are logged with a timestamp and stack trace | ✅ | ⬜ |
+| Logs are stored in a consistent location (e.g. /logs folder) | ✅ | ⬜ |
+| User-facing errors do not expose sensitive information | ✅ | ⬜ |
 
 ---
 
@@ -1046,10 +1110,11 @@ _No content_
 **So that** I can run the application locally without affecting production data.
 
 **Acceptance Criteria**
-
-- [ ] Config files exist for at least two environments (e.g. Development, Production).
-- [ ] Switching environments does not require code changes.
-- [ ] Local development uses a separate database or data store from production.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| Config files exist for at least two environments (e.g. Development, Production) | ✅ | ⬜ |
+| Switching environments does not require code changes | ✅ | ⬜ |
+| Local development uses a separate database or data store from production | ✅ | ⬜ |
 
 ---
 
@@ -1060,10 +1125,11 @@ _No content_
 **So that** the project stays readable over time.
 
 **Acceptance Criteria**
-
-- [ ] A linter or style checker is integrated into the project.
-- [ ] Code fails CI if it violates defined style rules.
-- [ ] Naming conventions and formatting are consistent across files.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| A linter or style checker is integrated into the project | ⬜ | ⬜ |
+| Code fails CI if it violates defined style rules | ⬜ | ⬜ |
+| Naming conventions and formatting are consistent across files | ⬜ | ⬜ |
 
 ---
 
@@ -1074,10 +1140,11 @@ _No content_
 **So that** I can ensure the system runs reliably under load.
 
 **Acceptance Criteria**
-
-- [ ] Key performance metrics (e.g. response time, error rate) are captured.
-- [ ] Metrics can be viewed in a dashboard or report.
-- [ ] System behavior under load has been tested and documented.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| Key performance metrics (e.g. response time, error rate) are captured | ⬜ | ⬜ |
+| Metrics can be viewed in a dashboard or report | ⬜ | ⬜ |
+| System behavior under load has been tested and documented | ⬜ | ⬜ |
 
 ---
 
@@ -1089,6 +1156,8 @@ _No content_
 
 **Acceptance Criteria**
 
-- [ ] README includes setup steps (dependencies, build, run instructions).
-- [ ] Any required environment variables are documented.
-- [ ] A new developer can clone the repo and run the project successfully by following the docs.
+| Task | Backend | Frontend |
+|------|---------|----------|
+| README includes setup steps (dependencies, build, run instructions) | ⬜ | ⬜ |
+| Any required environment variables are documented | ⬜ | ⬜ |
+| A new developer can clone the repo and run the project successfully by following the docs | ⬜ | ⬜ |
