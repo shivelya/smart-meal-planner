@@ -56,7 +56,7 @@ namespace Backend
         {
             modelBuilder.Entity<MealPlanEntry>()
                 .HasOne(mpe => mpe.MealPlan)
-                .WithMany(mp => mp.MealPlanEntries)
+                .WithMany(mp => mp.Meals)
                 .HasForeignKey(mpe => mpe.MealPlanId);
 
             modelBuilder.Entity<MealPlanEntry>()
@@ -70,7 +70,8 @@ namespace Backend
             modelBuilder.Entity<MealPlan>()
                 .HasOne(mp => mp.User)
                 .WithMany(u => u.MealPlans)
-                .HasForeignKey(mp => mp.UserId);
+                .HasForeignKey(mp => mp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
         }
 
         private static void SetUpRecipeIngredientRelationships(ModelBuilder modelBuilder)

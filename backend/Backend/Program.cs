@@ -10,7 +10,6 @@ using Microsoft.AspNetCore.Diagnostics;
 using System.Reflection;
 using Backend.Helpers;
 using Backend.DTOs;
-using Microsoft.OpenApi.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -100,9 +99,10 @@ builder.Services.AddScoped<IUserService, UserSerivce>();
 builder.Services.AddScoped<IEmailService, BrevoEmailService>();
 builder.Services.AddScoped<IPantryItemService, PantryItemService>();
 builder.Services.AddScoped<IFoodService, FoodService>();
-builder.Services.AddScoped<IRecipeExtractor, RecipeExtractor>();
+builder.Services.AddScoped<IRecipeExtractor, ManualRecipeExtractor>();
 builder.Services.AddScoped<ISmtpClient, SmtpClientAdapter>();
-builder.Services.AddHttpClient<RecipeExtractor>();
+builder.Services.AddScoped<IRecipeGenerator, SpoonacularRecipeGenerator>();
+builder.Services.AddHttpClient<ManualRecipeExtractor>();
 
 var app = builder.Build();
 

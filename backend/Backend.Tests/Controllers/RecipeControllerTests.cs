@@ -213,7 +213,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task ExtractRecipe_ReturnsBadRequest_WhenRequestIsNull()
         {
-            var result = await _controller.ExtractRecipe(null);
+            var result = await _controller.ExtractRecipe(null!);
             var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal(400, objResult.StatusCode);
         }
