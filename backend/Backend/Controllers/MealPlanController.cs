@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -60,7 +61,8 @@ namespace Backend.Controllers
 
             try
             {
-                var plan = await _service.AddMealPlanAsync(request);
+                var userId = GetUserId();
+                var plan = await _service.AddMealPlanAsync(userId, request);
 
                 _logger.LogInformation("Created meal plan successfully.");
                 return CreatedAtAction(nameof(GetMealPlansAsync), plan);
@@ -92,7 +94,8 @@ namespace Backend.Controllers
 
             try
             {
-                var plan = await _service.UpdateMealPlanAsync(id, request);
+                var userId = GetUserId();
+                var plan = await _service.UpdateMealPlanAsync(id, userId, request);
 
                 _logger.LogInformation("Updated meal plan successfully.");
                 return Ok(plan);
@@ -117,7 +120,8 @@ namespace Backend.Controllers
         {
             try
             {
-                if (await _service.DeleteMealPlanAsync(id))
+                var userId = GetUserId();
+                if (await _service.DeleteMealPlanAsync(id, userId))
                 {
                     _logger.LogInformation("Deleted meal plan successfully.");
                     return NoContent();
@@ -153,7 +157,8 @@ namespace Backend.Controllers
 
             try
             {
-                var plan = await _service.GenerateMealPlanAsync(days, startDate);
+                var userId = GetUserId();
+                var plan = await _service.GenerateMealPlanAsync(days, userId, startDate);
 
                 _logger.LogInformation("Meal plan generated successfully.");
                 return Ok(plan);
@@ -163,6 +168,11 @@ namespace Backend.Controllers
                 _logger.LogWarning("Could not generate meal plan: {ex}", ex.Message);
                 return StatusCode(500, "Could not generate meal plan: " + ex.Message);
             }
+        }
+
+        private int GetUserId()
+        {
+            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
         }
     }
 }

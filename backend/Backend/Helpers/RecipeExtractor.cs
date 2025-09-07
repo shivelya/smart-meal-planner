@@ -25,9 +25,9 @@ namespace Backend.Helpers
         Task<ExtractedRecipe> ExtractRecipeByTextAsync(string source);
     }
 
-    public class RecipeExtractor(ILogger<RecipeExtractor> logger, HttpClient httpClient) : IRecipeExtractor
+    public class ManualRecipeExtractor(ILogger<ManualRecipeExtractor> logger, HttpClient httpClient) : IRecipeExtractor
     {
-        private readonly ILogger<RecipeExtractor> _logger = logger;
+        private readonly ILogger<ManualRecipeExtractor> _logger = logger;
         private readonly HttpClient _httpClient = httpClient;
 
         public Task<ExtractedRecipe> ExtractRecipeByTextAsync(string source)

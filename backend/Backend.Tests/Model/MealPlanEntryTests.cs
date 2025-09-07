@@ -36,15 +36,6 @@ namespace Backend.Tests.Model
         }
 
         [Fact]
-        public void MealPlanEntry_Date_SetAndGet_Works()
-        {
-            var entry = new MealPlanEntry();
-            var date = DateTime.Now;
-            entry.Date = date;
-            Assert.Equal(date, entry.Date);
-        }
-
-        [Fact]
         public void MealPlanEntry_MealPlan_SetAndGet_Works()
         {
             var entry = new MealPlanEntry();

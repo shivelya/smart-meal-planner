@@ -50,8 +50,8 @@ namespace Backend.Tests.Model
         {
             var mealPlan = new MealPlan();
             var entries = new List<MealPlanEntry>();
-            mealPlan.MealPlanEntries = entries;
-            Assert.Same(entries, mealPlan.MealPlanEntries);
+            mealPlan.Meals = entries;
+            Assert.Same(entries, mealPlan.Meals);
         }
     }
 }

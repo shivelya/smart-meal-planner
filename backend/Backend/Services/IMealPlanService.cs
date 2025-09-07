@@ -14,28 +14,32 @@ namespace Backend.Services
         /// <summary>
         /// Creates a new meal plan.
         /// </summary>
+        /// <param name="userId">The id of the logged in user.</param>
         /// <param name="request">The meal plan DTO to create.</param>
         /// <returns>The created meal plan DTO.</returns>
-        Task<MealPlanDto> AddMealPlanAsync(CreateUpdateMealPlanRequestDto request);
+        Task<MealPlanDto> AddMealPlanAsync(int userId, CreateUpdateMealPlanRequestDto request);
         /// <summary>
         /// Updates an existing meal plan.
         /// </summary>
         /// <param name="id">The id of the meal plan to update.</param>
+        /// <param name="userId">The id of the logged in user.</param>
         /// <param name="request">The meal plan DTO to update.</param>
         /// <returns>The updated meal plan DTO.</returns>
-        Task<MealPlanDto> UpdateMealPlanAsync(int id, CreateUpdateMealPlanRequestDto request);
+        Task<MealPlanDto> UpdateMealPlanAsync(int id, int userId, CreateUpdateMealPlanRequestDto request);
         /// <summary>
         /// Deletes a meal plan by its unique ID.
         /// </summary>
         /// <param name="id">The meal plan's unique identifier.</param>
+        /// <param name="userId">The id of the logged in user.</param>
         /// <returns>True if the meal plan was deleted, otherwise false.</returns>
-        Task<bool> DeleteMealPlanAsync(int id);
+        Task<bool> DeleteMealPlanAsync(int id, int userId);
         /// <summary>
         /// Generates a meal plan based on the users pantry items.
         /// </summary>
         /// <param name="days">The of recipes to add.</param>
+        /// <param name="userId">The id of the current user.</param>
         /// <param name="startDate">The start date for the meal plan.</param>
         /// <returns>The generated meal plan.</returns>
-        Task<GeneratedMealPlanDto> GenerateMealPlanAsync(int days, DateTime startDate);
+        Task<GeneratedMealPlanDto> GenerateMealPlanAsync(int days, int userId, DateTime startDate);
     }
 }

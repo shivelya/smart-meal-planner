@@ -4,7 +4,7 @@ namespace Backend.Model
     {
         public int Id { get; set; }
         public int MealPlanId { get; set; }
-        public int RecipeId { get; set; }
+        public int? RecipeId { get; set; }
         public string? Notes { get; set; }
 
         public MealPlan MealPlan { get; set; } = null!;

@@ -10,8 +10,8 @@ namespace Backend.Tests.Helpers
 {
     public class RecipeExtractorTests
     {
-        private readonly Mock<ILogger<RecipeExtractor>> _loggerMock = new();
-        private readonly RecipeExtractor _extractor;
+        private readonly Mock<ILogger<ManualRecipeExtractor>> _loggerMock = new();
+        private readonly ManualRecipeExtractor _extractor;
         private readonly Mock<HttpMessageHandler> handlerMock;
 
         public RecipeExtractorTests()
@@ -30,7 +30,7 @@ namespace Backend.Tests.Helpers
                 });
 
             var httpClient = new HttpClient(handlerMock.Object);
-            _extractor = new RecipeExtractor(_loggerMock.Object, httpClient);
+            _extractor = new ManualRecipeExtractor(_loggerMock.Object, httpClient);
         }
 
         [Fact]

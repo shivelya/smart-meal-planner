@@ -56,5 +56,26 @@ namespace Backend.DTOs
                 Food = entity.Food.ToDto()
             };
         }
+
+        public static MealPlanDto ToDto(this MealPlan entity)
+        {
+            return new MealPlanDto
+            {
+                Id = entity.Id,
+                StartDate = entity.StartDate,
+                Meals = entity.Meals.Select(p => p.ToDto())
+            };
+        }
+
+        public static MealPlanEntryDto ToDto(this MealPlanEntry entity)
+        {
+            return new MealPlanEntryDto
+            {
+                Id = entity.Id,
+                Notes = entity.Notes,
+                RecipeId = entity.RecipeId,
+                Recipe = entity.Recipe?.ToDto()
+            };
+        }
     }
 }
