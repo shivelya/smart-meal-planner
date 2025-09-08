@@ -8,61 +8,30 @@
 **Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| When I open meal plans, I see a list of all my saved plans | ⬜ | ⬜ |
-| Each plan shows its creation date meals included | ⬜ | ⬜ |
+| When I open meal plans, I see a list of all my saved plans | ✅ | ⬜ |
+| Each plan shows its creation date & number of meals included | ✅ | ⬜ |
 
 **API**
 - `GET /api/meal-plan?skip={skip}&take={take}`
 
 **Response (200)**
 ```json
-[
-  {
-    "id": 10,
-    "name": "Weekly Plan for Aug 12",
-    "updatedAt": "2025-08-12",
-    "meals": [
-      {
-        "note": "",
-        "meal": {
+{
+  "totalCount": 0,
+  "mealPlans": [
+    {
+      "id": 0,
+      "startDate": "2025-09-08T16:38:09.592Z",
+      "meals": [
+        {
           "id": 0,
-          "source": "string",
-          "title": "string",
-          "instructions": "string",
-          "ingredients": [
-            {
-              "id": 0,
-              "food": {
-                "id": 0
-              },
-              "quantity": 0,
-              "unit": "string"
-            }
-          ]
+          "notes": "string",
+          "recipeId": 0,
         }
-      },
-      {
-        "note": "",
-        "meal": {
-          "id": 0,
-          "source": "string",
-          "title": "string",
-          "instructions": "string",
-          "ingredients": [
-            {
-              "id": 0,
-              "food": {
-                "id": 0
-              },
-              "quantity": 0,
-              "unit": "string"
-            }
-          ]
-        }
-      }
-    ]
-  }
-]
+      ]
+    }
+  ]
+}
 ```
 
 ---
@@ -76,8 +45,8 @@
 **Acceptance criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| When I go to the meal plan screen, I can create a new one with no recipes | ⬜ | ⬜ |
-| I can search for recipes and add them to a chosen meal plan | ⬜ | ⬜ |
+| When I go to the meal plan screen, I can create a new one with no recipes |  | ⬜ |
+| I can search for recipes and add them to a chosen meal plan | ✅ | ⬜ |
 
 **API**
 - `POST /api/meal-plan`
@@ -85,15 +54,11 @@
 **Request**
 ```json
 {
-  "start-date": "1-3-25",
-  "meals": [ 
+  "startDate": "2025-09-08T16:42:44.586Z",
+  "meals": [
     {
-      "note": "",
-      "meal": { "id": 1 }
-    },
-    {
-      "note": "",
-      "meal": { "id": 2 }
+      "notes": "string",
+      "recipeId": 0
     }
   ]
 }
@@ -102,16 +67,13 @@
 **Response 200**
 ```json
 {
-  "id": 10,
-  "start-date": "1-3-25",
-  "meals": [ 
+  "id": 0,
+  "startDate": "2025-09-08T16:42:44.588Z",
+  "meals": [
     {
-      "note": "",
-      "meal": { "id": 1 }
-    },
-    {
-      "note": "",
-      "meal": { "id": 2 }
+      "id": 0,
+      "notes": "string",
+      "recipeId": 0,
     }
   ]
 }
@@ -128,51 +90,42 @@
 **Acceptance criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| When I choose a meal plan, I can select recipes | ⬜ | ⬜ |
-| I can delete those selected recipes | ⬜ | ⬜ |
-| I can search for recipes and add them to a chosen meal plan | ⬜ | ⬜ |
+| When I choose a meal plan, I can select recipes | ✅ | ⬜ |
+| I can delete those selected recipes | ✅ | ⬜ |
+| I can search for recipes and add them to a chosen meal plan | ✅ | ⬜ |
+| I can swap out recipes and add notes to updates | ✅ | ⬜ |
 
 **API**
 - `PUT /api/meal-plan/{id}`
 
 **Request**
 ```json
-[
-  {
-    "id": 10,
-    "start-date": "1-3-25",
-    "meals": [ 
-      {
-        "note": "",
-        "meal": { "id": 1 }
-      },
-      {
-        "note": "",
-        "meal": { "id": 2 }
-      }
-    ]
-  }
-]
+{
+  "id": 0,
+  "startDate": "2025-09-08T16:45:07.928Z",
+  "meals": [
+    {
+      "id": 0,
+      "notes": "string",
+      "recipeId": 0
+    }
+  ]
+}
 ```
 
 **Response 200**
 ```json
-[
-  {
-    "id": 10,
-    "start-date": "1-3-25",
-    "meals": [ 
-      {
-        "note": "",
-        "meal": { "id": 1 }
-      },
-      {
-        "note": "",
-        "meal": { "id": 2 }
-      }
-    ]
-  }
-]
+{
+  "id": 0,
+  "startDate": "2025-09-08T16:45:07.930Z",
+  "meals": [
+    {
+      "id": 0,
+      "notes": "string",
+      "recipeId": 0,
+    }
+  ]
+}
 ```
 
 ---
@@ -186,9 +139,7 @@
 **Acceptance criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| When I choose a meal plan, I can select recipes | ⬜ | ⬜ |
-| I can delete those selected recipes | ⬜ | ⬜ |
-| I can search for recipes and add them to a chosen meal plan | ⬜ | ⬜ |
+| When looking at meal plans, I can select ones delete | ✅ | ⬜ |
 
 **API**
 - `DELETE /api/meal-plan/{id}`
@@ -206,9 +157,9 @@ _No Content_
 **Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| When I request a generated plan, meals are suggested that use my pantry items | ⬜ | ⬜ |
-| The plan is saved and can be viewed later | ⬜ | ⬜ |
-| If no suitable meals are found, I see a message | ⬜ | ⬜ |
+| When I request a generated plan, meals are suggested that use my pantry items | ✅ | ⬜ |
+| The plan is saved and can be viewed later | ✅ | ⬜ |
+| If no suitable meals are found, I see a message |  | ⬜ |
 
 **API**
 - `POST /meal-plan/generate`
@@ -243,6 +194,6 @@ _No Content_
 **Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| User can add recipes to certain days, or just add notes to certain days | ⬜ | ⬜ |
-| User can later edit that text, or delete it and add a recipe | ⬜ | ⬜ |
-| User can also have both text and a recipe | ⬜ | ⬜ |
+| User can add recipes to certain days, or just add notes to certain days | ✅ | ⬜ |
+| User can later edit that text, or delete it and add a recipe | ✅ | ⬜ |
+| User can also have both text and a recipe | ✅ | ⬜ |
