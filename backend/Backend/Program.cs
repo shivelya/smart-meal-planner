@@ -101,7 +101,7 @@ builder.Services.AddScoped<IPantryItemService, PantryItemService>();
 builder.Services.AddScoped<IFoodService, FoodService>();
 builder.Services.AddScoped<IRecipeExtractor, ManualRecipeExtractor>();
 builder.Services.AddScoped<ISmtpClient, SmtpClientAdapter>();
-builder.Services.AddScoped<IRecipeGenerator, SpoonacularRecipeGenerator>();
+builder.Services.AddScoped<IRecipeGenerator, ManualRecipeGenerator>();
 builder.Services.AddHttpClient<ManualRecipeExtractor>();
 
 var app = builder.Build();
