@@ -170,7 +170,7 @@ namespace Backend.Services.Impl
 
             var pantryItems = _context.PantryItems.Where(i => i.UserId == userId);
 
-            var mealPlan = await _recipeGenerator.GenerateMealPlan(days, _context.PantryItems);
+            var mealPlan = await _recipeGenerator.GenerateMealPlan(days, userId);
             mealPlan.StartDate = startDate;
 
             _logger.LogInformation("Meal plan successfully generated.");
