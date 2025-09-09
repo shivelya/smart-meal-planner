@@ -29,19 +29,41 @@ namespace Backend.Helpers
 
         public static WebApplication ConfigureExceptionHandling(this WebApplication app)
         {
+            // ensures all exceptions are handled so nothing sensitive is exposed to the user and connections don't crash
             app.UseExceptionHandler(errorApp =>
             {
                 errorApp.Run(async context =>
                 {
+                    // gets the exception
                     var exceptionHandlerPathFeature = context.Features.Get<IExceptionHandlerPathFeature>();
                     var exception = exceptionHandlerPathFeature?.Error;
 
+                    // logs the exception
                     var factory = app.Services.GetRequiredService<ILoggerFactory>();
                     var logger = factory.CreateLogger("WebApplicationExtensions");
                     logger.LogError(exception, "An unhandled exception occurred.");
 
+                    // returns an appropriate error message to the client
                     context.Response.StatusCode = 500;
-                    await context.Response.WriteAsJsonAsync(new { error = "An unexpected error occurred." });
+                    context.Response.ContentType = "application/json";
+
+                    // a detailed message for dev and a sanitized one for production
+                    var env = app.Services.GetRequiredService<IHostEnvironment>();
+                    if (env.IsDevelopment())
+                    {
+                        await context.Response.WriteAsJsonAsync(new
+                        {
+                            error = exception?.Message,
+                            stackTrace = exception?.StackTrace
+                        });
+                    }
+                    else
+                    {
+                        await context.Response.WriteAsJsonAsync(new
+                        {
+                            error = "An unexpected error occurred. Please try again later."
+                        });
+                    }
                 });
             });
 
