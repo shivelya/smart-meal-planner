@@ -1,20 +1,21 @@
 using Backend.Model;
+using Backend.Services.Impl;
 using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Tests.Services.Impl
 {
     public class UserServiceTests
     {
-        private UserSerivce CreateService()
+        private UserService CreateService()
         {
             var options = new DbContextOptionsBuilder<PlannerContext>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
             var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
-            var userLogger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<UserSerivce>();
+            var userLogger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<UserService>();
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
             var context = new PlannerContext(options, config, logger);
-            return new UserSerivce(context, userLogger);
+            return new UserService(context, userLogger);
         }
 
         [Fact]

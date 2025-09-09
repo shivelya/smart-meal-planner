@@ -1,13 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Backend.DTOs;
-using Backend.Services;
+using Backend.Model;
 
-namespace Backend.Model
+namespace Backend.Services.Impl
 {
-    public class UserSerivce(PlannerContext context, ILogger<UserSerivce> logger) : IUserService
+    public class UserService(PlannerContext context, ILogger<UserService> logger) : IUserService
     {
         private readonly PlannerContext _context = context;
-        private readonly ILogger<UserSerivce> _logger = logger;
+        private readonly ILogger<UserService> _logger = logger;
 
         /// <summary>
         /// Creates a new user with the specified email and password.
