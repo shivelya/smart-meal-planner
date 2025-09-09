@@ -40,7 +40,12 @@ namespace Backend.Helpers
             if (string.IsNullOrEmpty(connectionString))
                 throw new InvalidOperationException("Connection string 'DefaultConnection' is not configured in appsettings.json");
 
-            builderAction ??= (conn) => options => options.UseNpgsql(conn);
+            builderAction ??= connectionString =>
+            {
+                // left this guy strongly typed because Intellisense was having trouble recognizing options
+                return (DbContextOptionsBuilder options) => options.UseNpgsql(connectionString);
+            }!;
+
             services.AddDbContext<PlannerContext>(builderAction(connectionString));
 
             return services;

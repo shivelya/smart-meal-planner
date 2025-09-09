@@ -12,7 +12,7 @@ namespace Backend.Helpers
             {
                 // Development: built-in logging (console + debug)
                 builder.Logging.ClearProviders();
-                builder.Logging.AddConsole();
+                builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
                 builder.Logging.AddDebug();
                 builder.Logging.AddJsonConsole(); // optional structured output
             }
@@ -20,12 +20,8 @@ namespace Backend.Helpers
             {
                 // Production: use Serilog
                 builder.Host.UseSerilog((ctx, services, lc) =>
-                {
-                    lc.ReadFrom.Configuration(ctx.Configuration)
-                    .Enrich.FromLogContext()
-                    .WriteTo.Console()
-                    .WriteTo.File("logs/log-.txt", rollingInterval: RollingInterval.Day);
-                });
+                    lc.ReadFrom.Configuration(ctx.Configuration) .Enrich.FromLogContext()
+                );
             }
 
             return builder;
