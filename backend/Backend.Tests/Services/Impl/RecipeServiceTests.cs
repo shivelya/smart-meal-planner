@@ -165,5 +165,75 @@ namespace Backend.Tests.Services.Impl
             Assert.Equal("New", result.Title);
             Assert.Single(result.Ingredients);
         }
+
+         [Fact]
+        public void CookRecipe_Throws_WhenRecipeIdInvalid()
+        {
+            Assert.Throws<ArgumentException>(() => _service.CookRecipe(999, 1));
+        }
+
+        [Fact]
+        public void CookRecipe_Throws_WhenUserIdDoesNotMatch()
+        {
+            var recipe = new Recipe { Id = 1, UserId = 2, Ingredients = [], Source = "", Title = "", Instructions = "" };
+            _context.Recipes.Add(recipe);
+            _context.SaveChanges();
+            Assert.Throws<ValidationException>(() => _service.CookRecipe(1, 1));
+        }
+
+        [Fact]
+        public void CookRecipe_ReturnsUsedPantryItems()
+        {
+            var user = new User { Id = 1, Email = "", PasswordHash = "" };
+            var food = new Food { Id = 1, Name = "Egg", CategoryId = 1, Category = new Category { Id = 1, Name = "test"} };
+            var pantryItem = new PantryItem { Id = 1, UserId = 1, FoodId = 1, Food = food, Quantity = 2 };
+            var recipe = new Recipe {
+                Id = 1,
+                UserId = 1,
+                Source = "",
+                Title = "",
+                Instructions = "",
+                Ingredients = [
+                    new RecipeIngredient { RecipeId = 1, FoodId = 1, Food = food, Quantity = 1 }
+                ]
+            };
+            _context.Users.Add(user);
+            _context.Foods.Add(food);
+            _context.PantryItems.Add(pantryItem);
+            _context.Recipes.Add(recipe);
+            _context.SaveChanges();
+
+            var result = _service.CookRecipe(1, 1);
+
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Items);
+            Assert.Equal(pantryItem.Id, result.Items.First().Id);
+        }
+
+        [Fact]
+        public void CookRecipe_ReturnsEmpty_WhenNoMatchingPantryItems()
+        {
+            var user = new User { Id = 1, Email = "", PasswordHash = "" };
+            var food = new Food { Id = 1, Name = "Egg", CategoryId = 1 };
+            var pantryItem = new PantryItem { Id = 1, UserId = 1, FoodId = 1, Food = food, Quantity = 2 };
+            var recipe = new Recipe {
+                Id = 1,
+                UserId = 1,
+                Source = "",
+                Title = "",
+                Instructions = "",
+                Ingredients = [
+                    new RecipeIngredient { RecipeId = 1, FoodId = 2, Food = new Food { Id = 2, Name = "Milk", CategoryId = 1 }, Quantity = 1 }
+                ]
+            };
+            _context.Users.Add(user);
+            _context.Foods.Add(food);
+            _context.PantryItems.Add(pantryItem);
+            _context.Recipes.Add(recipe);
+            _context.SaveChanges();
+            var result = _service.CookRecipe(1, 1);
+            Assert.Equal(0, result.TotalCount);
+            Assert.Empty(result.Items);
+        }
     }
 }

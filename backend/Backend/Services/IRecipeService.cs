@@ -48,5 +48,12 @@ namespace Backend.Services
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>True if the recipe was deleted, otherwise false.</returns>
         Task<bool> DeleteAsync(int id, int userId);
+        /// <summary>
+        /// Finds pantry items used while making this recipe.
+        /// </summary>
+        /// <param name="id">The recipe's unique identifier.</param>
+        /// <param name="userId">The id of the logged in user.</param>
+        /// <returns>A list of ingredients possibly used up while making the recipe.</returns>
+        GetPantryItemsResult CookRecipe(int id, int userId);
     }
 }
