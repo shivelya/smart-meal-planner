@@ -1,11 +1,12 @@
 using Backend.DTOs;
 using Backend.Model;
+using Newtonsoft.Json.Linq;
 
 namespace Backend.Helpers
 {
     public interface IExternalRecipeGenerator
     {
-        IEnumerable<GeneratedMealPlanEntryDto> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry);
+        Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry);
     }
 
     public class SpoonacularRecipeGenerator(ILogger<SpoonacularRecipeGenerator> logger, HttpClient httpClient) : IExternalRecipeGenerator
@@ -14,8 +15,18 @@ namespace Backend.Helpers
         private readonly HttpClient _httpClient = httpClient;
 
         //expects the PantryItem objects to include the Food object
-        public IEnumerable<GeneratedMealPlanEntryDto> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry)
+        public async Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry)
         {
+            _httpClient.DefaultRequestHeaders.Add("Authorization", "Bearer my-token");
+            
+            var response = await _httpClient.GetAsync("https://api.example.com/data");
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var obj = JObject.Parse(json);
+            string name = (string)obj["name"];
+            int age = (int)obj["age"];
+
             // GET https://api.spoonacular.com/recipes/findByIngredients
             //ingredients=apples,+bananas
             //number=10 - maximum number of recipes to return
