@@ -4,12 +4,44 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Helpers
 {
-    public class ManualRecipeGenerator(PlannerContext context, ILogger<ManualRecipeGenerator> logger) : IRecipeGenerator
+    public interface IRecipeGenerator
+    {
+        Task<GeneratedMealPlanDto> GenerateMealPlan(int meals, int userId, bool useExternal);
+    }
+
+    public class ManualRecipeGenerator(PlannerContext context, ILogger<ManualRecipeGenerator> logger, IEnumerable<IExternalRecipeGenerator> generators) : IRecipeGenerator
     {
         private readonly PlannerContext _context = context;
         private readonly ILogger<ManualRecipeGenerator> _logger = logger;
+        private readonly IEnumerable<IExternalRecipeGenerator> _generators = generators;
 
-        public async Task<GeneratedMealPlanDto> GenerateMealPlan(int meals, int userId)
+        public async Task<GeneratedMealPlanDto> GenerateMealPlan(int mealCount, int userId, bool useExternal)
+        {
+            GeneratedMealPlanDto mealPlanDto;
+            if (!useExternal)
+                mealPlanDto = await GenerateManually(mealCount, userId);
+            else
+                mealPlanDto = new GeneratedMealPlanDto { Meals = [] };
+
+            if (mealPlanDto.Meals.Count() == mealCount)
+                return mealPlanDto;
+
+            var pantry = _context.PantryItems.Include(p => p.Food).Where(p => p.UserId == userId);
+            var meals = mealPlanDto.Meals.ToList();
+
+            foreach (var generator in _generators)
+            {
+                if (meals.Count == mealCount) break;
+
+                var mealPlanEntries = generator.GenerateMealPlan(mealCount - meals.Count, pantry);
+                meals.AddRange(mealPlanEntries);
+            }
+
+            mealPlanDto.Meals = meals;
+            return mealPlanDto;
+        }
+
+        private async Task<GeneratedMealPlanDto> GenerateManually(int meals, int userId)
         {
             // a recipe can only be chosen if the pantry has enough of all its ingredients
             // when a recipe is chosen, subtract its ingredient rquirements from the pantry
@@ -18,7 +50,6 @@ namespace Backend.Helpers
                 .AsNoTracking()
                 .Include(r => r.Ingredients)
                 .ThenInclude(i => i.Food)
-                .ThenInclude(f => f.Category)
                 .Where(r => r.UserId == userId)
                 .ToListAsync();
             var pantry = await _context.PantryItems.AsNoTracking().Include(p => p.Food).Where(p => p.UserId == userId).ToListAsync();
@@ -34,7 +65,7 @@ namespace Backend.Helpers
                 foreach (var r in recipes)
                     score.Add(r.Id, ScoreRecipe(r, pantry));
 
-                // remove recipes with negative score so they aren't used next go round
+                // remove recipes with zero score so they aren't used next go round
                 // they don't contain any ingredients
                 foreach (var a in score)
                     if (a.Value <= 0)
@@ -87,7 +118,7 @@ namespace Backend.Helpers
             // loop through each ingredient
             foreach (var ing in recipe.Ingredients)
             {
-                // if ingredient is in pantry
+                // recipes only get points when they contain ingredients
                 var a = pantry.FirstOrDefault(p => p.Food.Name.Equals(ing.Food.Name, StringComparison.CurrentCultureIgnoreCase));
                 if (a != null)
                 {
@@ -98,9 +129,6 @@ namespace Backend.Helpers
                         // this ingredient is in the pantry but not enough of it
                         score += 1;
                 }
-                else
-                    // ingredient is not in the pantry
-                    score -= 1;
             }
 
             return score;

@@ -1,22 +1,21 @@
 using Backend.DTOs;
 using Backend.Model;
-using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Helpers
 {
-    public interface IRecipeGenerator
+    public interface IExternalRecipeGenerator
     {
-        Task<GeneratedMealPlanDto> GenerateMealPlan(int meals, int userId);
+        IEnumerable<GeneratedMealPlanEntryDto> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry);
     }
 
-    public class SpoonacularRecipeGenerator(PlannerContext context, ILogger<SpoonacularRecipeGenerator> logger) : IRecipeGenerator
+    public class SpoonacularRecipeGenerator(ILogger<SpoonacularRecipeGenerator> logger, HttpClient httpClient) : IExternalRecipeGenerator
     {
-        private readonly PlannerContext _context = context;
         private readonly ILogger<SpoonacularRecipeGenerator> _logger = logger;
+        private readonly HttpClient _httpClient = httpClient;
 
-        public async Task<GeneratedMealPlanDto> GenerateMealPlan(int meals, int userId)
+        //expects the PantryItem objects to include the Food object
+        public IEnumerable<GeneratedMealPlanEntryDto> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry)
         {
-            var pantryItem = await _context.PantryItems.Where(p => p.UserId == userId).ToListAsync();
             // GET https://api.spoonacular.com/recipes/findByIngredients
             //ingredients=apples,+bananas
             //number=10 - maximum number of recipes to return

@@ -14,15 +14,22 @@ namespace Backend.Helpers
         public static IServiceCollection AddAppServices(this IServiceCollection services)
         {
             services.AddScoped<ITokenService, TokenService>();
-            services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IUserService, UserService>();
-            services.AddScoped<IEmailService, BrevoEmailService>();
-            services.AddScoped<IPantryItemService, PantryItemService>();
+            services.AddScoped<ICategoryService, CategoryService>();
             services.AddScoped<IFoodService, FoodService>();
-            services.AddScoped<IRecipeExtractor, ManualRecipeExtractor>();
+            services.AddScoped<IPantryItemService, PantryItemService>();
+            services.AddScoped<IRecipeService, RecipeService>();
+            services.AddScoped<IMealPlanService, MealPlanService>();
+
+            services.AddScoped<IEmailService, BrevoEmailService>();
             services.AddScoped<ISmtpClient, SmtpClientAdapter>();
+            services.AddScoped<IRecipeExtractor, ManualRecipeExtractor>();
             services.AddScoped<IRecipeGenerator, ManualRecipeGenerator>();
+
+            services.AddTransient<IExternalRecipeGenerator, SpoonacularRecipeGenerator>();
             services.AddHttpClient<ManualRecipeExtractor>();
+            services.AddHttpClient<SpoonacularRecipeGenerator>();
+
             return services;
         }
 
