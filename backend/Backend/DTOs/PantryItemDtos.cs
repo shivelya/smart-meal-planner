@@ -3,6 +3,7 @@ namespace Backend.DTOs
     public class PantryItemDto
     {
         public int Id { get; set; }
+        public required int FoodId { get; set; }
         public required FoodDto Food { get; set; }
         public required decimal Quantity { get; set; }
         public string? Unit { get; set; }
