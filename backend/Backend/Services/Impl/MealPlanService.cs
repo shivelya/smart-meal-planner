@@ -1,5 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security;
+using System.Threading.Tasks;
 using Backend.DTOs;
 using Backend.Helpers;
 using Backend.Model;
@@ -160,22 +161,56 @@ namespace Backend.Services.Impl
             return deleted > 0;
         }
 
-        public async Task<GeneratedMealPlanDto> GenerateMealPlanAsync(int days, int userId, DateTime startDate)
+        public async Task<GeneratedMealPlanDto> GenerateMealPlanAsync(int days, int userId, DateTime startDate, bool useExternal)
         {
-            if (days < 1)
-            {
-                _logger.LogWarning("Days must be greater than 0.");
-                throw new ArgumentException("Days must be greater than 0.");
-            }
-
-            var pantryItems = _context.PantryItems.Where(i => i.UserId == userId);
-
-            var mealPlan = await _recipeGenerator.GenerateMealPlan(days, userId);
+            var mealPlan = await _recipeGenerator.GenerateMealPlan(days, userId, useExternal);
             mealPlan.StartDate = startDate;
 
             _logger.LogInformation("Meal plan successfully generated.");
 
             return mealPlan;
+        }
+
+        public async Task<GetPantryItemsResult> CookMeal(int id, int mealEntryId, int userId)
+        {
+            var mealPlan = _context.MealPlans.AsNoTracking().FirstOrDefault(m => m.Id == id);
+            if (mealPlan == null)
+            {
+                _logger.LogWarning("Valid meal plan id required.");
+                throw new ArgumentException("Valid meal plan id required.");
+            }
+
+            if (mealPlan.UserId != userId)
+            {
+                _logger.LogWarning("Given meal plan does not belong to current user.");
+                throw new ValidationException("Given meal plan does not belong to current user.");
+            }
+
+            var mealPlanEntry = _context.MealPlanEntries
+                .Include(m => m.Recipe)
+                .ThenInclude(r => r.Ingredients)
+                .FirstOrDefault(m => m.Id == mealEntryId);
+
+            if (mealPlanEntry == null)
+            {
+                _logger.LogWarning("Valid meal plan entry id required.");
+                throw new ArgumentException("Valid meal plan entry id required.");
+            }
+
+            if (mealPlanEntry.MealPlanId != id)
+            {
+                _logger.LogWarning("Given meal plan entry does not belong to the given meal plan.");
+                throw new ValidationException("Given meal plan entry does not belong to the given meal plan.");
+            }
+
+            mealPlanEntry.Cooked = true;
+            await _context.SaveChangesAsync();
+
+            var pantry = _context.PantryItems.Where(p => p.UserId == userId).ToList();
+            var recipeFoodIds = mealPlanEntry.Recipe.Ingredients.Select(i => i.FoodId).ToList();
+            var usedPantryItems = pantry.Where(p => recipeFoodIds.Contains(p.FoodId)).ToList();
+
+            return new GetPantryItemsResult { TotalCount = usedPantryItems.Count, Items = usedPantryItems.Select(p => p.ToDto()) }; 
         }
 
         private void VerifyRecipe(int? recipeId, int userId)

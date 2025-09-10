@@ -14,25 +14,29 @@ namespace Backend.Tests.Model
         [Fact]
         public void MealPlanEntry_Id_SetAndGet_Works()
         {
-            var entry = new MealPlanEntry();
-            entry.Id = 1;
+            var entry = new MealPlanEntry { Id = 1 };
             Assert.Equal(1, entry.Id);
         }
 
         [Fact]
         public void MealPlanEntry_MealPlanId_SetAndGet_Works()
         {
-            var entry = new MealPlanEntry();
-            entry.MealPlanId = 2;
+            var entry = new MealPlanEntry { MealPlanId = 2 };
             Assert.Equal(2, entry.MealPlanId);
         }
 
         [Fact]
         public void MealPlanEntry_RecipeId_SetAndGet_Works()
         {
-            var entry = new MealPlanEntry();
-            entry.RecipeId = 3;
+            var entry = new MealPlanEntry { RecipeId = 3 };
             Assert.Equal(3, entry.RecipeId);
+        }
+
+        [Fact]
+        public void MealPlanEntry_Cooked_SetAndGet_Works()
+        {
+            var entry = new MealPlanEntry { Cooked = true };
+            Assert.True(entry.Cooked);
         }
 
         [Fact]

@@ -110,12 +110,16 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdateMealPlanAsync_ThrowsIfUpdatesToNonExistentMeals()
         {
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
-            var mealPlan = new MealPlan { Id = 1, UserId = 1, Meals = [ new MealPlanEntry { Id = 1, Notes = "spaghetti night" }] };
+            var mealPlan = new MealPlan { Id = 1, UserId = 1, Meals = [new MealPlanEntry { Id = 1, Notes = "spaghetti night" }] };
             plannerContext.Users.Add(user);
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
-            var req = new CreateUpdateMealPlanRequestDto { Id = 1, Meals = [
-                new CreateUpdateMealPlanEntryRequestDto { Id = 1, RecipeId = 42 }] };
+            var req = new CreateUpdateMealPlanRequestDto
+            {
+                Id = 1,
+                Meals = [
+                new CreateUpdateMealPlanEntryRequestDto { Id = 1, RecipeId = 42 }]
+            };
 
             await Assert.ThrowsAsync<ValidationException>(() => _service.UpdateMealPlanAsync(1, 1, req));
         }
@@ -128,16 +132,25 @@ namespace Backend.Tests.Services.Impl
             var recipe2 = new Recipe { Id = 2, Source = "test2", Title = "title2", Instructions = "do this2", UserId = 1 };
             plannerContext.Recipes.Add(recipe);
             plannerContext.Recipes.Add(recipe2);
-            var mealPlan = new MealPlan { Id = 1, UserId = 1, Meals = [
+            var mealPlan = new MealPlan
+            {
+                Id = 1,
+                UserId = 1,
+                Meals = [
                 new MealPlanEntry { Id = 1, Notes = "spaghetti night", RecipeId = 1, Recipe = recipe },
-                new MealPlanEntry { Id = 22, Notes = "to be deleted" }] };
+                new MealPlanEntry { Id = 22, Notes = "to be deleted" }]
+            };
             plannerContext.Users.Add(user);
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
 
-            var req = new CreateUpdateMealPlanRequestDto { Id = 1, Meals = [
+            var req = new CreateUpdateMealPlanRequestDto
+            {
+                Id = 1,
+                Meals = [
                 new CreateUpdateMealPlanEntryRequestDto { Id = 1, Notes = "n" },
-                new CreateUpdateMealPlanEntryRequestDto { Notes = "to be added", RecipeId = 2 }] };
+                new CreateUpdateMealPlanEntryRequestDto { Notes = "to be added", RecipeId = 2 }]
+            };
 
             var result = await _service.UpdateMealPlanAsync(1, 1, req);
 
@@ -155,12 +168,16 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdateMealPlanAsync_UpdatesExistingMeals()
         {
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
-            var mealPlan = new MealPlan { Id = 1, UserId = 1, Meals = [ new MealPlanEntry { Id = 1, Notes = "spaghetti night" }] };
+            var mealPlan = new MealPlan { Id = 1, UserId = 1, Meals = [new MealPlanEntry { Id = 1, Notes = "spaghetti night" }] };
             plannerContext.Users.Add(user);
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
-            var req = new CreateUpdateMealPlanRequestDto { Id = 1, Meals = [
-                new CreateUpdateMealPlanEntryRequestDto { Id = 1, Notes = "n" }] };
+            var req = new CreateUpdateMealPlanRequestDto
+            {
+                Id = 1,
+                Meals = [
+                new CreateUpdateMealPlanEntryRequestDto { Id = 1, Notes = "n" }]
+            };
 
             var result = await _service.UpdateMealPlanAsync(1, 1, req);
 
@@ -201,7 +218,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdateMealPlanAsync_DeletesOldMeals()
         {
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
-            var mealPlan = new MealPlan { Id = 1, UserId = 1, Meals = [ new MealPlanEntry { Id = 1, Notes = "note" }] };
+            var mealPlan = new MealPlan { Id = 1, UserId = 1, Meals = [new MealPlanEntry { Id = 1, Notes = "note" }] };
             plannerContext.Users.Add(user);
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
@@ -257,17 +274,113 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task GenerateMealPlanAsync_ThrowsIfDaysLessThanOne()
         {
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.GenerateMealPlanAsync(0, 1, DateTime.Today));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.GenerateMealPlanAsync(0, 1, DateTime.Today, false));
         }
 
         [Fact]
         public async Task GenerateMealPlanAsync_ReturnsGeneratedMealPlan()
         {
             var mealPlan = new GeneratedMealPlanDto { Meals = [] };
-            _mockRecipeGenerator.Setup(r => r.GenerateMealPlan(2, It.IsAny<int>())).ReturnsAsync(mealPlan);
-            var result = await _service.GenerateMealPlanAsync(2, 1, DateTime.Today);
+            _mockRecipeGenerator.Setup(r => r.GenerateMealPlan(2, It.IsAny<int>(), false)).ReturnsAsync(mealPlan);
+            var result = await _service.GenerateMealPlanAsync(2, 1, DateTime.Today, false);
             Assert.NotNull(result);
             Assert.Equal(mealPlan, result);
+        }
+
+         [Fact]
+        public async Task CookMeal_Throws_WhenMealPlanIdInvalid()
+        {
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMeal(999, 1, 1));
+        }
+
+        [Fact]
+        public async Task CookMeal_Throws_WhenUserIdDoesNotMatch()
+        {
+            var mealPlan = new MealPlan { Id = 1, UserId = 2 };
+            plannerContext.MealPlans.Add(mealPlan);
+            plannerContext.SaveChanges();
+            await Assert.ThrowsAsync<ValidationException>(() => _service.CookMeal(1, 1, 1));
+        }
+
+        [Fact]
+        public async Task CookMeal_Throws_WhenMealPlanEntryIdInvalid()
+        {
+            var mealPlan = new MealPlan { Id = 1, UserId = 1 };
+            plannerContext.MealPlans.Add(mealPlan);
+            plannerContext.SaveChanges();
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMeal(1, 999, 1));
+        }
+
+        [Fact]
+        public async Task CookMeal_Throws_WhenMealPlanEntryNotInMealPlan()
+        {
+            var mealPlan = new MealPlan { Id = 1, UserId = 1 };
+            var mealPlanEntry = new MealPlanEntry { Id = 2, MealPlanId = 2 };
+            plannerContext.MealPlans.Add(mealPlan);
+            plannerContext.MealPlanEntries.Add(mealPlanEntry);
+            plannerContext.SaveChanges();
+            await Assert.ThrowsAsync<ValidationException>(() => _service.CookMeal(1, 2, 1));
+        }
+
+        [Fact]
+        public async Task CookMeal_ReturnsUsedPantryItems()
+        {
+            var user = new User { Id = 1, Email = "", PasswordHash = "" };
+            var food = new Food { Id = 1, Name = "Egg", CategoryId = 1 };
+            var pantryItem = new PantryItem { Id = 1, UserId = 1, FoodId = 1, Food = food, Quantity = 2 };
+            var recipe = new Recipe {
+                Id = 1,
+                UserId = 1,
+                Source = "",
+                Title = "",
+                Instructions = "",
+                Ingredients = [
+                    new RecipeIngredient { RecipeId = 1, FoodId = 1, Food = food, Quantity = 1 }
+                ]
+            };
+            var mealPlan = new MealPlan { Id = 1, UserId = 1 };
+            var mealPlanEntry = new MealPlanEntry { Id = 2, MealPlanId = 1, RecipeId = 1, Recipe = recipe };
+            plannerContext.Users.Add(user);
+            plannerContext.Foods.Add(food);
+            plannerContext.PantryItems.Add(pantryItem);
+            plannerContext.Recipes.Add(recipe);
+            plannerContext.MealPlans.Add(mealPlan);
+            plannerContext.MealPlanEntries.Add(mealPlanEntry);
+            plannerContext.SaveChanges();
+            var result = await _service.CookMeal(1, 2, 1);
+            Assert.Equal(1, result.TotalCount);
+            Assert.Single(result.Items);
+            Assert.Equal(pantryItem.Id, result.Items.First().Id);
+        }
+
+        [Fact]
+        public async Task CookMeal_ReturnsEmpty_WhenNoMatchingPantryItems()
+        {
+            var user = new User { Id = 1, Email = "", PasswordHash = "" };
+            var food = new Food { Id = 1, Name = "Egg", CategoryId = 1 };
+            var pantryItem = new PantryItem { Id = 1, UserId = 1, FoodId = 1, Food = food, Quantity = 2 };
+            var recipe = new Recipe {
+                Id = 1,
+                UserId = 1,
+                Source = "",
+                Title = "",
+                Instructions = "",
+                Ingredients = [
+                    new RecipeIngredient { RecipeId = 1, FoodId = 2, Food = new Food { Id = 2, Name = "Milk", CategoryId = 1 }, Quantity = 1 }
+                ]
+            };
+            var mealPlan = new MealPlan { Id = 1, UserId = 1 };
+            var mealPlanEntry = new MealPlanEntry { Id = 2, MealPlanId = 1, RecipeId = 1, Recipe = recipe };
+            plannerContext.Users.Add(user);
+            plannerContext.Foods.Add(food);
+            plannerContext.PantryItems.Add(pantryItem);
+            plannerContext.Recipes.Add(recipe);
+            plannerContext.MealPlans.Add(mealPlan);
+            plannerContext.MealPlanEntries.Add(mealPlanEntry);
+            plannerContext.SaveChanges();
+            var result = await _service.CookMeal(1, 2, 1);
+            Assert.Equal(0, result.TotalCount);
+            Assert.Empty(result.Items);
         }
     }
 }
