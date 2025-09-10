@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using AngleSharp;
-using AngleSharp.Dom;
 
 namespace Backend.Helpers
 {

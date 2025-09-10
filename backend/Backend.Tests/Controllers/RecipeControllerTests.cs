@@ -250,8 +250,8 @@ namespace Backend.Tests.Controllers
         {
             var food = new FoodDto { Id = 1, Name = "yum yum sauce", Category = new CategoryDto { Id = 1, Name = "test" }};
             var pantryItems = new GetPantryItemsResult { TotalCount = 2, Items = [
-                new PantryItemDto { Id = 1, Quantity = 1, Food = food },
-                new PantryItemDto { Id = 2, Quantity = 3, Food = food }
+                new PantryItemDto { Id = 1, Quantity = 1, FoodId = food.Id, Food = food },
+                new PantryItemDto { Id = 2, Quantity = 3, FoodId = food.Id, Food = food }
             ] };
             _serviceMock.Setup(s => s.CookRecipe(1, It.IsAny<int>())).Returns(pantryItems);
 

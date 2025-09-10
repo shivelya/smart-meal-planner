@@ -304,8 +304,8 @@ _No content_
 | Task | Backend | Frontend |
 |------|---------|----------|
 | There should be a way, when viewing a recipe, to mark the system this recipe has been cooked |  | ⬜ |
-| The system should then show a list of pantry items that may have been used. | ⬜ | ⬜ |
-| The user gets to verify and specify which pantry items should be deleted before they are. | ⬜ | ⬜ |
+| The system should then show a list of pantry items that may have been used. | ✅ | ⬜ |
+| The user gets to verify and specify which pantry items should be deleted before they are. |  | ⬜ |
 
 **API**
 - `PUT /api/recipe/cook/{id}`

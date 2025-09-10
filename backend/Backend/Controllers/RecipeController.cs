@@ -247,7 +247,7 @@ namespace Backend.Controllers
         /// <summary>
         /// Returns all pantry items used while cooking this recipe.
         /// </summary>
-        /// <param name="id">The URL to source the recipe from.</param>
+        /// <param name="id">The id of the recipe that is being cooked.</param>
         /// <remarks>returns a list of pantry items to possibly be deleted by the user now that the recipe has been made.</remarks>
         [HttpPut("cook/{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
