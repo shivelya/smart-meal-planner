@@ -206,6 +206,21 @@ namespace Backend.Services.Impl
             return entity.ToDto();
         }
 
+        public GetPantryItemsResult CookRecipe(int id, int userId)
+        {
+            var recipe = _context.Recipes.AsNoTracking().Include(r => r.Ingredients).FirstOrDefault(r => r.Id == id)
+                ?? throw new ArgumentException("id is not a valid id of a recipe.");
+
+            if (recipe.UserId != userId)
+                throw new ValidationException("User does not have permission to access this recipe.");
+
+            var pantry = _context.PantryItems.Where(p => p.UserId == userId).ToList();
+            var recipeFoodIds = recipe.Ingredients.Select(i => i.FoodId).ToList();
+            var usedPantryItems = pantry.Where(p => recipeFoodIds.Contains(p.FoodId)).ToList();
+
+            return new GetPantryItemsResult { TotalCount = usedPantryItems.Count, Items = usedPantryItems.Select(p => p.ToDto()) };
+        }
+
         private void ValidateIngredient(CreateUpdateRecipeIngredientDto ing)
         {
             if (ing.Food.Mode == AddFoodMode.Existing)
@@ -217,7 +232,7 @@ namespace Backend.Services.Impl
                     throw new ValidationException("Found ingredient with unknown ID.");
                 }
             }
-            else if ( ing.Food.Mode == AddFoodMode.New)
+            else if (ing.Food.Mode == AddFoodMode.New)
             {
                 var food1 = (NewFoodReferenceDto)ing.Food;
                 if (_context.Categories.FirstOrDefaultAsync(i => i.Id == food1.CategoryId) == null)

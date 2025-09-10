@@ -244,6 +244,35 @@ namespace Backend.Controllers
             }
         }
 
+        /// <summary>
+        /// Returns all pantry items used while cooking this recipe.
+        /// </summary>
+        /// <param name="id">The URL to source the recipe from.</param>
+        /// <remarks>returns a list of pantry items to possibly be deleted by the user now that the recipe has been made.</remarks>
+        [HttpPut("cook/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public ActionResult<GetPantryItemsResult> CookRecipe(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Id must be positive.");
+                return BadRequest("Id must be positive.");
+            }
+
+            var userId = GetUserId();
+            try
+            {
+                return Ok(_recipeService.CookRecipe(id, userId));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
         private int GetUserId()
         {
             return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);

@@ -40,6 +40,7 @@ namespace Backend.Tests.Controllers
         [InlineData("Update", typeof(HttpPutAttribute))]
         [InlineData("Delete", typeof(HttpDeleteAttribute))]
         [InlineData("ExtractRecipe", typeof(HttpPostAttribute))]
+        [InlineData("CookRecipe", typeof(HttpPutAttribute))]
         public void Endpoint_HasCorrectHttpAttribute(string methodName, Type expectedAttribute)
         {
             var method = _controllerType.GetMethod(methodName);
@@ -66,6 +67,9 @@ namespace Backend.Tests.Controllers
         [InlineData("Delete", StatusCodes.Status500InternalServerError)]
         [InlineData("ExtractRecipe", StatusCodes.Status200OK)]
         [InlineData("ExtractRecipe", StatusCodes.Status500InternalServerError)]
+        [InlineData("CookRecipe", StatusCodes.Status200OK)]
+        [InlineData("CookRecipe", StatusCodes.Status400BadRequest)]
+        [InlineData("CookRecipe", StatusCodes.Status500InternalServerError)]
         public void Endpoint_HasCorrectProducesResponseType(string methodName, int statusCode)
         {
             var method = _controllerType.GetMethod(methodName);
