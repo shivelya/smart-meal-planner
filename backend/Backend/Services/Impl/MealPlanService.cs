@@ -161,7 +161,7 @@ namespace Backend.Services.Impl
             return deleted > 0;
         }
 
-        public async Task<GeneratedMealPlanDto> GenerateMealPlanAsync(int days, int userId, DateTime startDate, bool useExternal)
+        public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(int days, int userId, DateTime startDate, bool useExternal)
         {
             if (days <= 0)
             {

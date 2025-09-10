@@ -41,7 +41,7 @@ namespace Backend.Services
         /// <param name="startDate">The start date for the meal plan.</param>
         /// <param name="useExternal">If true then the system will use external source for the recipes rather than the users.</param>
         /// <returns>The generated meal plan.</returns>
-        Task<GeneratedMealPlanDto> GenerateMealPlanAsync(int days, int userId, DateTime startDate, bool useExternal);
+        Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(int days, int userId, DateTime startDate, bool useExternal);
         /// <summary>
         /// Gets a list of pantry items that may have been used when the given meal was cooked.
         /// </summary>
