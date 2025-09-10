@@ -209,7 +209,7 @@ _No Content_
 **Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| A meal can be marked as being cooked | ⬜ | ⬜ |
+| A meal can be marked as being cooked | ✅ | ⬜ |
 
 ---
 
@@ -222,9 +222,9 @@ _No Content_
 **Accpetance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| The system will generate a list of pantry items it believes were used once a given recipe is cooked | ⬜ | ⬜ |
-| The list of used pantry items is displayed to the user for verification | ⬜ | ⬜ |
-| The user can select which pantry items should be removed | ⬜ | ⬜ |
+| The system will generate a list of pantry items it believes were used once a given recipe is cooked | ✅ | ⬜ |
+| The list of used pantry items is displayed to the user for verification |  | ⬜ |
+| The user can select which pantry items should be removed |  | ⬜ |
 
 **API**
 - `PUT /meal-plan/cook/{id}`
@@ -264,8 +264,8 @@ _No Content_
 **Accpetance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| The system will generate as many meals as possible out of the users saved recipes first. | ⬜ | ⬜ |
+| The system will generate as many meals as possible out of the users saved recipes first. | ✅ | ⬜ |
 | If there are no more recipes that use the users pantry items, the system will go to an outside source such as Spoonacular. | ⬜ | ⬜ |
-| The system can also use the outside source by default if the user requests it. | ⬜ | ⬜ |
+| The system can also use the outside source by default if the user requests it. | ✅ | ⬜ |
 
 ---

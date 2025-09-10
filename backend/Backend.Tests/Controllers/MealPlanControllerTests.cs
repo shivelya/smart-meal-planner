@@ -73,8 +73,8 @@ namespace Backend.Tests.Controllers
         public async Task CreateMealPlan_ReturnsCreated_WhenValid()
         {
             var date = DateTime.Now;
-            var mealPlan = new CreateUpdateMealPlanRequestDto { Meals = [ new CreateUpdateMealPlanEntryRequestDto { Id = 1 } ], StartDate = date };
-            var resultMealPlan = new MealPlanDto { Id = 1, Meals = [ new MealPlanEntryDto { Id = 1 } ], StartDate = date };
+            var mealPlan = new CreateUpdateMealPlanRequestDto { Meals = [new CreateUpdateMealPlanEntryRequestDto { Id = 1 }], StartDate = date };
+            var resultMealPlan = new MealPlanDto { Id = 1, Meals = [new MealPlanEntryDto { Id = 1 }], StartDate = date };
             _mockService.Setup(s => s.AddMealPlanAsync(It.IsAny<int>(), mealPlan)).ReturnsAsync(resultMealPlan);
 
             var result = await _controller.AddMealPlanAsync(mealPlan);
@@ -142,7 +142,8 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GenerateMealPlanAsync_ReturnsOk_WhenValid()
         {
-            var generatedPlan = new GeneratedMealPlanDto {
+            var generatedPlan = new GeneratedMealPlanDto
+            {
                 Meals = [
                     new GeneratedMealPlanEntryDto {
                         RecipeId = 1,
@@ -157,9 +158,9 @@ namespace Backend.Tests.Controllers
                     }
                 ]
             };
-            _mockService.Setup(s => s.GenerateMealPlanAsync(5, It.IsAny<int>(), It.IsAny<DateTime>())).ReturnsAsync(generatedPlan);
+            _mockService.Setup(s => s.GenerateMealPlanAsync(5, It.IsAny<int>(), It.IsAny<DateTime>(), false)).ReturnsAsync(generatedPlan);
 
-            var result = await _controller.GenerateMealPlanAsync(5, DateTime.Today);
+            var result = await _controller.GenerateMealPlanAsync(5, DateTime.Today, false);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(generatedPlan, okResult.Value);
@@ -168,7 +169,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GenerateMealPlanAsync_ReturnsBadRequest_WhenDaysExceedMax()
         {
-            var result = await _controller.GenerateMealPlanAsync(15, DateTime.Today); // MAXDAYS is 10 in test config
+            var result = await _controller.GenerateMealPlanAsync(15, DateTime.Today, false); // MAXDAYS is 10 in test config
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.NotNull(badRequest.Value);
@@ -178,14 +179,65 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GenerateMealPlanAsync_Returns500_OnException()
         {
-            _mockService.Setup(s => s.GenerateMealPlanAsync(5, It.IsAny<int>(), It.IsAny<DateTime>())).ThrowsAsync(new Exception("fail"));
+            _mockService.Setup(s => s.GenerateMealPlanAsync(5, It.IsAny<int>(), It.IsAny<DateTime>(), false)).ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.GenerateMealPlanAsync(5, DateTime.Today);
+            var result = await _controller.GenerateMealPlanAsync(5, DateTime.Today, false);
 
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
             Assert.NotNull(objResult.Value);
             Assert.Contains("Could not generate meal plan", objResult.Value!.ToString());
+        }
+
+        [Theory]
+        [InlineData(0)]
+        [InlineData(-1)]
+        [InlineData(-10)]
+        public async Task GenerateMealPlanAsync_ReturnsBadRequest_WhenDaysIsZeroOrNegative(int days)
+        {
+            var result = await _controller.GenerateMealPlanAsync(days, DateTime.Today, false);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("Days must be positive.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task CookMeal_ReturnsBadRequest_WhenIdIsNonPositive()
+        {
+            var result = await _controller.CookMeal(0, 1);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result!);
+            Assert.Equal("Id must be positive.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task CookMeal_ReturnsBadRequest_WhenMealEntryIdIsNonPositive()
+        {
+            var result = await _controller.CookMeal(1, 0);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result!);
+            Assert.Equal("mealEntryId must be positive.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task CookMeal_ReturnsOk_WhenServiceReturnsResult()
+        {
+            var pantryResult = new GetPantryItemsResult { TotalCount = 1, Items = [] };
+            _mockService.Setup(s => s.CookMeal(1, 2, userId)).ReturnsAsync(pantryResult);
+
+            var result = await _controller.CookMeal(1, 2);
+
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            Assert.Equal(pantryResult, okResult.Value);
+        }
+
+        [Fact]
+        public async Task CookMeal_Returns500_WhenServiceThrows()
+        {
+            _mockService.Setup(s => s.CookMeal(1, 2, userId)).Throws(new Exception("fail"));
+
+            var result = await _controller.CookMeal(1, 2);
+
+            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, objResult.StatusCode);
+            Assert.Equal("fail", objResult.Value);
         }
     }
 }

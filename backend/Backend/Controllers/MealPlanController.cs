@@ -141,24 +141,31 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="days">The number of meals to generate.</param>
         /// <param name="startDate">The start date of the meal plan.</param>
+        /// <param name="useExternal">If true, the system will use external source for recipes rather than the user's saved ones.</param>
         /// <remarks>Returns a MealPlanDto object with the correct number of recipes. It will not be be inserted into the DB until
         /// the user verifies the list.</remarks>
         [HttpPost("generate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GeneratedMealPlanDto>> GenerateMealPlanAsync(int days, DateTime startDate)
+        public async Task<ActionResult<GeneratedMealPlanDto>> GenerateMealPlanAsync(int days, DateTime startDate, bool useExternal)
         {
-            if (days > MAXDAYS)
+            if (days <= 0)
             {
-                _logger.LogWarning("User tried to create a meal plan for more than {max} days.", MAXDAYS);
-                return BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,");
+                _logger.LogWarning("Cannot create meal plan for less than 1 day.");
+                return BadRequest("Cannot create meal plan for less than 1 day.");
             }
+
+            if (days > MAXDAYS)
+                {
+                    _logger.LogWarning("User tried to create a meal plan for more than {max} days.", MAXDAYS);
+                    return BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,");
+                }
 
             try
             {
                 var userId = GetUserId();
-                var plan = await _service.GenerateMealPlanAsync(days, userId, startDate);
+                var plan = await _service.GenerateMealPlanAsync(days, userId, startDate, useExternal);
 
                 _logger.LogInformation("Meal plan generated successfully.");
                 return Ok(plan);
@@ -167,6 +174,42 @@ namespace Backend.Controllers
             {
                 _logger.LogWarning("Could not generate meal plan: {ex}", ex.Message);
                 return StatusCode(500, "Could not generate meal plan: " + ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Returns all pantry items used while cooking this meal.
+        /// </summary>
+        /// <param name="id">The id of the meal plan the meal was taken from.</param>
+        /// <param name="mealEntryId">The id of the meal within the meal plan being cooked.</param>
+        /// <remarks>Returns a list of pantry items to possibly be deleted by the user now that the meal has been made.</remarks>
+        [HttpPut("cook/{id}")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<GetPantryItemsResult>> CookMeal(int id, [FromBody] int mealEntryId)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Id must be positive.");
+                return BadRequest("Id must be positive.");
+            }
+
+            if (mealEntryId <= 0)
+            {
+                _logger.LogWarning("mealEntryId must be positive.");
+                return BadRequest("mealEntryId must be positive.");
+            }
+
+            var userId = GetUserId();
+            try
+            {
+                return Ok(await _service.CookMeal(id, mealEntryId, userId));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return StatusCode(500, ex.Message);
             }
         }
 
