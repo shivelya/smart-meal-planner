@@ -13,7 +13,7 @@ namespace Backend.DTOs
                 Title = recipe.Title,
                 Source = recipe.Source,
                 Instructions = recipe.Instructions,
-                Ingredients = [.. recipe.Ingredients.Select(ToDto)]
+                Ingredients = [.. recipe.Ingredients?.Select(ToDto)!]
             };
         }
 
@@ -21,7 +21,7 @@ namespace Backend.DTOs
         {
             return new RecipeIngredientDto
             {
-                Food = ingredient.Food.ToDto(),
+                Food = ingredient.Food?.ToDto()!,
                 Quantity = ingredient.Quantity,
                 Unit = ingredient.Unit
             };
@@ -33,7 +33,7 @@ namespace Backend.DTOs
             {
                 Id = food.Id,
                 Name = food.Name,
-                Category = food.Category.ToDto()
+                Category = food.Category?.ToDto()!
             };
         }
 
@@ -53,7 +53,8 @@ namespace Backend.DTOs
                 Id = entity.Id,
                 Quantity = entity.Quantity,
                 Unit = entity.Unit,
-                Food = entity.Food.ToDto()
+                FoodId = entity.FoodId,
+                Food = entity.Food?.ToDto()!
             };
         }
 
@@ -63,7 +64,7 @@ namespace Backend.DTOs
             {
                 Id = entity.Id,
                 StartDate = entity.StartDate,
-                Meals = entity.Meals.Select(p => p.ToDto())
+                Meals = entity.Meals?.Select(ToDto)!
             };
         }
 
@@ -73,6 +74,7 @@ namespace Backend.DTOs
             {
                 Id = entity.Id,
                 Notes = entity.Notes,
+                Cooked = entity.Cooked,
                 RecipeId = entity.RecipeId,
                 Recipe = entity.Recipe?.ToDto()
             };
