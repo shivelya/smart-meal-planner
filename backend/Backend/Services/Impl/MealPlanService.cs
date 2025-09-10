@@ -163,6 +163,11 @@ namespace Backend.Services.Impl
 
         public async Task<GeneratedMealPlanDto> GenerateMealPlanAsync(int days, int userId, DateTime startDate, bool useExternal)
         {
+            if (days <= 0)
+            {
+                _logger.LogWarning("Days must be positive");
+                throw new ArgumentException("Days must be positive.");
+            }
             var mealPlan = await _recipeGenerator.GenerateMealPlan(days, userId, useExternal);
             mealPlan.StartDate = startDate;
 
