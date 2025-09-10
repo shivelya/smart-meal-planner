@@ -280,7 +280,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task GenerateMealPlanAsync_ReturnsGeneratedMealPlan()
         {
-            var mealPlan = new GeneratedMealPlanDto { Meals = [] };
+            var mealPlan = new CreateUpdateMealPlanRequestDto { Meals = [] };
             _mockRecipeGenerator.Setup(r => r.GenerateMealPlan(2, It.IsAny<int>(), false)).ReturnsAsync(mealPlan);
             var result = await _service.GenerateMealPlanAsync(2, 1, DateTime.Today, false);
             Assert.NotNull(result);

@@ -19,10 +19,4 @@ namespace Backend.DTOs
         public required int TotalCount { get; set; }
         public required IEnumerable<MealPlanDto> MealPlans { get; set;}
     }
-
-    public class GeneratedMealPlanDto
-    {
-        public DateTime? StartDate { get; set; }
-        public required IEnumerable<GeneratedMealPlanEntryDto> Meals { get; set; }
-    }
 }

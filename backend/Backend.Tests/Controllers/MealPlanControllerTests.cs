@@ -142,21 +142,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GenerateMealPlanAsync_ReturnsOk_WhenValid()
         {
-            var generatedPlan = new GeneratedMealPlanDto
+            var generatedPlan = new CreateUpdateMealPlanRequestDto
             {
-                Meals = [
-                    new GeneratedMealPlanEntryDto {
-                        RecipeId = 1,
-                        Recipe = new RecipeDto
-                        {
-                            Id = 1,
-                            Title = "Test Recipe",
-                            UserId = 1,
-                            Source = "src",
-                            Instructions = "inst",
-                            Ingredients = [] }
-                    }
-                ]
+                Meals = [ new CreateUpdateMealPlanEntryRequestDto { RecipeId = 1 } ]
             };
             _mockService.Setup(s => s.GenerateMealPlanAsync(5, It.IsAny<int>(), It.IsAny<DateTime>(), false)).ReturnsAsync(generatedPlan);
 

@@ -6,7 +6,7 @@ namespace Backend.Helpers
 {
     public interface IRecipeGenerator
     {
-        Task<GeneratedMealPlanDto> GenerateMealPlan(int meals, int userId, bool useExternal);
+        Task<CreateUpdateMealPlanRequestDto> GenerateMealPlan(int meals, int userId, bool useExternal);
     }
 
     public class ManualRecipeGenerator(PlannerContext context, ILogger<ManualRecipeGenerator> logger, IEnumerable<IExternalRecipeGenerator> generators) : IRecipeGenerator
@@ -15,13 +15,13 @@ namespace Backend.Helpers
         private readonly ILogger<ManualRecipeGenerator> _logger = logger;
         private readonly IEnumerable<IExternalRecipeGenerator> _generators = generators;
 
-        public async Task<GeneratedMealPlanDto> GenerateMealPlan(int mealCount, int userId, bool useExternal)
+        public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlan(int mealCount, int userId, bool useExternal)
         {
-            GeneratedMealPlanDto mealPlanDto;
+            CreateUpdateMealPlanRequestDto mealPlanDto;
             if (!useExternal)
                 mealPlanDto = await GenerateManually(mealCount, userId);
             else
-                mealPlanDto = new GeneratedMealPlanDto { Meals = [] };
+                mealPlanDto = new CreateUpdateMealPlanRequestDto { Meals = [] };
 
             if (mealPlanDto.Meals.Count() == mealCount)
                 return mealPlanDto;
@@ -41,7 +41,7 @@ namespace Backend.Helpers
             return mealPlanDto;
         }
 
-        private async Task<GeneratedMealPlanDto> GenerateManually(int meals, int userId)
+        private async Task<CreateUpdateMealPlanRequestDto> GenerateManually(int meals, int userId)
         {
             // a recipe can only be chosen if the pantry has enough of all its ingredients
             // when a recipe is chosen, subtract its ingredient rquirements from the pantry
@@ -97,13 +97,9 @@ namespace Backend.Helpers
                 selectedRecipes.Add(selectedRecipe);
             }
 
-            var generatedMealPlan = new GeneratedMealPlanDto
+            var generatedMealPlan = new CreateUpdateMealPlanRequestDto
             {
-                Meals = selectedRecipes.Select(r => new GeneratedMealPlanEntryDto
-                {
-                    Recipe = r.ToDto(),
-                    RecipeId = r.Id
-                })
+                Meals = selectedRecipes.Select(r => new CreateUpdateMealPlanEntryRequestDto { RecipeId = r.Id })
             };
 
             return generatedMealPlan;
