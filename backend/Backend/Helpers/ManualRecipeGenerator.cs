@@ -33,7 +33,7 @@ namespace Backend.Helpers
             {
                 if (meals.Count == mealCount) break;
 
-                var mealPlanEntries = generator.GenerateMealPlan(mealCount - meals.Count, pantry);
+                var mealPlanEntries = await generator.GenerateMealPlan(mealCount - meals.Count, pantry);
                 meals.AddRange(mealPlanEntries);
             }
 

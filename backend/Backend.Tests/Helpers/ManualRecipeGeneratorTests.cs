@@ -146,7 +146,7 @@ namespace Backend.Tests.Helpers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             _externalGeneratorMock.Setup(g => g.GenerateMealPlan(2, It.IsAny<IQueryable<PantryItem>>()))
-                .Returns([new GeneratedMealPlanEntryDto { RecipeId = 99, Recipe = new RecipeDto { Id = 99, Title = "External", UserId = 1, Source = "src", Instructions = "inst", Ingredients = new List<RecipeIngredientDto>() } }]);
+                .ReturnsAsync([new GeneratedMealPlanEntryDto { RecipeId = 99, Recipe = new RecipeDto { Id = 99, Title = "External", UserId = 1, Source = "src", Instructions = "inst", Ingredients = new List<RecipeIngredientDto>() } }]);
             var result = await _generator.GenerateMealPlan(2, 1, false);
             Assert.Single(result.Meals);
             Assert.Equal(99, result.Meals.First().RecipeId);
@@ -174,7 +174,7 @@ namespace Backend.Tests.Helpers
 
             // Setup external generator to return a different recipe
             _externalGeneratorMock.Setup(g => g.GenerateMealPlan(1, It.IsAny<IQueryable<PantryItem>>()))
-                .Returns([
+                .ReturnsAsync([
                     new() {
                         RecipeId = 99,
                         Recipe = new RecipeDto { Id = 99, Title = "External", UserId = 1, Source = "src", Instructions = "inst", Ingredients = [] }

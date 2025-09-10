@@ -197,7 +197,7 @@ namespace Backend.Tests.Controllers
         {
             var result = await _controller.GenerateMealPlanAsync(days, DateTime.Today, false);
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Days must be positive.", badRequest.Value);
+            Assert.Equal("Cannot create meal plan for less than 1 day.", badRequest.Value);
         }
 
         [Fact]
