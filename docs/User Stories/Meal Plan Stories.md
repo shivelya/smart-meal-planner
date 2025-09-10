@@ -197,3 +197,75 @@ _No Content_
 | User can add recipes to certain days, or just add notes to certain days | ✅ | ⬜ |
 | User can later edit that text, or delete it and add a recipe | ✅ | ⬜ |
 | User can also have both text and a recipe | ✅ | ⬜ |
+
+---
+
+## Story: Cooking a Meal Plan Recipe
+
+***A a*** user,
+***I want*** to be able to mark which meals I've made in a given meal plan.
+***so that*** I can keep track.
+
+**Acceptance Criteria**
+| Task | Backend | Frontend |
+|------|---------|----------|
+| A meal can be marked as being cooked | ⬜ | ⬜ |
+
+---
+
+## Story: Using Pantry Items
+
+***As a*** user,
+***I want*** my pantry to stay updated when I cook meals
+***so that*** my pantry is correct the next time I make a meal plan.
+
+**Accpetance Criteria**
+| Task | Backend | Frontend |
+|------|---------|----------|
+| The system will generate a list of pantry items it believes were used once a given recipe is cooked | ⬜ | ⬜ |
+| The list of used pantry items is displayed to the user for verification | ⬜ | ⬜ |
+| The user can select which pantry items should be removed | ⬜ | ⬜ |
+
+**API**
+- `PUT /meal-plan/cook/{id}`
+
+**Request**
+```json
+{ "meal-plan-entry-id": 1}
+```
+
+**Response (200)**
+```json
+[
+  {
+    "id": 0,
+    "food": {
+      "id": 0,
+      "name": "string",
+      "category": {
+        "id": 0,
+        "name": "string"
+      }
+    },
+    "quantity": 0,
+    "unit": "string"
+  }
+]
+```
+
+---
+
+## Story: Using Pantry Items
+
+***As a*** user,
+***I want*** as many meals as I requested in my meal plan, even if I don't have enough of my own recipes.
+***so that*** I have a full meal plan without having to save my own recipes.
+
+**Accpetance Criteria**
+| Task | Backend | Frontend |
+|------|---------|----------|
+| The system will generate as many meals as possible out of the users saved recipes first. | ⬜ | ⬜ |
+| If there are no more recipes that use the users pantry items, the system will go to an outside source such as Spoonacular. | ⬜ | ⬜ |
+| The system can also use the outside source by default if the user requests it. | ⬜ | ⬜ |
+
+---

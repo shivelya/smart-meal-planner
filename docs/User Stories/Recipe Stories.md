@@ -138,7 +138,7 @@
 ## Story: Search Recipes by Pantry Items
 
 ***As a*** logged-in user
-***I want**** to search for recipes using my pantry items
+***I want*** to search for recipes using my pantry items
 ***So that*** I can cook meals with what I have.
 
 **Acceptance Criteria**
@@ -255,9 +255,9 @@ _No content_
 
 ## Story: Import Recipe from Text
 
-***As a*** user  
-***I want*** to paste or type a recipe into the app as plain text  
-***So that*** the app can parse the text into structured recipe details and let me verify them before saving to my collection  
+***As a*** user
+***I want*** to paste or type a recipe into the app as plain text
+***So that*** the app can parse the text into structured recipe details and let me verify them before saving to my collection
 
 **Acceptance Criteria:**
 | Task | Backend | Frontend |
@@ -277,3 +277,56 @@ _No content_
 | The user should be able to freely edit any extracted fields before saving | ⬜ | ⬜ |
 | The system should not save the recipe to the database until the user explicitly confirms | ⬜ | ⬜ |
 | If the user cancels, the extracted recipe should be discarded without saving | ⬜ | ⬜ |
+
+---
+
+## Story: Add Recipes to Meal Plans
+
+***As a*** user
+***I want*** to manually be able to put recipes in meal plans
+***So that*** I have full control over what I'd like to cook
+
+**Acceptance Criteria:**
+| Task | Backend | Frontend |
+|------|---------|----------|
+| User can select a recipe and add it to a specified meal plan |  | ⬜ |
+| User can select a recipe and add it to a new meal plan |  | ⬜ |
+
+---
+
+## Story: Mark a Recipe as Cooked
+
+***As a*** user
+***I want*** tell the system that I cooked a particular recipe, even if that recipe is not in a meal plan
+***So that*** the system can help me keep my pantry up to date
+
+**Acceptance Criteria:**
+| Task | Backend | Frontend |
+|------|---------|----------|
+| There should be a way, when viewing a recipe, to mark the system this recipe has been cooked |  | ⬜ |
+| The system should then show a list of pantry items that may have been used. | ⬜ | ⬜ |
+| The user gets to verify and specify which pantry items should be deleted before they are. | ⬜ | ⬜ |
+
+**API**
+- `PUT /api/recipe/cook/{id}`
+
+**Response**
+```json
+[
+  {
+    "id": 0,
+    "food": {
+      "id": 0,
+      "name": "string",
+      "category": {
+        "id": 0,
+        "name": "string"
+      }
+    },
+    "quantity": 0,
+    "unit": "string"
+  }
+]
+```
+
+---
