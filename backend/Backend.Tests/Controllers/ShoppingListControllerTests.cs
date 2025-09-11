@@ -21,6 +21,39 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
+        public async Task DeleteShoppingListItemAsync_ReturnsNoContent_OnSuccess()
+        {
+            var serviceMock = new Mock<IShoppingListService>();
+            serviceMock.Setup(s => s.DeleteShoppingListItemAsync(2, 42)).Returns(Task.CompletedTask);
+            var controller = GetController(serviceMock);
+
+            var result = await controller.DeleteShoppingListItemAsync(2);
+            Assert.IsType<NoContentResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task DeleteShoppingListItemAsync_ReturnsBadRequest_WhenIdIsInvalid()
+        {
+            var controller = GetController();
+            var result = await controller.DeleteShoppingListItemAsync(0);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("Valid id is required.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task DeleteShoppingListItemAsync_Returns500_OnException()
+        {
+            var serviceMock = new Mock<IShoppingListService>();
+            serviceMock.Setup(s => s.DeleteShoppingListItemAsync(2, 42)).ThrowsAsync(new Exception("fail"));
+            var controller = GetController(serviceMock);
+
+            var result = await controller.DeleteShoppingListItemAsync(2);
+            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, objResult.StatusCode);
+            Assert.Equal("fail", objResult.Value);
+        }
+
+        [Fact]
         public async Task AddShoppingListItemAsync_ReturnsOk_WithResult()
         {
             var serviceMock = new Mock<IShoppingListService>();
