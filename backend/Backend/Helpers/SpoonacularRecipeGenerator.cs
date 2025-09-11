@@ -11,10 +11,11 @@ namespace Backend.Helpers
         Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry);
     }
 
-    public class SpoonacularRecipeGenerator(ILogger<SpoonacularRecipeGenerator> logger, HttpClient httpClient) : IExternalRecipeGenerator
+    public class SpoonacularRecipeGenerator(ILogger<SpoonacularRecipeGenerator> logger, HttpClient httpClient, IConfiguration configuration) : IExternalRecipeGenerator
     {
         private readonly ILogger<SpoonacularRecipeGenerator> _logger = logger;
         private readonly HttpClient _httpClient = httpClient;
+        private readonly IConfiguration _configuration = configuration;
 
         //expects the PantryItem objects to include the Food object
         public async Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry)
