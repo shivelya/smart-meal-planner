@@ -27,6 +27,43 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
+        public async Task AddShoppingListItemAsync_ThrowsArgumentException_WhenRequestIsNull()
+        {
+            var context = CreateContext();
+            var service = CreateService(context);
+            await Assert.ThrowsAsync<ArgumentException>(() => service.AddShoppingListItemAsync(null!, 42));
+        }
+
+        [Fact]
+        public async Task AddShoppingListItemAsync_ThrowsArgumentException_WhenIdIsNotNull()
+        {
+            var context = CreateContext();
+            var service = CreateService(context);
+            var request = new CreateUpdateShoppingListEntryRequestDto { Id = 1, FoodId = 10, Purchased = true, Notes = "note" };
+            await Assert.ThrowsAsync<ArgumentException>(() => service.AddShoppingListItemAsync(request, 42));
+        }
+
+        [Fact]
+        public async Task AddShoppingListItemAsync_AddsItemSuccessfully()
+        {
+            var context = CreateContext();
+            context.Users.Add(new User { Id = 42, Email = "user@example.com", PasswordHash = "hash" });
+            context.Foods.Add(new Food { Id = 10, Name = "Apple" });
+            context.SaveChanges();
+            var service = CreateService(context);
+            var request = new CreateUpdateShoppingListEntryRequestDto { FoodId = 10, Purchased = true, Notes = "new item" };
+            var result = await service.AddShoppingListItemAsync(request, 42);
+            Assert.NotNull(result);
+            Assert.Equal(10, result.FoodId);
+            Assert.True(result.Purchased);
+            Assert.Equal("new item", result.Notes);
+            // Verify item is in context
+            var dbItem = context.ShoppingListItems.FirstOrDefault(i => i.FoodId == 10 && i.UserId == 42);
+            Assert.NotNull(dbItem);
+            Assert.Equal(result.Id, dbItem.Id);
+        }
+
+        [Fact]
         public async Task UpdateShoppingListItemAsync_ThrowsArgumentException_WhenRequestIsNull()
         {
             var context = CreateContext();
