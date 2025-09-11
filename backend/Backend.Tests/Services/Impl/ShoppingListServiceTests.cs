@@ -27,6 +27,37 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
+        public async Task DeleteShoppingListItemAsync_ThrowsArgumentException_WhenIdIsInvalid()
+        {
+            var context = CreateContext();
+            var service = CreateService(context);
+            await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteShoppingListItemAsync(0, 42));
+        }
+
+        [Fact]
+        public async Task DeleteShoppingListItemAsync_ThrowsValidationException_WhenItemNotFound()
+        {
+            var context = CreateContext();
+            var service = CreateService(context);
+            await Assert.ThrowsAsync<ValidationException>(() => service.DeleteShoppingListItemAsync(99, 42));
+        }
+
+        [Fact]
+        public async Task DeleteShoppingListItemAsync_DeletesItemSuccessfully()
+        {
+            var context = CreateContext();
+            context.Users.Add(new User { Id = 42, Email = "user@example.com", PasswordHash = "hash" });
+            context.Foods.Add(new Food { Id = 10, Name = "Apple" });
+            context.ShoppingListItems.Add(new ShoppingListItem { Id = 1, UserId = 42, FoodId = 10, Purchased = false });
+            context.SaveChanges();
+            var service = CreateService(context);
+
+            await service.DeleteShoppingListItemAsync(1, 42);
+            var dbItem = context.ShoppingListItems.FirstOrDefault(i => i.Id == 1 && i.UserId == 42);
+            Assert.Null(dbItem);
+        }
+
+        [Fact]
         public async Task AddShoppingListItemAsync_ThrowsArgumentException_WhenRequestIsNull()
         {
             var context = CreateContext();

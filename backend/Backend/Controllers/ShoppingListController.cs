@@ -97,6 +97,36 @@ namespace Backend.Controllers
         }
 
         /// <summary>
+        /// Removes an item from the shopping list
+        /// </summary>
+        /// <param name="id">The id of the item to remove.</param>
+        /// <remarks>Returns 204 on success.</remarks>
+        [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ShoppingListItemDto>> DeleteShoppingListItemAsync(int id)
+        {
+            if (id <= 0)
+            {
+                _logger.LogWarning("Valid id is requried.");
+                return BadRequest("Valid id is required.");
+            }
+
+            try
+            {
+                var userId = GetUserId();
+                await _service.DeleteShoppingListItemAsync(id, userId);
+                return NoContent();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Generates a shopping list based on a given meal plan
         /// </summary>
         /// <param name="request">Includes a meal plan id and whether or not to restart the list.</param>

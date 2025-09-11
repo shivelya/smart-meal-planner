@@ -102,6 +102,28 @@ namespace Backend.Services.Impl
             return item.ToDto();
         }
 
+        public async Task DeleteShoppingListItemAsync(int id, int userId)
+        {
+            if (id <= 0)
+            {
+                // shouldn't get here, we check this in controller
+                _logger.LogWarning("Valid id is required.");
+                throw new ArgumentException("Valid id is required.");
+            }
+
+            var item = _context.ShoppingListItems
+                .FirstOrDefault(s => s.Id == id && s.UserId == userId);
+
+            if (item == null)
+            {
+                _logger.LogWarning("Shopping list item not found.");
+                throw new ValidationException("Shopping list item not found.");
+            }
+
+            _context.ShoppingListItems.Remove(item);
+            await _context.SaveChangesAsync();
+        }
+
         public async Task GenerateAsync(GenerateShoppingListRequestDto request, int userId)
         {
             if (request == null)
