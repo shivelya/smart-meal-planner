@@ -59,7 +59,7 @@ cd backend
 dotnet restore
 dotnet tool restore
 dotnet build
-dotnet run
+dotnet run (I like dotnet run | ForEach-Object { $_ | jq . } to help keep my terminal messages readable)
 ```
 
 4. Run tests:
