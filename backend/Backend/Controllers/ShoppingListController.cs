@@ -37,6 +37,36 @@ namespace Backend.Controllers
         }
 
         /// <summary>
+        /// Edits an item on the shopping list
+        /// </summary>
+        /// <param name="request">The updated shopping list item.</param>
+        /// <remarks>Returns the shopping list.</remarks>
+        [HttpPut]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ShoppingListItemDto>> UpdateShoppingList(CreateUpdateShoppingListEntryRequestDto request)
+        {
+            if (request == null)
+            {
+                _logger.LogWarning("request object is requried.");
+                return BadRequest("request object is required.");
+            }
+
+            try
+            {
+                var userId = GetUserId();
+                var result = await _service.UpdateShoppingListItemAsync(request, userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Generates a shopping list based on a given meal plan
         /// </summary>
         /// <param name="request">Includes a meal plan id and whether or not to restart the list.</param>

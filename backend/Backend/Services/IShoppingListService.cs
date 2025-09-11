@@ -6,5 +6,6 @@ namespace Backend.Services
     {
         Task GenerateAsync(GenerateShoppingListRequestDto request, int userId);
         GetShoppingListResult GetShoppingList(int userId);
+        Task<ShoppingListItemDto> UpdateShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request, int userId);
     }
 }

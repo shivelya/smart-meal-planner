@@ -26,6 +26,54 @@ namespace Backend.Services.Impl
             };
         }
 
+        public async Task<ShoppingListItemDto> UpdateShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request, int userId)
+        {
+            if (request == null)
+            {
+                // shouldn't get here, we check this in controller
+                _logger.LogWarning("request object is required.");
+                throw new ArgumentException("request object is required.");
+            }
+
+            if (request.Id == null)
+            {
+                _logger.LogWarning("Id is required for updating a shopping list item.");
+                throw new ArgumentException("Id is required for updating a shopping list item.");
+            }
+
+            var item = _context.ShoppingListItems
+                .FirstOrDefault(s => s.Id == request.Id && s.UserId == userId);
+
+            if (item == null)
+            {
+                _logger.LogWarning("Shopping list item not found.");
+                throw new ValidationException("Shopping list item not found.");
+            }
+
+            if (request.FoodId != null)
+            {
+                var food = _context.Foods
+                    .AsNoTracking()
+                    .FirstOrDefault(f => f.Id == request.FoodId);
+
+                if (food == null)
+                {
+                    _logger.LogWarning("Valid food id must be given.");
+                    throw new ArgumentException("Valid food id must be given.");
+                }
+
+            }
+
+            item.FoodId = request.FoodId;
+            item.Purchased = request.Purchased;
+            item.Notes = request.Notes;
+
+            _context.ShoppingListItems.Update(item);
+            await _context.SaveChangesAsync();
+
+            return item.ToDto();
+        }
+
         public async Task GenerateAsync(GenerateShoppingListRequestDto request, int userId)
         {
             if (request == null)
