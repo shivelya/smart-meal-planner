@@ -53,11 +53,17 @@ namespace Backend.Helpers
                 // returns an array of recipes
                 foreach (var recipe in recipes)
                 {
+                    // need to make separate call to get instructions as text, womp womp
+                    response = await _httpClient.GetAsync($"https://api.spoonacular.com/recipes/{recipe["id"]}/information");
+                    response.EnsureSuccessStatusCode();
+                    json = await response.Content.ReadAsStringAsync();
+                    obj = JObject.Parse(json);
+
                     var gen = new GeneratedMealPlanEntryDto
                     {
                         Title = (string)recipe["title"]!,
                         Source = $"Spoonacular - {((int)recipe["id"]!).ToString()}",
-                        Instructions = (string)recipe["instructions"]!
+                        Instructions = (string)obj["instructions"]!
                     };
 
                     genList.Add(gen);

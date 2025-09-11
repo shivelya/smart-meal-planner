@@ -146,10 +146,13 @@ namespace Backend.Tests.Helpers
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
             _externalGeneratorMock.Setup(g => g.GenerateMealPlan(2, It.IsAny<IQueryable<PantryItem>>()))
-                .ReturnsAsync([new GeneratedMealPlanEntryDto { Title = "", Source = "", Instructions = "" }]);
+                .ReturnsAsync([new GeneratedMealPlanEntryDto { Title = "test", Source = "", Instructions = "" }]);
+
             var result = await _generator.GenerateMealPlan(2, 1, false);
+
             Assert.Single(result.Meals);
-            Assert.Equal(99, result.Meals.First().RecipeId);
+            var meal = Assert.IsType<GeneratedMealPlanEntryDto>(result.Meals.First());
+            Assert.Equal("test", meal.Title);
         }
 
         [Fact]
@@ -177,7 +180,7 @@ namespace Backend.Tests.Helpers
                 .ReturnsAsync([
                     new() {
                         Source = "Spoonacular",
-                        Title = "Title",
+                        Title = "External",
                         Instructions = ""
                     }
                 ]);
