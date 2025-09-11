@@ -19,7 +19,7 @@ namespace Backend.Tests.Controllers
         {
             var attr = typeof(MealPlanController).GetCustomAttribute<RouteAttribute>();
             Assert.NotNull(attr);
-            Assert.Equal("api/meal-plan", attr.Template);
+            Assert.Equal("api/[controller]", attr.Template);
         }
 
         [Fact]
