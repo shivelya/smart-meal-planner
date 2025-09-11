@@ -15,7 +15,7 @@ namespace Backend.DTOs
     public class ShoppingListItemDto
     {
         public required int Id { get; set; }
-        public required int FoodId { get; set; }
+        public int? FoodId { get; set; }
         public FoodDto? Food { get; set; }
         public bool Purchased { get; set; }
         public string? Notes { get; set; }

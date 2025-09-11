@@ -5,5 +5,6 @@ namespace Backend.Services
     public interface IShoppingListService
     {
         Task GenerateAsync(GenerateShoppingListRequestDto request, int userId);
+        GetShoppingListResult GetShoppingList(int userId);
     }
 }

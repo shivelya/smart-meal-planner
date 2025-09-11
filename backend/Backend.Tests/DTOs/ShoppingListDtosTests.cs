@@ -1,4 +1,5 @@
 using Backend.DTOs;
+using Backend.Model;
 
 namespace Backend.Tests.DTOs
 {
@@ -47,6 +48,33 @@ namespace Backend.Tests.DTOs
             Assert.True(dto.Purchased);
             Assert.Equal("Organic", dto.Notes);
         }
+
+            [Fact]
+            public void MappingExtensions_ToDto_MapsEntityToDtoCorrectly()
+            {
+                var category = new Category { Id = 1, Name = "Fruit" };
+                var food = new Food { Id = 5, Name = "Apple", Category = category };
+                var entity = new ShoppingListItem
+                {
+                    Id = 10,
+                    FoodId = 5,
+                    Food = food,
+                    Purchased = true,
+                    Notes = "Organic"
+                };
+
+                var dto = entity.ToDto();
+                Assert.Equal(entity.Id, dto.Id);
+                Assert.Equal(entity.FoodId, dto.FoodId);
+                Assert.Equal(entity.Purchased, dto.Purchased);
+                Assert.Equal(entity.Notes, dto.Notes);
+                Assert.NotNull(dto.Food);
+                Assert.Equal(food.Id, dto.Food.Id);
+                Assert.Equal(food.Name, dto.Food.Name);
+                Assert.NotNull(dto.Food.Category);
+                Assert.Equal(category.Id, dto.Food.Category.Id);
+                Assert.Equal(category.Name, dto.Food.Category.Name);
+            }
 
         [Fact]
         public void CanSetNullProperties()

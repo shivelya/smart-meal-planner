@@ -20,6 +20,44 @@ namespace Backend.Tests.Controllers
             return controller;
         }
 
+            [Fact]
+            public void GetShoppingList_ReturnsOk_WithResult()
+            {
+                var serviceMock = new Mock<IShoppingListService>();
+                var expected = new GetShoppingListResult
+                {
+                    TotalCount = 2,
+                    Foods = new[]
+                    {
+                        new ShoppingListItemDto { Id = 1, FoodId = 10, Purchased = false },
+                        new ShoppingListItemDto { Id = 2, FoodId = 20, Purchased = true }
+                    }
+                };
+                serviceMock.Setup(s => s.GetShoppingList(42)).Returns(expected);
+                var controller = GetController(serviceMock);
+
+                var result = controller.GetShoppingList();
+                var okResult = Assert.IsType<OkObjectResult>(result.Result);
+                var value = Assert.IsType<GetShoppingListResult>(okResult.Value);
+                Assert.Equal(2, value.TotalCount);
+                Assert.Collection(value.Foods,
+                    item => Assert.Equal(1, item.Id),
+                    item => Assert.Equal(2, item.Id));
+            }
+
+            [Fact]
+            public void GetShoppingList_Returns500_OnException()
+            {
+                var serviceMock = new Mock<IShoppingListService>();
+                serviceMock.Setup(s => s.GetShoppingList(42)).Throws(new Exception("fail"));
+                var controller = GetController(serviceMock);
+
+                var result = controller.GetShoppingList();
+                var objResult = Assert.IsType<ObjectResult>(result.Result);
+                Assert.Equal(500, objResult.StatusCode);
+                Assert.Equal("fail", objResult.Value);
+            }
+
         [Fact]
         public async Task GenerateAsync_ReturnsBadRequest_WhenRequestIsNull()
         {

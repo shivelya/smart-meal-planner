@@ -79,5 +79,17 @@ namespace Backend.DTOs
                 Recipe = entity.Recipe?.ToDto()
             };
         }
+
+        public static ShoppingListItemDto ToDto(this ShoppingListItem entity)
+        {
+            return new ShoppingListItemDto
+            {
+                Id = entity.Id,
+                FoodId = entity.FoodId,
+                Food = entity.Food?.ToDto()!,
+                Purchased = entity.Purchased,
+                Notes = entity.Notes
+            };
+        }
     }
 }
