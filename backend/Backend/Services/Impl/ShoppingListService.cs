@@ -12,11 +12,15 @@ namespace Backend.Services.Impl
 
         public GetShoppingListResult GetShoppingList(int userId)
         {
+            // sorts by category first, with items with no category at the end, then by food name
             var items = _context.ShoppingListItems
                 .AsNoTracking()
                 .Where(s => s.UserId == userId)
                 .Include(s => s.Food)
                 .ThenInclude(f => f!.Category)
+                .OrderBy(i => i.Food == null ? 1 : 0)
+                .ThenBy(i => i.Food == null ? "Other" : i.Food.Category.Name)
+                .ThenBy(i => i.Food == null ? i.Notes : i.Food.Name)
                 .ToList();
 
             return new GetShoppingListResult
@@ -61,7 +65,6 @@ namespace Backend.Services.Impl
                     _logger.LogWarning("Valid food id must be given.");
                     throw new ArgumentException("Valid food id must be given.");
                 }
-
             }
 
             item.FoodId = request.FoodId;
@@ -159,8 +162,63 @@ namespace Backend.Services.Impl
                 .Include(p => p.Food)
                 .ToList();
 
-            var shoppingList = new Dictionary<int, Food>();
+            var shoppingList = BuildShoppingList(mealPlan, pantryItems);
 
+            if (!request.Restart)
+                await AddToShoppingList(userId, shoppingList);
+            else
+                await RestartShoppingList(userId, shoppingList);
+        }
+
+        private async Task AddToShoppingList(int userId, Dictionary<int, Food> shoppingList)
+        {
+            var existingItems = _context.ShoppingListItems
+                .AsNoTracking()
+                .Where(s => s.UserId == userId)
+                .Include(s => s.Food)
+                .ToList();
+
+            foreach (var item in shoppingList)
+            {
+                if (existingItems.FirstOrDefault(e => e.Food?.Id == item.Key) != null)
+                    continue;
+
+                var newItem = new ShoppingListItem
+                {
+                    UserId = userId,
+                    FoodId = item.Key
+                };
+
+                _context.ShoppingListItems.Add(newItem);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private async Task RestartShoppingList(int userId, Dictionary<int, Food> shoppingList)
+        {
+            var itemsToRemove = _context.ShoppingListItems
+                                .Where(s => s.UserId == userId);
+
+            _context.ShoppingListItems.RemoveRange(itemsToRemove);
+
+            foreach (var food in shoppingList.Values)
+            {
+                var newItem = new ShoppingListItem
+                {
+                    UserId = userId,
+                    FoodId = food.Id
+                };
+
+                _context.ShoppingListItems.Add(newItem);
+            }
+
+            await _context.SaveChangesAsync();
+        }
+
+        private static Dictionary<int, Food> BuildShoppingList(MealPlan mealPlan, List<PantryItem> pantryItems)
+        {
+            var shoppingList = new Dictionary<int, Food>();
             foreach (var meal in mealPlan.Meals)
             {
                 if (meal.Recipe == null || meal.Recipe.Ingredients == null)
@@ -184,51 +242,7 @@ namespace Backend.Services.Impl
                 }
             }
 
-            if (!request.Restart)
-            {
-                var existingItems = _context.ShoppingListItems
-                    .AsNoTracking()
-                    .Where(s => s.UserId == userId)
-                    .Include(s => s.Food)
-                    .ThenInclude(f => f!.Category)
-                    .ToList();
-
-                foreach (var item in shoppingList)
-                {
-                    if (existingItems.FirstOrDefault(e => e.Food?.Id == item.Key) != null)
-                        continue;
-
-                    var newItem = new ShoppingListItem
-                    {
-                        UserId = userId,
-                        FoodId = item.Key
-                    };
-
-                    _context.ShoppingListItems.Add(newItem);
-                }
-
-                await _context.SaveChangesAsync();
-            }
-            else
-            {
-                var itemsToRemove = _context.ShoppingListItems
-                    .Where(s => s.UserId == userId);
-
-                _context.ShoppingListItems.RemoveRange(itemsToRemove);
-
-                foreach (var food in shoppingList.Values)
-                {
-                    var newItem = new ShoppingListItem
-                    {
-                        UserId = userId,
-                        FoodId = food.Id
-                    };
-
-                    _context.ShoppingListItems.Add(newItem);
-                }
-
-                await _context.SaveChangesAsync();
-            }
+            return shoppingList;
         }
     }
 }
