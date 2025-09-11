@@ -9,16 +9,16 @@
 **Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| When the user selects a meal plan, they can tell the system to generate a shopping list | ⬜ | ⬜ |
-| The items can be added to the existing shopping or it can be restarted. | ⬜ | ⬜ |
-| Items already in the pantry are marked as available (and not added to the list) | ⬜ | ⬜ |
-| The shopping list shows item names, quantities, and units | ⬜ | ⬜ |
+| When the user selects a meal plan, they can tell the system to generate a shopping list | ✅ | ⬜ |
+| The items can be added to the existing shopping or it can be restarted. | ✅ | ⬜ |
+| Items already in the pantry are marked as available (and not added to the list) | ✅ | ⬜ |
 | The shopping list will be sorted by category, and then alphabetically. | ⬜ | ⬜ |
 
 **Extended Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
 | Have a list of staples, and keep those listed separately on the shopping list because the user may well already have them. | ⬜ | ⬜ |
+| The shopping list shows item names, quantities, and units | ⬜ | ⬜ |
 
 **API**
 - `GET /meal-plans/{id}/generate-shopping-list?new=true`
@@ -79,16 +79,33 @@
 | The user can fully edit items on the shopping list | ⬜ | ⬜ |
 | The user can add new items to the shopping list | ⬜ | ⬜ |
 | The user can remove items from the shopping list. | ⬜ | ⬜ |
-| The user can mark items as completed. | ⬜ | ⬜ |
+| The user can mark items as completed. | ✅ | ⬜ |
 
 **API**
 - `GET /shopping-list/`
 
-
 **Response (200)**
 ```json
 {
-  {shopping list}
+  {
+    "totalCount": 0,
+    "foods": [
+      {
+        "id": 0,
+        "foodId": 0,
+        "food": {
+          "id": 0,
+          "name": "string",
+          "category": {
+            "id": 0,
+            "name": "string"
+          }
+        },
+        "purchased": true,
+        "notes": "string"
+      }
+    ]
+  }
 }
 ```
 
@@ -105,14 +122,38 @@
 - `PUT /shopping-list/{id}`
 
 **Request**
+```json
 {
-  {shopping list item}
+  "id": 0,
+  "foodId": 0,
+  "food": {
+    "id": 0,
+    "name": "string",
+    "category": {
+      "id": 0,
+      "name": "string"
+    }
+  },
+  "purchased": true,
+  "notes": "string"
 }
+```
 
 **Response (200)**
 ```json
 {
-  {shopping list item}
+  "id": 0,
+  "foodId": 0,
+  "food": {
+    "id": 0,
+    "name": "string",
+    "category": {
+      "id": 0,
+      "name": "string"
+    }
+  },
+  "purchased": true,
+  "notes": "string"
 }
 ```
 
@@ -122,13 +163,36 @@
 - `POST /shopping-list`
 
 **Request**
+```json
 {
-  {shopping list item}
+  "foodId": 0,
+  "food": {
+    "id": 0,
+    "name": "string",
+    "category": {
+      "id": 0,
+      "name": "string"
+    }
+  },
+  "purchased": true,
+  "notes": "string"
 }
+```
 
 **Response (200)**
 ```json
 {
-  {shopping list item}
+  "id": 0,
+  "foodId": 0,
+  "food": {
+    "id": 0,
+    "name": "string",
+    "category": {
+      "id": 0,
+      "name": "string"
+    }
+  },
+  "purchased": true,
+  "notes": "string"
 }
 ```

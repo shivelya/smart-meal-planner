@@ -15,6 +15,28 @@ namespace Backend.Controllers
         private readonly ILogger<ShoppingListController> _logger = logger;
 
         /// <summary>
+        /// Retrieves the shopping list for the current user 
+        /// </summary>
+        /// <remarks>Returns the shopping list.</remarks>
+        [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public ActionResult<GetShoppingListResult> GetShoppingList()
+        {
+            try
+            {
+                var userId = GetUserId();
+                var result = _service.GetShoppingList(userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        /// <summary>
         /// Generates a shopping list based on a given meal plan
         /// </summary>
         /// <param name="request">Includes a meal plan id and whether or not to restart the list.</param>

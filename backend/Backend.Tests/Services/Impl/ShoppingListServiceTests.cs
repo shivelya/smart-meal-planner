@@ -20,6 +20,40 @@ namespace Backend.Tests.Services.Impl
             return new PlannerContext(options, config, logger);
         }
 
+            [Fact]
+            public void GetShoppingList_ReturnsEmpty_WhenNoItemsExist()
+            {
+                var context = CreateContext();
+                context.Users.Add(new User { Id = 42, Email = "user@example.com", PasswordHash = "hash" });
+                context.SaveChanges();
+                var service = CreateService(context);
+
+                var result = service.GetShoppingList(42);
+                Assert.NotNull(result);
+                Assert.Equal(0, result.TotalCount);
+                Assert.Empty(result.Foods);
+            }
+
+            [Fact]
+            public void GetShoppingList_ReturnsItems_ForUser()
+            {
+                var context = CreateContext();
+                context.Users.Add(new User { Id = 42, Email = "user@example.com", PasswordHash = "hash" });
+                context.Foods.Add(new Food { Id = 10, Name = "Apple" });
+                context.Foods.Add(new Food { Id = 20, Name = "Banana" });
+                context.ShoppingListItems.Add(new ShoppingListItem { Id = 1, UserId = 42, FoodId = 10, Purchased = false });
+                context.ShoppingListItems.Add(new ShoppingListItem { Id = 2, UserId = 42, FoodId = 20, Purchased = true });
+                context.SaveChanges();
+                var service = CreateService(context);
+
+                var result = service.GetShoppingList(42);
+                Assert.NotNull(result);
+                Assert.Equal(2, result.TotalCount);
+                Assert.Collection(result.Foods,
+                    item => Assert.Equal(1, item.Id),
+                    item => Assert.Equal(2, item.Id));
+            }
+
         private static ShoppingListService CreateService(PlannerContext context)
         {
             var logger = new LoggerFactory().CreateLogger<ShoppingListService>();

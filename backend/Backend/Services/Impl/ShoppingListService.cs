@@ -10,6 +10,22 @@ namespace Backend.Services.Impl
         private readonly PlannerContext _context = context;
         private readonly ILogger<ShoppingListService> _logger = logger;
 
+        public GetShoppingListResult GetShoppingList(int userId)
+        {
+            var items = _context.ShoppingListItems
+                .AsNoTracking()
+                .Where(s => s.UserId == userId)
+                .Include(s => s.Food)
+                .ThenInclude(f => f!.Category)
+                .ToList();
+
+            return new GetShoppingListResult
+            {
+                TotalCount = items.Count,
+                Foods = items.Select(i => i.ToDto())
+            };
+        }
+
         public async Task GenerateAsync(GenerateShoppingListRequestDto request, int userId)
         {
             if (request == null)
