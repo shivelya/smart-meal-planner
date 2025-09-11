@@ -1,9 +1,7 @@
-using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Backend.Model;
 using Microsoft.Extensions.Logging;
-using Moq;
 
 namespace Backend.Tests
 {
@@ -128,6 +126,18 @@ namespace Backend.Tests
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
             var context = new PlannerContext(options, config, logger);
             Assert.NotNull(context.RefreshTokens);
+        }
+
+        [Fact]
+        public void PlannerContext_ShoppingListItems_Property_Works()
+        {
+            var options = new DbContextOptionsBuilder<PlannerContext>()
+                .UseInMemoryDatabase(databaseName: "TestDb_ShoppingListItems")
+                .Options;
+            var config = new ConfigurationBuilder().Build();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
+            var context = new PlannerContext(options, config, logger);
+            Assert.NotNull(context.ShoppingListItems);
         }
     }
 
@@ -269,6 +279,18 @@ namespace Backend.Tests
             Assert.NotNull(index);
             Assert.Contains(index.Properties, p => p.Name == "UserId");
             Assert.Contains(index.Properties, p => p.Name == "FoodId");
+        }
+
+        [Fact]
+        public void ShoppingListItemRelationships_AreConfigured()
+        {
+            var builder = InitializeContext();
+
+            var entity = builder.Model.FindEntityType(typeof(ShoppingListItem));
+            Assert.NotNull(entity);
+
+            Assert.NotNull(entity.FindNavigation(nameof(ShoppingListItem.User)));
+            Assert.NotNull(entity.FindNavigation(nameof(ShoppingListItem.Food)));
         }
     }
 

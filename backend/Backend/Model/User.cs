@@ -9,5 +9,6 @@ namespace Backend.Model
         public ICollection<PantryItem> PantryItems { get; set; } = new List<PantryItem>();
         public ICollection<Recipe> Recipes { get; set; } = new List<Recipe>();
         public ICollection<MealPlan> MealPlans { get; set; } = new List<MealPlan>();
+        public ICollection<ShoppingListItem> ShoppingList { get; set; } = new List<ShoppingListItem>();
     }
 }
