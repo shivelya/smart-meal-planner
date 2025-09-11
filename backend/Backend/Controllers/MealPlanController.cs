@@ -3,7 +3,6 @@ using Backend.DTOs;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Backend.Controllers
 {
@@ -134,13 +133,6 @@ namespace Backend.Controllers
                 _logger.LogWarning("Could not update meal plan: {ex}", ex.Message);
                 return StatusCode(500, "Could not update meal plan: " + ex.Message);
             }
-        }
-
-        public class GenerateMealPlanRequestDto
-        {
-            public int Days { get; set; }
-            public DateTime StartDate { get; set; }
-            public bool UseExternal { get; set; }
         }
 
         /// <summary>
