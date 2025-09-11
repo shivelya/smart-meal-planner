@@ -75,8 +75,8 @@
 **Acceptance Criteria**
 | Task | Backend | Frontend |
 |------|---------|----------|
-| The user can view the shopping list | ⬜ | ⬜ |
-| The user can fully edit items on the shopping list | ⬜ | ⬜ |
+| The user can view the shopping list | ✅ | ⬜ |
+| The user can fully edit items on the shopping list | ✅ | ⬜ |
 | The user can add new items to the shopping list | ⬜ | ⬜ |
 | The user can remove items from the shopping list. | ⬜ | ⬜ |
 | The user can mark items as completed. | ✅ | ⬜ |

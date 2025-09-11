@@ -20,4 +20,12 @@ namespace Backend.DTOs
         public bool Purchased { get; set; }
         public string? Notes { get; set; }
     }
+
+    public class CreateUpdateShoppingListEntryRequestDto
+    {
+        public int? Id { get; set; } // null for create, required for update
+        public int? FoodId { get; set; }
+        public bool Purchased { get; set; }
+        public string? Notes { get; set; }
+    }
 }
