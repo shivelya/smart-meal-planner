@@ -53,7 +53,7 @@ namespace Backend.Helpers
                 return (DbContextOptionsBuilder options) => options.UseNpgsql(connectionString);
             }!;
 
-            services.AddDbContext<PlannerContext>(builderAction(connectionString + ";Include Error Detail=true"));
+            services.AddDbContext<PlannerContext>(builderAction(connectionString));
 
             return services;
         }

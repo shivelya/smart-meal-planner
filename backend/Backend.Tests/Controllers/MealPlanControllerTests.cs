@@ -8,6 +8,7 @@ using Backend.Model;
 using Backend.DTOs;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
+using static Backend.Controllers.MealPlanController;
 
 namespace Backend.Tests.Controllers
 {
@@ -148,7 +149,13 @@ namespace Backend.Tests.Controllers
             };
             _mockService.Setup(s => s.GenerateMealPlanAsync(5, It.IsAny<int>(), It.IsAny<DateTime>(), false)).ReturnsAsync(generatedPlan);
 
-            var result = await _controller.GenerateMealPlanAsync(5, DateTime.Today, false);
+            var request = new GenerateMealPlanRequestDto
+            {
+                Days = 5,
+                StartDate = DateTime.Today,
+                UseExternal = false
+            };
+            var result = await _controller.GenerateMealPlanAsync(request);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(generatedPlan, okResult.Value);
@@ -157,7 +164,13 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GenerateMealPlanAsync_ReturnsBadRequest_WhenDaysExceedMax()
         {
-            var result = await _controller.GenerateMealPlanAsync(15, DateTime.Today, false); // MAXDAYS is 10 in test config
+            var request = new GenerateMealPlanRequestDto
+            {
+                Days = 15,
+                StartDate = DateTime.Today,
+                UseExternal = false
+            };
+            var result = await _controller.GenerateMealPlanAsync(request); // MAXDAYS is 10 in test config
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.NotNull(badRequest.Value);
@@ -169,7 +182,13 @@ namespace Backend.Tests.Controllers
         {
             _mockService.Setup(s => s.GenerateMealPlanAsync(5, It.IsAny<int>(), It.IsAny<DateTime>(), false)).ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.GenerateMealPlanAsync(5, DateTime.Today, false);
+            var request = new GenerateMealPlanRequestDto
+            {
+                Days = 5,
+                StartDate = DateTime.Today,
+                UseExternal = false
+            };
+            var result = await _controller.GenerateMealPlanAsync(request);
 
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
@@ -183,7 +202,13 @@ namespace Backend.Tests.Controllers
         [InlineData(-10)]
         public async Task GenerateMealPlanAsync_ReturnsBadRequest_WhenDaysIsZeroOrNegative(int days)
         {
-            var result = await _controller.GenerateMealPlanAsync(days, DateTime.Today, false);
+            var request = new GenerateMealPlanRequestDto
+            {
+                Days = days,
+                StartDate = DateTime.Today,
+                UseExternal = false
+            };
+            var result = await _controller.GenerateMealPlanAsync(request);
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("Cannot create meal plan for less than 1 day.", badRequest.Value);
         }

@@ -1,3 +1,5 @@
+using System.Text.Json.Serialization;
+
 namespace Backend.DTOs
 {
     public class MealPlanEntryDto
@@ -16,6 +18,9 @@ namespace Backend.DTOs
         public required string Instructions { get; set; }
     }
 
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+    [JsonDerivedType(typeof(CreateUpdateMealPlanEntryRequestDto), "base")]
+    [JsonDerivedType(typeof(GeneratedMealPlanEntryDto), "generated")]
     public class CreateUpdateMealPlanEntryRequestDto
     {
         public int? Id { get; set; }

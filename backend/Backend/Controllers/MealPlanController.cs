@@ -136,27 +136,33 @@ namespace Backend.Controllers
             }
         }
 
+        public class GenerateMealPlanRequestDto
+        {
+            public int Days { get; set; }
+            public DateTime StartDate { get; set; }
+            public bool UseExternal { get; set; }
+        }
+
         /// <summary>
         /// Generates a meal plan based on the user's pantry items
         /// </summary>
-        /// <param name="days">The number of meals to generate.</param>
-        /// <param name="startDate">The start date of the meal plan.</param>
-        /// <param name="useExternal">If true, the system will use external source for recipes rather than the user's saved ones.</param>
+        /// <param name="request">An object describing how to generate the meal plan. Includes a number of days to generate for,
+        /// the start date for the meal plan, and whether the recipes should come only from external sources.</param>
         /// <remarks>Returns a MealPlanDto object with the correct number of recipes. It will not be be inserted into the DB until
         /// the user verifies the list.</remarks>
         [HttpPost("generate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<CreateUpdateMealPlanRequestDto>> GenerateMealPlanAsync(int days, DateTime startDate, bool useExternal)
+        public async Task<ActionResult<CreateUpdateMealPlanRequestDto>> GenerateMealPlanAsync(GenerateMealPlanRequestDto request)
         {
-            if (days <= 0)
+            if (request.Days <= 0)
             {
                 _logger.LogWarning("Cannot create meal plan for less than 1 day.");
                 return BadRequest("Cannot create meal plan for less than 1 day.");
             }
 
-            if (days > MAXDAYS)
+            if (request.Days > MAXDAYS)
                 {
                     _logger.LogWarning("User tried to create a meal plan for more than {max} days.", MAXDAYS);
                     return BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,");
@@ -165,7 +171,7 @@ namespace Backend.Controllers
             try
             {
                 var userId = GetUserId();
-                var plan = await _service.GenerateMealPlanAsync(days, userId, startDate, useExternal);
+                var plan = await _service.GenerateMealPlanAsync(request.Days, userId, request.StartDate, request.UseExternal);
 
                 _logger.LogInformation("Meal plan generated successfully.");
                 return Ok(plan);

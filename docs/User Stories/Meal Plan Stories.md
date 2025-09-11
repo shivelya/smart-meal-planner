@@ -265,7 +265,7 @@ _No Content_
 | Task | Backend | Frontend |
 |------|---------|----------|
 | The system will generate as many meals as possible out of the users saved recipes first. | ✅ | ⬜ |
-| If there are no more recipes that use the users pantry items, the system will go to an outside source such as Spoonacular. | ⬜ | ⬜ |
+| If there are no more recipes that use the users pantry items, the system will go to an outside source such as Spoonacular. | ✅ | ⬜ |
 | The system can also use the outside source by default if the user requests it. | ✅ | ⬜ |
 
 ---
