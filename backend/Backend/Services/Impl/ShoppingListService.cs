@@ -74,6 +74,34 @@ namespace Backend.Services.Impl
             return item.ToDto();
         }
 
+        public async Task<ShoppingListItemDto> AddShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request, int userId)
+        {
+            if (request == null)
+            {
+                // shouldn't get here, we check this in controller
+                _logger.LogWarning("request object is required.");
+                throw new ArgumentException("request object is required.");
+            }
+
+            if (request.Id != null)
+            {
+                _logger.LogWarning("Id is not allowed for creating a shopping list item.");
+                throw new ArgumentException("Id is not allowed for creating a shopping list item.");
+            }
+
+            var item = new ShoppingListItem
+            {
+                UserId = userId,
+                FoodId = request.FoodId,
+                Purchased = request.Purchased,
+                Notes = request.Notes
+            };
+
+            _context.ShoppingListItems.Add(item);
+            await _context.SaveChangesAsync();
+            return item.ToDto();
+        }
+
         public async Task GenerateAsync(GenerateShoppingListRequestDto request, int userId)
         {
             if (request == null)

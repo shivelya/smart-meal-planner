@@ -21,6 +21,49 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
+        public async Task AddShoppingListItemAsync_ReturnsOk_WithResult()
+        {
+            var serviceMock = new Mock<IShoppingListService>();
+            var expected = new ShoppingListItemDto { Id = 2, FoodId = 20, Purchased = false, Notes = "new" };
+            serviceMock.Setup(s => s.AddShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42))
+                .ReturnsAsync(expected);
+            var controller = GetController(serviceMock);
+
+            var request = new CreateUpdateShoppingListEntryRequestDto { FoodId = 20, Purchased = false, Notes = "new" };
+            var result = await controller.AddShoppingListItemAsync(request);
+            var okResult = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsType<ShoppingListItemDto>(okResult.Value);
+            Assert.Equal(2, value.Id);
+            Assert.Equal(20, value.FoodId);
+            Assert.False(value.Purchased);
+            Assert.Equal("new", value.Notes);
+        }
+
+        [Fact]
+        public async Task AddShoppingListItemAsync_ReturnsBadRequest_WhenRequestIsNull()
+        {
+            var controller = GetController();
+            var result = await controller.AddShoppingListItemAsync(null!);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("request object is required.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task AddShoppingListItemAsync_Returns500_OnException()
+        {
+            var serviceMock = new Mock<IShoppingListService>();
+            serviceMock.Setup(s => s.AddShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42))
+                .ThrowsAsync(new Exception("fail"));
+            var controller = GetController(serviceMock);
+
+            var request = new CreateUpdateShoppingListEntryRequestDto { FoodId = 20, Purchased = false, Notes = "new" };
+            var result = await controller.AddShoppingListItemAsync(request);
+            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, objResult.StatusCode);
+            Assert.Equal("fail", objResult.Value);
+        }
+
+        [Fact]
         public async Task UpdateShoppingList_ReturnsOk_WithResult()
         {
             var serviceMock = new Mock<IShoppingListService>();
@@ -30,7 +73,7 @@ namespace Backend.Tests.Controllers
             var controller = GetController(serviceMock);
 
             var request = new CreateUpdateShoppingListEntryRequestDto { Id = 1, FoodId = 10, Purchased = true, Notes = "note" };
-            var result = await controller.UpdateShoppingList(request);
+            var result = await controller.UpdateShoppingListItemAsync(request);
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var value = Assert.IsType<ShoppingListItemDto>(okResult.Value);
             Assert.Equal(1, value.Id);
@@ -43,7 +86,7 @@ namespace Backend.Tests.Controllers
         public async Task UpdateShoppingList_ReturnsBadRequest_WhenRequestIsNull()
         {
             var controller = GetController();
-            var result = await controller.UpdateShoppingList(null!);
+            var result = await controller.UpdateShoppingListItemAsync(null!);
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("request object is required.", badRequest.Value);
         }
@@ -57,7 +100,7 @@ namespace Backend.Tests.Controllers
             var controller = GetController(serviceMock);
 
             var request = new CreateUpdateShoppingListEntryRequestDto { Id = 1, FoodId = 10, Purchased = true, Notes = "note" };
-            var result = await controller.UpdateShoppingList(request);
+            var result = await controller.UpdateShoppingListItemAsync(request);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
             Assert.Equal("fail", objResult.Value);

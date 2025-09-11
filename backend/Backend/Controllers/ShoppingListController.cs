@@ -45,7 +45,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ShoppingListItemDto>> UpdateShoppingList(CreateUpdateShoppingListEntryRequestDto request)
+        public async Task<ActionResult<ShoppingListItemDto>> UpdateShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request)
         {
             if (request == null)
             {
@@ -57,6 +57,36 @@ namespace Backend.Controllers
             {
                 var userId = GetUserId();
                 var result = await _service.UpdateShoppingListItemAsync(request, userId);
+                return Ok(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogWarning(ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Adds a new item to the shopping list
+        /// </summary>
+        /// <param name="request">The new shopping list item.</param>
+        /// <remarks>Returns the new shopping list item.</remarks>
+        [HttpPost]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<ActionResult<ShoppingListItemDto>> AddShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request)
+        {
+            if (request == null)
+            {
+                _logger.LogWarning("request object is requried.");
+                return BadRequest("request object is required.");
+            }
+
+            try
+            {
+                var userId = GetUserId();
+                var result = await _service.AddShoppingListItemAsync(request, userId);
                 return Ok(result);
             }
             catch (Exception ex)
