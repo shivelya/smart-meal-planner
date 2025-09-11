@@ -28,6 +28,7 @@ namespace Backend
         public DbSet<MealPlan> MealPlans { get; set; } = null!;
         public DbSet<MealPlanEntry> MealPlanEntries { get; set; } = null!;
         public DbSet<RefreshToken> RefreshTokens { get; set; } = null!;
+        public DbSet<ShoppingListItem> ShoppingListItems { get; set; } = null!;
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -40,6 +41,7 @@ namespace Backend
             SetUpRecipeIngredientRelationships(modelBuilder);
             SetUpMealPlanRelationships(modelBuilder);
             SetUpMealPlanEntryRelationships(modelBuilder);
+            SetUpShoppinglistRelationships(modelBuilder);
             SeedCategories(modelBuilder);
 
             _logger.LogInformation("Model creating completed with configured relationships and seeded categories.");
@@ -129,6 +131,19 @@ namespace Backend
             modelBuilder.Entity<Food>()
                 .HasIndex(p => p.Name)
                 .HasDatabaseName("IX_Food_Name");
+        }
+
+        private static void SetUpShoppinglistRelationships(ModelBuilder modelBuilder)
+        {
+            modelBuilder.Entity<ShoppingListItem>()
+                .HasOne(s => s.User)
+                .WithMany(u => u.ShoppingList)
+                .HasForeignKey(s => s.UserId);
+
+            modelBuilder.Entity<ShoppingListItem>()
+                .HasOne(s => s.Food)
+                .WithMany()
+                .HasForeignKey(s => s.FoodId);
         }
     }
 }
