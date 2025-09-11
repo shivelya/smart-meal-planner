@@ -12,7 +12,7 @@
 | When the user selects a meal plan, they can tell the system to generate a shopping list | ✅ | ⬜ |
 | The items can be added to the existing shopping or it can be restarted. | ✅ | ⬜ |
 | Items already in the pantry are marked as available (and not added to the list) | ✅ | ⬜ |
-| The shopping list will be sorted by category, and then alphabetically. | ⬜ | ⬜ |
+| The shopping list will be sorted by category, and then alphabetically. | ✅ | ⬜ |
 
 **Extended Acceptance Criteria**
 | Task | Backend | Frontend |
