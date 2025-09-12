@@ -127,8 +127,7 @@ namespace Backend.Tests.Services.Impl
             _context.Recipes.Add(new Recipe { Id = 6, UserId = 1, Title = "Pizza", Source = "S", Instructions = "I" });
             _context.Recipes.Add(new Recipe { Id = 7, UserId = 1, Title = "Burger", Source = "S", Instructions = "I" });
             _context.SaveChanges();
-            var options = new RecipeSearchOptions { TitleContains = "Pizza" };
-            var result = await _service.SearchAsync(options, 1);
+            var result = await _service.SearchAsync(1, "Pizza", null, null, null);
             Assert.Single(result.Items);
             Assert.Equal("Pizza", result.Items.First().Title);
         }

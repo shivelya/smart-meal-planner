@@ -21,7 +21,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task SearchFoods_ReturnsBadRequest_WhenSearchIsNullOrWhitespace()
         {
-            var result = await _controller.SearchFoods("");
+            var result = await _controller.SearchFoodsAsync("");
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("Search term is required.", badRequest.Value);
         }
@@ -31,9 +31,9 @@ namespace Backend.Tests.Controllers
         {
             var foods = new List<FoodDto> { new() { Id = 1, Name = "Salt", Category = new CategoryDto { Id = 1, Name = "produce" }},
                 new() { Id = 2, Name = "Pepper", Category = new CategoryDto { Id = 1, Name = "produce" }}};
-            _serviceMock.Setup(s => s.SearchFoods("spice", null, null)).ReturnsAsync(new GetFoodsResult { TotalCount = foods.Count, Items = foods });
+            _serviceMock.Setup(s => s.SearchFoodsAsync("spice", null, null)).ReturnsAsync(new GetFoodsResult { TotalCount = foods.Count, Items = foods });
 
-            var result = await _controller.SearchFoods("spice");
+            var result = await _controller.SearchFoodsAsync("spice");
 
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetFoodsResult>(ok.Value);
@@ -43,9 +43,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task SearchFoods_ReturnsOk_WithEmptyResults()
         {
-            _serviceMock.Setup(s => s.SearchFoods("none", null, null)).ReturnsAsync(new GetFoodsResult { TotalCount = 0, Items = [] });
+            _serviceMock.Setup(s => s.SearchFoodsAsync("none", null, null)).ReturnsAsync(new GetFoodsResult { TotalCount = 0, Items = [] });
 
-            var result = await _controller.SearchFoods("none");
+            var result = await _controller.SearchFoodsAsync("none");
 
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetFoodsResult>(ok.Value);

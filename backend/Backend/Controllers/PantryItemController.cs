@@ -31,10 +31,17 @@ namespace Backend.Controllers
         /// <param name="dto">A DTO containing pantry item details.</param>
         /// <remarks>Return a created pantry item DTO.</remarks>
         [HttpPost]
-        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> AddItem(CreateUpdatePantryItemRequestDto dto)
+        public async Task<ActionResult<PantryItemDto>> AddItemAsync(CreateUpdatePantryItemRequestDto dto)
         {
+            if (dto == null)
+            {
+                _logger.LogWarning("PantryItemDto dto is required");
+                return BadRequest("PantryItemDto dto is required.");
+            }
+
             var userId = GetUserId();
             _logger.LogInformation("Adding pantry item for user {UserId}: {@Dto}", userId, dto);
             try
@@ -42,7 +49,7 @@ namespace Backend.Controllers
                 var result = await _service.CreatePantryItemAsync(dto, userId);
 
                 _logger.LogInformation("Pantry item added for user {UserId}: {@Result}", userId, result);
-                return CreatedAtAction(nameof(GetItem), result);
+                return CreatedAtAction(nameof(GetItemAsync), result);
             }
             catch (Exception ex)
             {
@@ -59,9 +66,16 @@ namespace Backend.Controllers
         /// <remarks>Return a collection of created pantry item DTOs.</remarks>
         [HttpPost("bulk")]
         [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<IEnumerable<PantryItemDto>>> AddItems(IEnumerable<CreateUpdatePantryItemRequestDto> dtos)
+        public async Task<ActionResult<IEnumerable<PantryItemDto>>> AddItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> dtos)
         {
+            if (dtos == null || !dtos.Any())
+            {
+                _logger.LogWarning("A collection of PantryItemDto dtos is required.");
+                return BadRequest("A collection of PantryItemDto dtos is required.");
+            }
+
             var userId = GetUserId();
             _logger.LogInformation("Adding multiple pantry items for user {UserId}: {@Dtos}", userId, dtos);
             try
@@ -69,7 +83,7 @@ namespace Backend.Controllers
                 var result = await _service.CreatePantryItemsAsync(dtos, userId);
                 _logger.LogInformation("Pantry items added for user {UserId}: {@Result}", userId, result);
 
-                return CreatedAtAction(nameof(GetItem), result);
+                return CreatedAtAction(nameof(GetItemAsync), result);
             }
             catch (Exception ex)
             {
@@ -87,8 +101,14 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> GetItem(int id)
+        public async Task<ActionResult<PantryItemDto>> GetItemAsync(int id)
         {
+            if (id <= 0)
+            {
+                _logger.LogWarning("A valid pantry item ID is required.");
+                return BadRequest("A valid pantry item ID is required.");
+            } 
+
             _logger.LogInformation("Retrieving pantry item with ID {Id}", id);
             try
             {
@@ -112,21 +132,21 @@ namespace Backend.Controllers
         /// <summary>
         /// Retrieves all pantry items for the authenticated user with pagination.
         /// </summary>
-        /// <param name="pageNumber">The page number to retrieve.</param>
-        /// <param name="pageSize">The number of items per page.</param>
+        /// <param name="skip">The page number to retrieve.</param>
+        /// <param name="take">The number of items per page.</param>
         /// <remarks>Return a GetPantryItemsResult object containing the total count and fully constituted items.</remarks>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> GetItems([FromQuery, BindRequired] int pageNumber = 1, [FromQuery, BindRequired] int pageSize = 10)
+        public async Task<ActionResult<GetPantryItemsResult>> GetItemsAsync([FromQuery, BindRequired] int skip = 0, [FromQuery, BindRequired] int take = 10)
         {
-            _logger.LogInformation("Retrieving pantry items: page {PageNumber}, size {PageSize}", pageNumber, pageSize);
+            _logger.LogInformation("Retrieving pantry items: page {Size}, size {Take}", skip, take);
             try
             {
-                var (items, totalCount) = await _service.GetAllPantryItemsAsync(pageNumber, pageSize);
-                _logger.LogInformation("Retrieved {TotalCount} pantry items", totalCount);
+                var result = await _service.GetAllPantryItemsAsync(skip, take);
+                _logger.LogInformation("Retrieved {TotalCount} pantry items", result.TotalCount);
 
-                return Ok(new GetPantryItemsResult() { TotalCount = totalCount, Items = items });
+                return Ok(result);
             }
             catch (Exception ex)
             {
@@ -144,7 +164,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeleteItem(int id)
+        public async Task<IActionResult> DeleteItemAsync(int id)
         {
             _logger.LogInformation("Deleting pantry item with ID {Id}", id);
             try
@@ -175,7 +195,7 @@ namespace Backend.Controllers
         [ProducesResponseType(typeof(DeleteRequest), StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<DeleteRequest>> DeleteItems([FromBody, BindRequired] DeleteRequest request)
+        public async Task<ActionResult<DeleteRequest>> DeleteItemsAsync([FromBody, BindRequired] DeleteRequest request)
         {
             if (request == null)
             {
@@ -187,13 +207,13 @@ namespace Backend.Controllers
             try
             {
                 var deleted = await _service.DeletePantryItemsAsync(request.Ids);
-                if (deleted.Ids.Count() > 0)
+                if (deleted.Ids.Any())
                 {
                     _logger.LogInformation("Deleted {Count} pantry items", deleted.Ids.Count());
                     return StatusCode(204, deleted);
                 }
 
-                _logger.LogWarning("No pantry items deleted for IDs: {@Ids}", request.Ids);
+                _logger.LogWarning("No pantry items deleted for IDs: {Ids}", request.Ids);
                 return NotFound();
             }
             catch (Exception ex)
@@ -214,7 +234,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> Search([FromQuery, BindRequired] string query, int? take = null, int? skip = null)
+        public async Task<ActionResult<GetPantryItemsResult>> SearchAsync([FromQuery, BindRequired] string query, int? take = null, int? skip = null)
         {
             if (string.IsNullOrEmpty(query))
             {
@@ -245,7 +265,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> Update(string id, [FromBody, BindRequired] CreateUpdatePantryItemRequestDto pantryItem)
+        public async Task<ActionResult<PantryItemDto>> UpdateAsync(string id, [FromBody, BindRequired] CreateUpdatePantryItemRequestDto pantryItem)
         {
             if (string.IsNullOrEmpty(id))
             {

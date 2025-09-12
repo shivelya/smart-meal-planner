@@ -24,7 +24,7 @@ namespace Backend.Tests.Controllers
         public async Task DeleteShoppingListItemAsync_ReturnsNoContent_OnSuccess()
         {
             var serviceMock = new Mock<IShoppingListService>();
-            serviceMock.Setup(s => s.DeleteShoppingListItemAsync(2, 42)).Returns(Task.CompletedTask);
+            serviceMock.Setup(s => s.DeleteShoppingListItemAsync(2, 42)).ReturnsAsync(true);
             var controller = GetController(serviceMock);
 
             var result = await controller.DeleteShoppingListItemAsync(2);

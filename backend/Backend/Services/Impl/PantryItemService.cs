@@ -95,7 +95,7 @@ namespace Backend.Services.Impl
         /// <param name="pageNumber">The page number to retrieve.</param>
         /// <param name="pageSize">The number of items per page.</param>
         /// <returns>A tuple containing the items and the total count.</returns>
-        public async Task<(IEnumerable<PantryItemDto> Items, int TotalCount)> GetAllPantryItemsAsync(int pageNumber, int pageSize)
+        public async Task<GetPantryItemsResult> GetAllPantryItemsAsync(int pageNumber, int pageSize)
         {
             _logger.LogInformation("Getting {pageSize} pantry items, on page {page}", pageSize, pageNumber);
             var query = _context.PantryItems.AsQueryable();
@@ -107,7 +107,7 @@ namespace Backend.Services.Impl
                 .Take(pageSize)
                 .ToListAsync();
 
-            return (items.Select(i => i.ToDto()), totalCount);
+            return new GetPantryItemsResult { Items = items.Select(i => i.ToDto()), TotalCount = totalCount };
         }
 
         /// <summary>

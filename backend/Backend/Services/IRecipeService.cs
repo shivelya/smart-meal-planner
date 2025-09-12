@@ -29,10 +29,13 @@ namespace Backend.Services
         /// <summary>
         /// Searches for recipes by title or by ingredient.
         /// </summary>
-        /// <param name="options">Contains all the options for searching on.</param>
         /// <param name="userId">The currently logged in user.</param>
+        /// <param name="title">Search term to use on recipe titles.</param>
+        /// <param name="ingredient">Search term to use on recipe ingredients.</param>
+        /// <param name="skip">How many results to skip for pagination.</param>
+        /// <param name="take">How many results to take for pagniation.</param>
         /// <returns>The matching recipe ids.</returns>
-        Task<GetRecipesResult> SearchAsync(RecipeSearchOptions options, int userId);
+        Task<GetRecipesResult> SearchAsync(int userId, string? title, string? ingredient, int? skip = 0, int? take = 50);
         /// <summary>
         /// Updates an existing recipe.
         /// </summary>

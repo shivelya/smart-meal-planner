@@ -103,6 +103,7 @@ namespace Backend.Controllers
         /// <remarks>Returns 204 on success.</remarks>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ShoppingListItemDto>> DeleteShoppingListItemAsync(int id)
@@ -116,8 +117,12 @@ namespace Backend.Controllers
             try
             {
                 var userId = GetUserId();
-                await _service.DeleteShoppingListItemAsync(id, userId);
-                return NoContent();
+                var ok = await _service.DeleteShoppingListItemAsync(id, userId);
+
+                if (ok)
+                    return NoContent();
+                else
+                    return NotFound();
             }
             catch (Exception ex)
             {

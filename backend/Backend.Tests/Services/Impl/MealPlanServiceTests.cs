@@ -274,7 +274,13 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task GenerateMealPlanAsync_ThrowsIfDaysLessThanOne()
         {
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.GenerateMealPlanAsync(0, 1, DateTime.Today, false));
+            var result = new GenerateMealPlanRequestDto
+            {
+                Days = 0,
+                StartDate = DateTime.Today,
+                UseExternal = false
+            };
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.GenerateMealPlanAsync(result, 1));
         }
 
         [Fact]
@@ -282,7 +288,13 @@ namespace Backend.Tests.Services.Impl
         {
             var mealPlan = new CreateUpdateMealPlanRequestDto { Meals = [] };
             _mockRecipeGenerator.Setup(r => r.GenerateMealPlan(2, It.IsAny<int>(), false)).ReturnsAsync(mealPlan);
-            var result = await _service.GenerateMealPlanAsync(2, 1, DateTime.Today, false);
+            var mock = new GenerateMealPlanRequestDto
+            {
+                Days = 2,
+                StartDate = DateTime.Today,
+                UseExternal = false
+            };
+            var result = await _service.GenerateMealPlanAsync(mock, 1);
             Assert.NotNull(result);
             Assert.Equal(mealPlan, result);
         }

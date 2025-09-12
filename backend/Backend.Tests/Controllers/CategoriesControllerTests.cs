@@ -15,7 +15,8 @@ namespace Backend.Tests.Controllers
             var serviceMock = new Mock<ICategoryService>();
             var loggerMock = new Mock<ILogger<CategoriesController>>();
             var categories = new List<CategoryDto> { new() { Id = 1, Name = "Test" } };
-            serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(categories);
+            var resultMock = new GetCategoriesResult { TotalCount = 1, Items = categories };
+            serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(resultMock);
             var controller = new CategoriesController(serviceMock.Object, loggerMock.Object);
 
             var result = await controller.GetCategories();
@@ -30,7 +31,7 @@ namespace Backend.Tests.Controllers
         {
             var loggerMock = new Mock<ILogger<CategoriesController>>();
             var serviceMock = new Mock<ICategoryService>();
-            serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync([]);
+            serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(new GetCategoriesResult { TotalCount = 0, Items = [] });
             var controller = new CategoriesController(serviceMock.Object, loggerMock.Object);
             var result = await controller.GetCategories();
             var ok = Assert.IsType<OkObjectResult>(result.Result);

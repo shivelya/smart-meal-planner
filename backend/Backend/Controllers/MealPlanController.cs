@@ -155,15 +155,15 @@ namespace Backend.Controllers
             }
 
             if (request.Days > MAXDAYS)
-                {
-                    _logger.LogWarning("User tried to create a meal plan for more than {max} days.", MAXDAYS);
-                    return BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,");
-                }
+            {
+                _logger.LogWarning("User tried to create a meal plan for more than {max} days.", MAXDAYS);
+                return BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,");
+            }
 
             try
             {
                 var userId = GetUserId();
-                var plan = await _service.GenerateMealPlanAsync(request.Days, userId, request.StartDate, request.UseExternal);
+                var plan = await _service.GenerateMealPlanAsync(request, userId);
 
                 _logger.LogInformation("Meal plan generated successfully.");
                 return Ok(plan);
@@ -181,11 +181,11 @@ namespace Backend.Controllers
         /// <param name="id">The id of the meal plan the meal was taken from.</param>
         /// <param name="mealEntryId">The id of the meal within the meal plan being cooked.</param>
         /// <remarks>Returns a list of pantry items to possibly be deleted by the user now that the meal has been made.</remarks>
-        [HttpPut("cook/{id}")]
+        [HttpGet("{id}/cook")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> CookMeal(int id, [FromBody] int mealEntryId)
+        public async Task<ActionResult<GetPantryItemsResult>> CookMealAsync(int id, [FromQuery] int mealEntryId)
         {
             if (id <= 0)
             {

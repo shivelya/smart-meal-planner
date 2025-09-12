@@ -54,20 +54,5 @@ namespace Backend.Tests.DTOs
         }
 
         private class TestCreateRecipeDto : CreateUpdateRecipeDtoRequest { }
-
-        [Fact]
-        public void RecipeSearchOptions_PropertyTest()
-        {
-            var dto = new RecipeSearchOptions {
-                TitleContains = "Egg",
-                IngredientContains = "Milk",
-                Skip = 2,
-                Take = 10
-            };
-            Assert.Equal("Egg", dto.TitleContains);
-            Assert.Equal("Milk", dto.IngredientContains);
-            Assert.Equal(2, dto.Skip);
-            Assert.Equal(10, dto.Take);
-        }
     }
 }

@@ -25,7 +25,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetFoodsResult>> SearchFoods([FromQuery, BindRequired] string query, int? skip = null, int? take = null)
+        public async Task<ActionResult<GetFoodsResult>> SearchFoodsAsync([FromQuery, BindRequired] string query, int? skip = null, int? take = null)
         {
             if (string.IsNullOrWhiteSpace(query))
             {
@@ -35,7 +35,7 @@ namespace Backend.Controllers
 
             try
             {
-                var foods = await _service.SearchFoods(query, skip, take);
+                var foods = await _service.SearchFoodsAsync(query, skip, take);
 
                 _logger.LogInformation("search on {search} completed with {count} results", query, foods.TotalCount);
 
