@@ -5,6 +5,7 @@ using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using Backend.DTOs;
+using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Controllers
 {
@@ -192,30 +193,31 @@ namespace Backend.Controllers
                 return BadRequest(ModelState);
             }
 
-            var oldRefreshToken = await _tokenService.FindRefreshToken(refreshToken);
-
-            // if the refresh token is not found or is expired/revoked, return Unauthorized
-            // this is a security measure to prevent token reuse
-            if (oldRefreshToken == null || oldRefreshToken.Expires < DateTime.UtcNow
-                || oldRefreshToken.IsRevoked)
-            {
-                _logger.LogWarning("Invalid or expired refresh token provided: {RefreshToken}", refreshToken);
-                return Unauthorized("Invalid refresh token.");
-            }
-
-            var user = await _userService.GetByIdAsync(oldRefreshToken.UserId);
-            if (user == null)
-            {
-                _logger.LogWarning("User not found for refresh token: {RefreshToken}", refreshToken);
-                return Unauthorized("Invalid user.");
-            }
-
-            // Mark the old refresh token as revoked
-            oldRefreshToken.IsRevoked = true;
-            _logger.LogDebug("Revoking old refresh token: {RefreshToken}", refreshToken);
-
+            User? user = null;
             try
             {
+                var oldRefreshToken = await _tokenService.FindRefreshToken(refreshToken);
+
+                // if the refresh token is not found or is expired/revoked, return Unauthorized
+                // this is a security measure to prevent token reuse
+                if (oldRefreshToken == null || oldRefreshToken.Expires < DateTime.UtcNow
+                    || oldRefreshToken.IsRevoked)
+                {
+                    _logger.LogWarning("Invalid or expired refresh token provided: {RefreshToken}", refreshToken);
+                    return Unauthorized("Invalid refresh token.");
+                }
+
+                user = await _userService.GetByIdAsync(oldRefreshToken.UserId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found for refresh token: {RefreshToken}", refreshToken);
+                    return Unauthorized("Invalid user.");
+                }
+
+                // Mark the old refresh token as revoked
+                oldRefreshToken.IsRevoked = true;
+                _logger.LogDebug("Revoking old refresh token: {RefreshToken}", refreshToken);
+
                 // Generate new tokens
                 var result = await GenerateTokens(user);
 
@@ -226,7 +228,7 @@ namespace Backend.Controllers
             catch (Exception ex)
             {
                 _logger.LogError("Failed to generate new tokens: {Error}", ex.Message);
-                _logger.LogDebug("Failed to generate new tokens for user with email {Email}.", user.Email);
+                _logger.LogDebug("Failed to generate new tokens for user with email {Email}.", user?.Email);
                 return StatusCode(500, "Failed to generate tokens: " + ex.Message);
             }
         }
@@ -351,17 +353,17 @@ namespace Backend.Controllers
                 return Ok("If that email exists, a reset link has been sent."); // don’t reveal if email exists
             }
 
-            var token = _tokenService.GenerateResetToken(user);
-            if (string.IsNullOrEmpty(token))
-            {
-                _logger.LogError("Failed to generate reset token for user with email {Email}.", request.Email);
-                return StatusCode(500, "Failed to generate reset token.");
-            }
-
-            _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", request.Email, token);
-
             try
             {
+                var token = _tokenService.GenerateResetToken(user);
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogError("Failed to generate reset token for user with email {Email}.", request.Email);
+                    return StatusCode(500, "Failed to generate reset token.");
+                }
+
+                _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", request.Email, token);
+
                 await _emailService.SendPasswordResetEmailAsync(user.Email, token);
                 _logger.LogInformation("Reset password email sent to {Email}.", user.Email);
             }
@@ -423,7 +425,7 @@ namespace Backend.Controllers
             {
                 _logger.LogError("Failed to generate access token or refresh token for user with email {Email}.", user.Email);
                 _logger.LogDebug("AccessToken: {AccessToken}, RefreshToken: {RefreshToken}", accessToken, refreshToken);
-                throw new NullReferenceException("Failed to generate access token or refresh token for user");
+                throw new ValidationException("Failed to generate access token or refresh token for user");
             }
 
             _logger.LogDebug("Generated access token and refresh token for user with email {Email}.", user.Email);
