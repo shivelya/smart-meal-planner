@@ -14,7 +14,7 @@ namespace Backend.Services
         /// Retrieves all pantry items in a paged manner.
         /// </summary>
         /// <returns>An enumerable collection of pantry item DTOs.</returns>
-        Task<(IEnumerable<PantryItemDto> Items, int TotalCount)> GetAllPantryItemsAsync(int pageNumber, int pageSize);
+        Task<GetPantryItemsResult> GetAllPantryItemsAsync(int pageNumber, int pageSize);
 
         /// <summary>
         /// Creates a new pantry item. Assumes that the corresponding Food object has already been created.

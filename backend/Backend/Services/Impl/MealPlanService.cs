@@ -161,15 +161,17 @@ namespace Backend.Services.Impl
             return deleted > 0;
         }
 
-        public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(int days, int userId, DateTime startDate, bool useExternal)
+        public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(GenerateMealPlanRequestDto request, int userId)
         {
-            if (days <= 0)
+            if (request.Days <= 0)
             {
+                // should be validated in controller, but just in case
                 _logger.LogWarning("Days must be positive");
                 throw new ArgumentException("Days must be positive.");
             }
-            var mealPlan = await _recipeGenerator.GenerateMealPlan(days, userId, useExternal);
-            mealPlan.StartDate = startDate;
+
+            var mealPlan = await _recipeGenerator.GenerateMealPlan(request.Days, userId, request.UseExternal);
+            mealPlan.StartDate = request.StartDate;
 
             _logger.LogInformation("Meal plan successfully generated.");
 

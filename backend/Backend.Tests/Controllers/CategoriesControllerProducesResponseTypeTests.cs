@@ -11,12 +11,14 @@ namespace Backend.Tests.Controllers
         private readonly Type _controllerType = typeof(CategoriesController);
 
         [Fact]
-        public void GetCategories_HasNoProducesResponseTypeAttributes()
+        public void GetCategories_HasCorrectProducesResponseTypeAttributes()
         {
             var method = _controllerType.GetMethod("GetCategories");
             Assert.NotNull(method);
-            var attrs = method.GetCustomAttributes<ProducesResponseTypeAttribute>();
-            Assert.Empty(attrs); // No ProducesResponseType attributes present
+            var attrs = method.GetCustomAttributes<ProducesResponseTypeAttribute>().ToList();
+            Assert.Equal(2, attrs.Count);
+            Assert.Contains(attrs, a => a.StatusCode == 200);
+            Assert.Contains(attrs, a => a.StatusCode == 500);
         }
     }
 }

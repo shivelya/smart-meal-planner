@@ -35,7 +35,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public void SearchFoods_HasHttpGetAttribute()
         {
-            var method = _controllerType.GetMethod("SearchFoods");
+            var method = _controllerType.GetMethod("SearchFoodsAsync");
             Assert.NotNull(method);
             var attr = method.GetCustomAttribute<HttpGetAttribute>();
             Assert.NotNull(attr);
@@ -44,7 +44,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public void SearchFoodts_HasProducesResponseTypeAttribute_400BadRequest()
         {
-            var method = _controllerType.GetMethod("SearchFoods");
+            var method = _controllerType.GetMethod("SearchFoodsAsync");
             Assert.NotNull(method);
             var attrs = method.GetCustomAttributes<ProducesResponseTypeAttribute>();
             Assert.Contains(attrs, a => a.StatusCode == StatusCodes.Status400BadRequest);

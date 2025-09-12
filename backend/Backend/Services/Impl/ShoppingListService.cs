@@ -105,7 +105,7 @@ namespace Backend.Services.Impl
             return item.ToDto();
         }
 
-        public async Task DeleteShoppingListItemAsync(int id, int userId)
+        public async Task<bool> DeleteShoppingListItemAsync(int id, int userId)
         {
             if (id <= 0)
             {
@@ -124,7 +124,7 @@ namespace Backend.Services.Impl
             }
 
             _context.ShoppingListItems.Remove(item);
-            await _context.SaveChangesAsync();
+            return await _context.SaveChangesAsync() > 0;
         }
 
         public async Task GenerateAsync(GenerateShoppingListRequestDto request, int userId)

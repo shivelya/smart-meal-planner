@@ -34,16 +34,16 @@ namespace Backend.Tests.Services.Impl
             await _context.SaveChangesAsync();
 
             var result = await _service.GetAllAsync();
-            Assert.Equal(2, result.Count());
-            Assert.Contains(result, c => c.Name == "Fruit");
-            Assert.Contains(result, c => c.Name == "Vegetable");
+            Assert.Equal(2, result.TotalCount);
+            Assert.Contains(result.Items, c => c.Name == "Fruit");
+            Assert.Contains(result.Items, c => c.Name == "Vegetable");
         }
 
         [Fact]
         public async Task GetAllAsync_ReturnsEmpty_WhenNoCategories()
         {
             var result = await _service.GetAllAsync();
-            Assert.Empty(result);
+            Assert.Empty(result.Items);
         }
     }
 }

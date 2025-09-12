@@ -36,12 +36,4 @@ namespace Backend.DTOs
     {
         public required string Source { get; set; }
     }
-
-    public class RecipeSearchOptions
-    {
-        public string? TitleContains { get; set; } = null!;
-        public string? IngredientContains { get; set; } = null!;
-        public int? Skip = 0;
-        public int? Take = 50;
-    }
 }

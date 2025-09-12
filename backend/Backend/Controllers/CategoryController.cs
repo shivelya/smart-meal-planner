@@ -21,13 +21,15 @@ namespace Backend.Controllers
         /// </summary>
         /// <remarks>Returns all the existing category types.</remarks>
         [HttpGet]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetCategoriesResult>> GetCategories()
         {
             try
             {
                 var categories = await _service.GetAllAsync();
-                _logger.LogInformation("Retrieved {Count} categories", categories.Count());
-                return Ok(new GetCategoriesResult { TotalCount = categories.Count(), Items = categories });
+                _logger.LogInformation("Retrieved {Count} categories", categories.TotalCount);
+                return Ok(categories);
             }
             catch (Exception ex)
             {

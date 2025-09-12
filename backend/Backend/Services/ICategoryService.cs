@@ -11,6 +11,6 @@ namespace Backend.Services
         /// Retrieves all categories.
         /// </summary>
         /// <returns>An enumerable collection of category DTOs.</returns>
-        Task<IEnumerable<CategoryDto>> GetAllAsync();
+        Task<GetCategoriesResult> GetAllAsync();
     }
 }

@@ -8,10 +8,11 @@ namespace Backend.Services.Impl
         private readonly PlannerContext _context = context;
         private readonly ILogger<FoodService> _logger = logger;
 
-        public async Task<GetFoodsResult> SearchFoods(string search, int? skip, int? take)
+        public async Task<GetFoodsResult> SearchFoodsAsync(string search, int? skip, int? take)
         {
             var foodsQuery = _context.Foods
-                .Where(i => i.Name.Contains(search));
+                .AsNoTracking()
+                .Where(i => i.Name.Contains(search, StringComparison.InvariantCultureIgnoreCase));
 
             var count = await foodsQuery.CountAsync();
 

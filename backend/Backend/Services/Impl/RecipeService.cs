@@ -111,15 +111,9 @@ namespace Backend.Services.Impl
             return new GetRecipesResult { TotalCount = entities.Count, Items = [.. entities.Select(r => r.ToDto())] };
         }
 
-        /// <summary>
-        /// Searches for recipes based on title and/or ingredient for the specified user.
-        /// </summary>
-        /// <param name="options">Search options including title, ingredient, skip, and take.</param>
-        /// <param name="userId">The user ID who owns the recipes.</param>
-        /// <returns>A collection of recipe DTOs matching the search criteria.</returns>
-        public async Task<GetRecipesResult> SearchAsync(RecipeSearchOptions options, int userId)
+        public async Task<GetRecipesResult> SearchAsync(int userId, string ? title, string ? ingredient, int? skip, int? take)
         {
-            _logger.LogInformation("Searching recipes for user {UserId}: {@Options}", userId, options);
+            _logger.LogInformation("Searching recipes for user {UserId}: {Title}, {Ingredient}, {skip}, {take}", userId, title, ingredient, skip, take);
 
             var query = _context.Recipes
                 .AsNoTracking()
@@ -127,42 +121,42 @@ namespace Backend.Services.Impl
                 .Where(r => r.UserId == userId)
                 .AsQueryable();
 
-            if (!string.IsNullOrWhiteSpace(options.TitleContains))
+            if (!string.IsNullOrWhiteSpace(title))
             {
-                var title = options.TitleContains.Trim();
+                title = title.Trim();
                 var pattern = $"%{title}%";
                 query = query.Where(r => r.Title != null && r.Title!.Contains(title, StringComparison.CurrentCultureIgnoreCase));
             }
 
-            if (!string.IsNullOrWhiteSpace(options.IngredientContains))
+            if (!string.IsNullOrWhiteSpace(ingredient))
             {
-                var ing = options.IngredientContains.Trim();
+                var ing = ingredient.Trim();
                 var pattern = $"%{ing}%";
                 query = query.Where(r => r.Ingredients.Any(i => i.Food.Name.Contains(ing, StringComparison.CurrentCultureIgnoreCase)));
             }
 
             var count = await query.CountAsync();
 
-            if (options.Skip != null)
+            if (skip != null)
             {
-                if (options.Skip < 0)
+                if (skip < 0)
                 {
                     _logger.LogWarning("Negative skip used for search.");
                     throw new ArgumentException("Skip must be non-negative");
                 }
 
-                query = query.Skip(options.Skip!.Value);
+                query = query.Skip(skip!.Value);
             }
 
-            if (options.Take != null)
+            if (take != null)
             {
-                if (options.Take < 0)
+                if (take < 0)
                 {
                     _logger.LogWarning("Negative take used for search.");
                     throw new ArgumentException("Take must be non-negative.");
                 }
 
-                query = query.Take(options.Take!.Value);
+                query = query.Take(take!.Value);
             }
 
             var list = await query.ToListAsync();

@@ -35,9 +35,9 @@ namespace Backend.Tests.Controllers
         }
 
         [Theory]
-        [InlineData("AddItem", typeof(HttpPostAttribute))]
-        [InlineData("AddItems", typeof(HttpPostAttribute))]
-        [InlineData("GetItem", typeof(HttpGetAttribute))]
+        [InlineData("AddItemAsync", typeof(HttpPostAttribute))]
+        [InlineData("AddItemsAsync", typeof(HttpPostAttribute))]
+        [InlineData("GetItemAsync", typeof(HttpGetAttribute))]
         // Add more endpoint checks as needed
         public void Endpoint_HasCorrectHttpAttribute(string methodName, Type expectedAttribute)
         {
@@ -48,21 +48,21 @@ namespace Backend.Tests.Controllers
         }
 
         [Theory]
-        [InlineData("AddItem", StatusCodes.Status200OK)]
-        [InlineData("AddItem", StatusCodes.Status500InternalServerError)]
-        [InlineData("AddItems", StatusCodes.Status201Created)]
-        [InlineData("AddItems", StatusCodes.Status500InternalServerError)]
-        [InlineData("GetItem", StatusCodes.Status200OK)]
-        [InlineData("GetItem", StatusCodes.Status404NotFound)]
-        [InlineData("GetItem", StatusCodes.Status500InternalServerError)]
-        [InlineData("GetItems", StatusCodes.Status200OK)]
-        [InlineData("GetItems", StatusCodes.Status500InternalServerError)]
-        [InlineData("DeleteItem", StatusCodes.Status204NoContent)]
-        [InlineData("DeleteItem", StatusCodes.Status404NotFound)]
-        [InlineData("DeleteItem", StatusCodes.Status500InternalServerError)]
-        [InlineData("DeleteItems", StatusCodes.Status204NoContent)]
-        [InlineData("DeleteItems", StatusCodes.Status404NotFound)]
-        [InlineData("DeleteItems", StatusCodes.Status500InternalServerError)]
+        [InlineData("AddItemAsync", StatusCodes.Status201Created)]
+        [InlineData("AddItemAsync", StatusCodes.Status500InternalServerError)]
+        [InlineData("AddItemsAsync", StatusCodes.Status201Created)]
+        [InlineData("AddItemsAsync", StatusCodes.Status500InternalServerError)]
+        [InlineData("GetItemAsync", StatusCodes.Status200OK)]
+        [InlineData("GetItemAsync", StatusCodes.Status404NotFound)]
+        [InlineData("GetItemAsync", StatusCodes.Status500InternalServerError)]
+        [InlineData("GetItemsAsync", StatusCodes.Status200OK)]
+        [InlineData("GetItemsAsync", StatusCodes.Status500InternalServerError)]
+        [InlineData("DeleteItemAsync", StatusCodes.Status204NoContent)]
+        [InlineData("DeleteItemAsync", StatusCodes.Status404NotFound)]
+        [InlineData("DeleteItemAsync", StatusCodes.Status500InternalServerError)]
+        [InlineData("DeleteItemsAsync", StatusCodes.Status204NoContent)]
+        [InlineData("DeleteItemsAsync", StatusCodes.Status404NotFound)]
+        [InlineData("DeleteItemsAsync", StatusCodes.Status500InternalServerError)]
         public void Endpoint_HasCorrectProducesResponseType(string methodName, int statusCode)
         {
             var method = _controllerType.GetMethod(methodName);
