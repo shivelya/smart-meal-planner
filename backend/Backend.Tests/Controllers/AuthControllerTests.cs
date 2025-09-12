@@ -12,6 +12,63 @@ namespace Backend.Tests.Controllers
     public class AuthControllerTests
     {
         [Fact]
+        public async Task UpdateUserAsync_ReturnsBadRequest_WhenRequestIsNull()
+        {
+            var tokenService = new Mock<ITokenService>();
+            var userService = new Mock<IUserService>();
+            var emailService = new Mock<IEmailService>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
+            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
+            var result = await controller.UpdateUserAsync(null!);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Required is required.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task UpdateUserAsync_ReturnsBadRequest_WhenUpdateFails()
+        {
+            var tokenService = new Mock<ITokenService>();
+            var userService = new Mock<IUserService>();
+            userService.Setup(s => s.UpdateUserDtoAsync(It.IsAny<UserDto>())).ReturnsAsync(false);
+            var emailService = new Mock<IEmailService>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
+            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
+            var dto = new UserDto { Id = 1, Email = "test@example.com" };
+            var result = await controller.UpdateUserAsync(dto);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Unable to update user.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task UpdateUserAsync_ReturnsServerError_WhenExceptionThrown()
+        {
+            var tokenService = new Mock<ITokenService>();
+            var userService = new Mock<IUserService>();
+            userService.Setup(s => s.UpdateUserDtoAsync(It.IsAny<UserDto>())).ThrowsAsync(new Exception("fail"));
+            var emailService = new Mock<IEmailService>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
+            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
+            var dto = new UserDto { Id = 1, Email = "test@example.com" };
+            var result = await controller.UpdateUserAsync(dto);
+            var status = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, status.StatusCode);
+            Assert.Equal("fail", status.Value);
+        }
+
+        [Fact]
+        public async Task UpdateUserAsync_ReturnsOk_WhenUpdateSucceeds()
+        {
+            var tokenService = new Mock<ITokenService>();
+            var userService = new Mock<IUserService>();
+            userService.Setup(s => s.UpdateUserDtoAsync(It.IsAny<UserDto>())).ReturnsAsync(true);
+            var emailService = new Mock<IEmailService>();
+            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
+            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
+            var dto = new UserDto { Id = 1, Email = "test@example.com" };
+            var result = await controller.UpdateUserAsync(dto);
+            Assert.IsType<OkResult>(result);
+        }
+        [Fact]
         public async Task Refresh_ReturnsBadRequest_WhenRefreshTokenIMissing()
         {
             var tokenService = new Mock<ITokenService>();

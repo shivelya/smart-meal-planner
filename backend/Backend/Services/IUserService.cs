@@ -29,8 +29,8 @@ namespace Backend.Services
         /// Updates the user DTO information.
         /// </summary>
         /// <param name="userDto">The user DTO to update.</param>
-        /// <returns>The updated user DTO.</returns>
-        Task<UserDto> UpdateUserDtoAsync(UserDto userDto);
+        /// <returns>True on success.</returns>
+        Task<bool> UpdateUserDtoAsync(UserDto userDto);
         /// <summary>
         /// Verifies the password hash for the specified user.
         /// </summary>
@@ -45,7 +45,7 @@ namespace Backend.Services
         /// <param name="oldPassword">The user's current password.</param>
         /// <param name="newPassword">The user's new password.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        Task ChangePasswordAsync(string userId, string oldPassword, string newPassword);
+        Task ChangePasswordAsync(int userId, string oldPassword, string newPassword);
         /// <summary>
         /// Updates the password for the specified user.
         /// </summary>

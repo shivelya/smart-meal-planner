@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Backend.DTOs;
 using Backend.Model;
+using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Services.Impl
 {
@@ -49,7 +50,10 @@ namespace Backend.Services.Impl
         /// <returns>The user if found, otherwise null.</returns>
         public async Task<User> GetByEmailAsync(string email)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email) ?? null!;
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email == email) ?? null!;
+
             if (user == null)
             {
                 _logger.LogInformation("User not found with email: {Email}", email);
@@ -59,14 +63,14 @@ namespace Backend.Services.Impl
             return user;
         }
 
-    /// <summary>
-    /// Retrieves a user by their unique ID.
-    /// </summary>
-    /// <param name="id">The user's unique identifier.</param>
-    /// <returns>The user if found, otherwise null.</returns>
-    public async Task<User> GetByIdAsync(int id)
+        /// <summary>
+        /// Retrieves a user by their unique ID.
+        /// </summary>
+        /// <param name="id">The user's unique identifier.</param>
+        /// <returns>The user if found, otherwise null.</returns>
+        public async Task<User> GetByIdAsync(int id)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id) ?? null!;
+            var user = await _context.Users.FindAsync(id);
             if (user == null)
             {
                 _logger.LogInformation("User not found with ID: {Id}", id);
@@ -76,13 +80,13 @@ namespace Backend.Services.Impl
             return user;
         }
 
-    /// <summary>
-    /// Verifies the password hash for the specified user.
-    /// </summary>
-    /// <param name="password">The password to verify.</param>
-    /// <param name="user">The user whose password hash to verify.</param>
-    /// <returns>True if the password matches, otherwise false.</returns>
-    public bool VerifyPasswordHash(string password, User user)
+        /// <summary>
+        /// Verifies the password hash for the specified user.
+        /// </summary>
+        /// <param name="password">The password to verify.</param>
+        /// <param name="user">The user whose password hash to verify.</param>
+        /// <returns>True if the password matches, otherwise false.</returns>
+        public bool VerifyPasswordHash(string password, User user)
         {
             // Verify the password against the stored hash
             if (user == null || string.IsNullOrEmpty(user.PasswordHash))
@@ -94,26 +98,20 @@ namespace Backend.Services.Impl
             return BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
         }
 
-    /// <summary>
-    /// Changes the password for the specified user.
-    /// </summary>
-    /// <param name="userId">The user's unique identifier.</param>
-    /// <param name="oldPassword">The user's current password.</param>
-    /// <param name="newPassword">The user's new password.</param>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    public async Task ChangePasswordAsync(string userId, string oldPassword, string newPassword)
+        /// <summary>
+        /// Changes the password for the specified user.
+        /// </summary>
+        /// <param name="userId">The user's unique identifier.</param>
+        /// <param name="oldPassword">The user's current password.</param>
+        /// <param name="newPassword">The user's new password.</param>
+        /// <returns>A task representing the asynchronous operation.</returns>
+        public async Task ChangePasswordAsync(int userId, string oldPassword, string newPassword)
         {
-            if (!int.TryParse(userId, out int id))
-            {
-                _logger.LogWarning("Invalid user ID format: {UserId}", userId);
-                throw new ArgumentException("Invalid user ID format.");
-            }
-
-            var user = await GetByIdAsync(id);
+            var user = await GetByIdAsync(userId);
             if (user == null)
             {
                 _logger.LogWarning("User not found with ID: {UserId}", userId);
-                throw new InvalidOperationException("User not found.");
+                throw new ArgumentException("User not found.");
             }
 
             if (!VerifyPasswordHash(oldPassword, user))
@@ -132,13 +130,13 @@ namespace Backend.Services.Impl
             _logger.LogInformation("Password changed successfully for user ID: {UserId}", userId);
         }
 
-    /// <summary>
-    /// Updates the password for the specified user.
-    /// </summary>
-    /// <param name="userId">The user's unique identifier.</param>
-    /// <param name="newPassword">The new password to set.</param>
-    /// <returns>True if the update was successful, otherwise false.</returns>
-    public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
+        /// <summary>
+        /// Updates the password for the specified user.
+        /// </summary>
+        /// <param name="userId">The user's unique identifier.</param>
+        /// <param name="newPassword">The new password to set.</param>
+        /// <returns>True if the update was successful, otherwise false.</returns>
+        public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
         {
             var user = await GetByIdAsync(userId);
             if (user == null)
@@ -155,14 +153,22 @@ namespace Backend.Services.Impl
             return true;
         }
 
-    /// <summary>
-    /// Updates the user DTO information.
-    /// </summary>
-    /// <param name="userDto">The user DTO to update.</param>
-    /// <returns>The updated user DTO.</returns>
-    public Task<UserDto> UpdateUserDtoAsync(UserDto userDto)
+        /// <summary>
+        /// Updates the user DTO information.
+        /// </summary>
+        /// <param name="userDto">The user DTO to update.</param>
+        /// <returns>The updated user DTO.</returns>
+        public async Task<bool> UpdateUserDtoAsync(UserDto userDto)
         {
-            throw new NotImplementedException();
+            var user = await GetByIdAsync(userDto.Id);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found with ID: {UserId}", userDto.Id);
+                throw new ValidationException($"User not found with ID: {userDto.Id}");
+            }
+
+            user.Email = userDto.Email;
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }
