@@ -1,11 +1,12 @@
 using MailKit.Net.Smtp;
+using MailKit.Security;
 using MimeKit;
 
 namespace Backend.Services.Impl
 {
     public interface ISmtpClient : IDisposable
     {
-        Task ConnectAsync(string host, int port, MailKit.Security.SecureSocketOptions options);
+        Task ConnectAsync(string host, int port, SecureSocketOptions options);
         Task AuthenticateAsync(string user, string password);
         Task SendAsync(MimeMessage message);
         Task DisconnectAsync(bool quit);
@@ -18,25 +19,18 @@ namespace Backend.Services.Impl
         public SmtpClientAdapter(SmtpClient client) { _client = client; }
 
         private readonly SmtpClient _client;
-        public Task ConnectAsync(string host, int port, MailKit.Security.SecureSocketOptions options) => _client.ConnectAsync(host, port, options);
+        public Task ConnectAsync(string host, int port, SecureSocketOptions options) => _client.ConnectAsync(host, port, options);
         public Task AuthenticateAsync(string user, string password) => _client.AuthenticateAsync(user, password);
         public Task SendAsync(MimeMessage message) => _client.SendAsync(message);
         public Task DisconnectAsync(bool quit) => _client.DisconnectAsync(quit);
         public void Dispose() => _client.Dispose();
     }
 
-    public class BrevoEmailService : IEmailService
+    public class BrevoEmailService(IConfiguration config, ILogger<BrevoEmailService> logger, ISmtpClient smtpClient) : IEmailService
     {
-        private readonly IConfiguration _config;
-        private readonly ILogger<BrevoEmailService> _logger;
-        private readonly ISmtpClient _smtpClient;
-
-        public BrevoEmailService(IConfiguration config, ILogger<BrevoEmailService> logger, ISmtpClient smtpClient)
-        {
-            _config = config;
-            _logger = logger;
-            _smtpClient = smtpClient;
-        }
+        private readonly IConfiguration _config = config;
+        private readonly ILogger<BrevoEmailService> _logger = logger;
+        private readonly ISmtpClient _smtpClient = smtpClient;
 
         /// <summary>
         /// Sends a password reset email to the specified recipient with the provided reset link.
@@ -57,7 +51,7 @@ namespace Backend.Services.Impl
 
             int port;
             port = int.TryParse(_config["Email:Port"], out port) ? port : 587;
-            await _smtpClient.ConnectAsync(_config["Email:MailServer"]!, port, MailKit.Security.SecureSocketOptions.StartTls);
+            await _smtpClient.ConnectAsync(_config["Email:MailServer"]!, port, SecureSocketOptions.StartTls);
             await _smtpClient.AuthenticateAsync(_config["Email:SMTPUser"]!, _config["Email:SMTPPassword"]!);
             await _smtpClient.SendAsync(emailMessage);
             await _smtpClient.DisconnectAsync(true);

@@ -289,6 +289,38 @@ namespace Backend.Controllers
         /// <param name="request">JSON object with old password and new password.</param>
         /// <remarks>Returns an OK status upon success.</remarks>
         [Authorize]
+        [HttpPut("update-user")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
+        public async Task<IActionResult> UpdateUserAsync(UserDto request)
+        {
+            if (request == null)
+            {
+                _logger.LogInformation("Request is required");
+                return BadRequest("Required is required.");
+            }
+
+            try
+            {
+                if (await _userService.UpdateUserDtoAsync(request))
+                    return Ok();
+                else
+                    return BadRequest("Unable to update user.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogInformation(ex.Message);
+                return StatusCode(500, ex.Message);
+            }
+        }
+
+        /// <summary>
+        /// Allows an authenticated user to change their password
+        /// </summary>
+        /// <param name="request">JSON object with old password and new password.</param>
+        /// <remarks>Returns an OK status upon success.</remarks>
+        [Authorize]
         [HttpPut("change-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -309,12 +341,7 @@ namespace Backend.Controllers
                 return BadRequest("Old password and new password are required.");
             }
 
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            if (string.IsNullOrEmpty(userId))
-            {
-                _logger.LogWarning("Change password failed: User ID not found in claims.");
-                return Unauthorized();
-            }
+            var userId = GetUserId();
 
             try
             {
@@ -436,6 +463,11 @@ namespace Backend.Controllers
                 AccessToken = _tokenService.GenerateAccessToken(user),
                 RefreshToken = refreshToken.Token!
             };
+        }
+
+        private int GetUserId()
+        {
+            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
         }
     }
 }

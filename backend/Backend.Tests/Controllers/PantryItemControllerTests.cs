@@ -1,5 +1,4 @@
 using System.Security.Claims;
-using System.Security.Cryptography;
 using Backend.Controllers;
 using Backend.DTOs;
 using Backend.Services;

@@ -50,20 +50,12 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public async Task ChangePassword_ReturnsUnauthorized_WhenUserIdMissing()
-        {
-            var controller = CreateController();
-            var result = await controller.ChangePassword(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" });
-            Assert.IsType<UnauthorizedResult>(result);
-        }
-
-        [Fact]
         public async Task ChangePassword_ReturnsUnauthorized_WhenOldPasswordIncorrect()
         {
             var userService = new Mock<IUserService>();
-            userService.Setup(s => s.ChangePasswordAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            userService.Setup(s => s.ChangePasswordAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(new UnauthorizedAccessException());
-            var claims = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "user1") }));
+            var claims = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "1")]));
             var controller = CreateController(userService: userService, user: claims);
             var result = await controller.ChangePassword(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" });
             var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
@@ -74,9 +66,9 @@ namespace Backend.Tests.Controllers
         public async Task ChangePassword_ReturnsServerError_OnException()
         {
             var userService = new Mock<IUserService>();
-            userService.Setup(s => s.ChangePasswordAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            userService.Setup(s => s.ChangePasswordAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>()))
                 .Throws(new Exception("fail"));
-            var claims = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "user1") }));
+            var claims = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "1")]));
             var controller = CreateController(userService: userService, user: claims);
             var result = await controller.ChangePassword(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" });
             var error = Assert.IsType<ObjectResult>(result);
@@ -88,9 +80,9 @@ namespace Backend.Tests.Controllers
         public async Task ChangePassword_ReturnsOk_WhenSuccess()
         {
             var userService = new Mock<IUserService>();
-            userService.Setup(s => s.ChangePasswordAsync("user1", "old", "new"))
+            userService.Setup(s => s.ChangePasswordAsync(1, "old", "new"))
                 .Returns(Task.CompletedTask);
-            var claims = new ClaimsPrincipal(new ClaimsIdentity(new[] { new Claim(ClaimTypes.NameIdentifier, "user1") }));
+            var claims = new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "1")]));
             var controller = CreateController(userService: userService, user: claims);
             var result = await controller.ChangePassword(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" });
             var ok = Assert.IsType<OkObjectResult>(result);

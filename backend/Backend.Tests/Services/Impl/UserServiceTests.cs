@@ -138,7 +138,7 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateService();
             var user = await service.CreateUserAsync("changepass@example.com", "oldpass");
-            await service.ChangePasswordAsync(user.Id.ToString(), "oldpass", "newpass");
+            await service.ChangePasswordAsync(user.Id, "oldpass", "newpass");
 
             var updatedUser = await service.GetByIdAsync(user.Id);
             Assert.True(service.VerifyPasswordHash("newpass", updatedUser));
@@ -151,7 +151,7 @@ namespace Backend.Tests.Services.Impl
             var service = CreateService();
             var user = await service.CreateUserAsync("wrongold@example.com", "oldpass");
             await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-                service.ChangePasswordAsync(user.Id.ToString(), "wrongpass", "newpass"));
+                service.ChangePasswordAsync(user.Id, "wrongpass", "newpass"));
         }
 
         [Fact]
@@ -159,7 +159,7 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateService();
             await Assert.ThrowsAsync<InvalidOperationException>(() =>
-                service.ChangePasswordAsync("9999", "oldpass", "newpass"));
+                service.ChangePasswordAsync(9999, "oldpass", "newpass"));
         }
 
         [Fact]
@@ -167,10 +167,7 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateService();
             await Assert.ThrowsAsync<ArgumentException>(() =>
-                service.ChangePasswordAsync("", "oldpass", "newpass"));
-
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                service.ChangePasswordAsync("not an id", "oldpass", "newpass"));
+                service.ChangePasswordAsync(-1, "oldpass", "newpass"));
         }
 
         [Fact]
