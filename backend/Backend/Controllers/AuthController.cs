@@ -196,7 +196,7 @@ namespace Backend.Controllers
             User? user = null;
             try
             {
-                var oldRefreshToken = await _tokenService.FindRefreshToken(refreshToken);
+                var oldRefreshToken = await _tokenService.FindRefreshTokenAsync(refreshToken);
 
                 // if the refresh token is not found or is expired/revoked, return Unauthorized
                 // this is a security measure to prevent token reuse
@@ -266,7 +266,7 @@ namespace Backend.Controllers
 
             try
             {
-                var refreshTokenObj = await _tokenService.FindRefreshToken(request.RefreshToken);
+                var refreshTokenObj = await _tokenService.FindRefreshTokenAsync(request.RefreshToken);
 
                 // If the refresh token is not found, we can still return OK
                 // This is to ensure that the client can safely call logout without worrying about the token's existence
@@ -274,7 +274,7 @@ namespace Backend.Controllers
                 if (refreshTokenObj == null)
                     return Ok();
 
-                await _tokenService.RevokeRefreshToken(refreshTokenObj);
+                await _tokenService.RevokeRefreshTokenAsync(refreshTokenObj);
                 return Ok();
             }
             catch (Exception ex)
@@ -445,7 +445,7 @@ namespace Backend.Controllers
         private async Task<TokenResponse> GenerateTokens(User user)
         {
             var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "unknown";
-            var refreshToken = await _tokenService.GenerateRefreshToken(user, ip);
+            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user, ip);
             var accessToken = _tokenService.GenerateAccessToken(user);
 
             if (accessToken == null || refreshToken == null)
