@@ -158,7 +158,7 @@ namespace Backend.Tests.Services.Impl
         public async Task ChangePasswordAsync_Throws_WhenUserNotFound()
         {
             var service = CreateService();
-            await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            await Assert.ThrowsAsync<ArgumentException>(() =>
                 service.ChangePasswordAsync(9999, "oldpass", "newpass"));
         }
 
