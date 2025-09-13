@@ -177,20 +177,12 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<TokenResponse>> Refresh([FromBody] string refreshToken)
+        public async Task<ActionResult<TokenResponse>> RefreshAsync([FromBody] string refreshToken)
         {
             if (string.IsNullOrEmpty(refreshToken))
             {
                 _logger.LogWarning("Null refresh token provided.");
                 return BadRequest("Refresh token is required.");
-            }
-
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Model state is invalid for refresh token request.");
-                _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                _logger.LogDebug("Refresh token: {RefreshToken}", refreshToken);
-                return BadRequest(ModelState);
             }
 
             User? user = null;
@@ -200,9 +192,11 @@ namespace Backend.Controllers
 
                 // if the refresh token is not found or is expired/revoked, return Unauthorized
                 // this is a security measure to prevent token reuse
-                if (oldRefreshToken == null || oldRefreshToken.Expires < DateTime.UtcNow
-                    || oldRefreshToken.IsRevoked)
+                if (oldRefreshToken == null || oldRefreshToken.Expires < DateTime.UtcNow || oldRefreshToken.IsRevoked)
                 {
+                    if (oldRefreshToken != null && oldRefreshToken.Expires < DateTime.UtcNow && !oldRefreshToken.IsRevoked)
+                        await _tokenService.RevokeRefreshTokenAsync(oldRefreshToken);
+
                     _logger.LogWarning("Invalid or expired refresh token provided: {RefreshToken}", refreshToken);
                     return Unauthorized("Invalid refresh token.");
                 }
@@ -215,7 +209,7 @@ namespace Backend.Controllers
                 }
 
                 // Mark the old refresh token as revoked
-                oldRefreshToken.IsRevoked = true;
+                await _tokenService.RevokeRefreshTokenAsync(oldRefreshToken);
                 _logger.LogDebug("Revoking old refresh token: {RefreshToken}", refreshToken);
 
                 // Generate new tokens

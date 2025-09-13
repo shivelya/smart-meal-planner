@@ -10,16 +10,9 @@ namespace Backend.Services.Impl
         private readonly PlannerContext _context = plannerContext;
         private readonly ILogger<PantryItemService> _logger = logger;
 
-        /// <summary>
-        /// Creates a new pantry item for the specified user. Assumes a FoodId for foods that already exist,
-        /// and assumes a FoodName and CategoryId for foods that need to be added to the DB.
-        /// </summary>
-        /// <param name="pantryItemDto">The DTO containing pantry item details.</param>
-        /// <param name="userId">The user ID to associate with the pantry item.</param>
-        /// <returns>The created pantry item DTO.</returns>
         public async Task<PantryItemDto> CreatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId)
         {
-            _logger.LogInformation("Creating for user {0} pantry item {1}", userId, pantryItemDto);
+            _logger.LogInformation("Creating for user {UserId} pantry item {dtoItem}", userId, pantryItemDto);
             PantryItem entity = await CreatePantryItem(pantryItemDto, userId);
             await _context.SaveChangesAsync();
 
@@ -28,27 +21,16 @@ namespace Backend.Services.Impl
             return entity.ToDto();
         }
 
-        /// <summary>
-        /// Creates multiple pantry items for the specified user. Assumes a FoodId for Foods that alreay exist
-        /// and assumes a FoodName and CategoryId for Foods that need to be added to the DB.
-        /// </summary>
-        /// <param name="pantryItemDtos">A collection of DTOs containing pantry item details.</param>
-        /// <param name="userId">The user ID to associate with the pantry items.</param>
-        /// <returns>A collection of created pantry item DTOs.</returns>
         public async Task<IEnumerable<PantryItemDto>> CreatePantryItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> pantryItemDtos, int userId)
         {
             _logger.LogInformation("Creating for user {id} {count} pantry items", userId, pantryItemDtos.Count());
 
             if (pantryItemDtos.Any(dto => dto.Food == null))
-            {
                 _logger.LogWarning("Pantry items with no foods were added. These will be filtered out.");
-                throw new ArgumentException("Pantry items with no food were added. A food is required.");
-            }
 
-            var tasks = pantryItemDtos.Select(async dto => await CreatePantryItem(dto, userId));
+            var tasks = pantryItemDtos.Where(p => p != null).Select(async dto => await CreatePantryItem(dto, userId));
             var pantryItems = await Task.WhenAll(tasks);
 
-            _context.PantryItems.AddRange(pantryItems);
             int count = await _context.SaveChangesAsync();
 
             _logger.LogInformation("{count} pantry items created.", count);
@@ -56,11 +38,6 @@ namespace Backend.Services.Impl
             return pantryItems.Select(i => i.ToDto());
         }
 
-        /// <summary>
-        /// Deletes a pantry item by its unique ID.
-        /// </summary>
-        /// <param name="id">The pantry item's unique identifier.</param>
-        /// <returns>True if the item was deleted, otherwise false.</returns>
         public async Task<bool> DeletePantryItemAsync(int id)
         {
             _logger.LogInformation("Deleting pantry item {id}", id);
@@ -73,11 +50,6 @@ namespace Backend.Services.Impl
             return deleted > 0;
         }
 
-        /// <summary>
-        /// Deletes multiple pantry items by their IDs.
-        /// </summary>
-        /// <param name="ids">A collection of pantry item IDs to delete.</param>
-        /// <returns>The number of items deleted.</returns>
         public async Task<DeleteRequest> DeletePantryItemsAsync(IEnumerable<int> ids)
         {
             _logger.LogInformation("Deleting {count} pantry items", ids.Count());
@@ -89,45 +61,52 @@ namespace Backend.Services.Impl
             return new DeleteRequest { Ids = deletedIds };
         }
 
-        /// <summary>
-        /// Retrieves all pantry items with pagination.
-        /// </summary>
-        /// <param name="pageNumber">The page number to retrieve.</param>
-        /// <param name="pageSize">The number of items per page.</param>
-        /// <returns>A tuple containing the items and the total count.</returns>
-        public async Task<GetPantryItemsResult> GetAllPantryItemsAsync(int pageNumber, int pageSize)
+        public async Task<GetPantryItemsResult> GetAllPantryItemsAsync(int? skip, int? take)
         {
-            _logger.LogInformation("Getting {pageSize} pantry items, on page {page}", pageSize, pageNumber);
-            var query = _context.PantryItems.AsQueryable();
+            _logger.LogInformation("Getting {take} pantry items, skip {skip}", take, skip);
+            var query = _context.PantryItems.AsNoTracking().Include(i => i.Food).OrderBy(p => p.Food.Name).AsQueryable();
 
             var totalCount = await query.CountAsync();
-            var items = await query
-                .OrderBy(p => p.Food.Name)
-                .Skip((pageNumber - 1) * pageSize)
-                .Take(pageSize)
-                .ToListAsync();
+
+            if (skip != null)
+            {
+                if (skip < 0)
+                {
+                    _logger.LogWarning("Negative skip used for get all.");
+                    throw new ArgumentException("Non-negative skip must be used for pagination.");
+                }
+
+                query = query.Skip(skip.Value);
+            }
+
+            if (take != null)
+            {
+                if (take < 0)
+                {
+                    _logger.LogWarning("Negative take used for get all.");
+                    throw new ArgumentException("Non-negative take must be used for pagination.");
+                }
+
+                query = query.Take(take.Value);
+            }
+
+            var items = await query.ToListAsync();
 
             return new GetPantryItemsResult { Items = items.Select(i => i.ToDto()), TotalCount = totalCount };
         }
 
-        /// <summary>
-        /// Retrieves a pantry item by its unique ID.
-        /// </summary>
-        /// <param name="id">The pantry item's unique identifier.</param>
-        /// <returns>The pantry item DTO if found, otherwise null.</returns>
         public async Task<PantryItemDto?> GetPantryItemByIdAsync(int id)
         {
-            _logger.LogInformation("Getting pantry item {0}", id);
-            var entity = await _context.PantryItems.FindAsync(id);
+            _logger.LogInformation("Getting pantry item {id}", id);
+            var entity = await _context.PantryItems
+                .AsNoTracking()
+                .Include(i => i.Food)
+                .ThenInclude(f => f.Category)
+                .FirstOrDefaultAsync(i => i.Id == id);
+
             return entity?.ToDto();
         }
 
-        /// <summary>
-        /// Updates an existing pantry item.
-        /// </summary>
-        /// <param name="pantryItemDto">The pantry item DTO to update.</param>
-        /// <param name="userId">The user id the item belongs to.</param>
-        /// <returns>The updated pantry item DTO.</returns>
         public async Task<PantryItemDto> UpdatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId)
         {
             if (pantryItemDto == null)
@@ -142,17 +121,11 @@ namespace Backend.Services.Impl
                 throw new ArgumentException("PantryItemDto.Id is required for updates.");
             }
 
-            var item = _context.PantryItems.FirstOrDefault(item => item.Id == pantryItemDto.Id);
+            var item = _context.PantryItems.FirstOrDefault(item => item.Id == pantryItemDto.Id && item.UserId == userId);
             if (item == null)
             {
                 _logger.LogWarning("Could not find pantry item {id} to update.", pantryItemDto.Id);
                 throw new ArgumentException("Could not find pantry item {0} to update.", pantryItemDto.Id.ToString());
-            }
-
-            if (userId != item.UserId)
-            {
-                _logger.LogWarning("Cannot update pantry items for other users.");
-                throw new ArgumentException("Cannot update pantry items for other users.");
             }
 
             if (pantryItemDto.Quantity < 0)
@@ -173,7 +146,9 @@ namespace Backend.Services.Impl
         {
             var items = _context.PantryItems
                 .Where(i => i.UserId == userId)
-                .Where(i => i.Food.Name.Contains(search.ToLower(), StringComparison.InvariantCultureIgnoreCase));
+                .Where(i => i.Food.Name.Contains(search.ToLower(), StringComparison.InvariantCultureIgnoreCase))
+                .OrderBy(i => i.Food.Name)
+                .AsQueryable();
 
             var count = await items.CountAsync();
 
@@ -199,8 +174,7 @@ namespace Backend.Services.Impl
                 items = items.Take(take.Value);
             }
 
-            var results = await items.OrderBy(i => i.Food.Name).ToListAsync();
-
+            var results = await items.ToListAsync();
             return new GetPantryItemsResult { TotalCount = count, Items = items.Select(i => i.ToDto()) };
         }
 
