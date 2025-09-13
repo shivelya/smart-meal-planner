@@ -38,7 +38,7 @@ namespace Backend.Services.Impl
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<RefreshToken> GenerateRefreshToken(User user, string ipAddress)
+        public async Task<RefreshToken> GenerateRefreshTokenAsync(User user, string ipAddress)
         {
             var randomBytes = new byte[64];
             using var rng = RandomNumberGenerator.Create();
@@ -60,14 +60,14 @@ namespace Backend.Services.Impl
             return refreshToken;
         }
 
-        public async Task<RefreshToken?> FindRefreshToken(string tokenStr)
+        public async Task<RefreshToken?> FindRefreshTokenAsync(string tokenStr)
         {
             var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == tokenStr);
             _logger.LogInformation("Found refresh token for user {UserId} at {Time}", token?.UserId, DateTime.UtcNow);
             return token;
         }
 
-        public async Task RevokeRefreshToken(RefreshToken token)
+        public async Task RevokeRefreshTokenAsync(RefreshToken token)
         {
             token.IsRevoked = true;
             _context.RefreshTokens.Update(token);

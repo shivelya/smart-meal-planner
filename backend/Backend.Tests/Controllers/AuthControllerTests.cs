@@ -102,7 +102,7 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
             var emailService = new Mock<IEmailService>();
@@ -118,7 +118,7 @@ namespace Backend.Tests.Controllers
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
             var revokedToken = new RefreshToken { IsRevoked = true };
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(revokedToken);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(revokedToken);
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
             var emailService = new Mock<IEmailService>();
@@ -134,7 +134,7 @@ namespace Backend.Tests.Controllers
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
             var revokedToken = new RefreshToken { Expires = DateTime.UtcNow.AddMinutes(-1), IsRevoked = false };
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(revokedToken);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(revokedToken);
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
             var emailService = new Mock<IEmailService>();
@@ -150,7 +150,7 @@ namespace Backend.Tests.Controllers
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
             var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync((User)null!);
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
@@ -168,7 +168,7 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
             var user = new User { Id = 123, Email = "test@test.com" };
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
             tokenService.Setup(s => s.GenerateAccessToken(user)).Throws(new Exception("Token generation failed"));
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
@@ -188,9 +188,9 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
             var user = new User { Id = 123, Email = "test@test.com" };
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
-            tokenService.Setup(s => s.GenerateRefreshToken(user, "ip")).Throws(new Exception("Token generation failed"));
+            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, "ip")).Throws(new Exception("Token generation failed"));
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
             var emailService = new Mock<IEmailService>();
@@ -208,7 +208,7 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
             var user = new User { Id = 123, Email = "test@test.com" };
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
             tokenService.Setup(s => s.GenerateAccessToken(user)).Returns((string)null!);
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
@@ -228,9 +228,9 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
             var user = new User { Id = 123, Email = "test@test.com" };
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
-            tokenService.Setup(s => s.GenerateRefreshToken(user, "ip")).ReturnsAsync((RefreshToken)null!);
+            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, "ip")).ReturnsAsync((RefreshToken)null!);
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
             var emailService = new Mock<IEmailService>();
@@ -248,12 +248,12 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             var user = new User { Id = 123, Email = "test@example.com" };
             var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
             userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
             var accesstoken = "access-token";
             tokenService.Setup(s => s.GenerateAccessToken(user)).Returns(accesstoken);
             var refreshTokenStr = "refresh-token";
-            tokenService.Setup(s => s.GenerateRefreshToken(user, It.IsAny<string>())).ReturnsAsync(
+            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, It.IsAny<string>())).ReturnsAsync(
                 new RefreshToken { Token = refreshTokenStr });
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
@@ -383,7 +383,7 @@ namespace Backend.Tests.Controllers
             var accessTokenStr = "access-token";
             var refreshTokenStr = "refresh-token";
             tokenService.Setup(s => s.GenerateAccessToken(user)).Returns(accessTokenStr);
-            tokenService.Setup(s => s.GenerateRefreshToken(user, It.IsAny<string>())).ReturnsAsync(
+            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, It.IsAny<string>())).ReturnsAsync(
                 new RefreshToken { Token = refreshTokenStr });
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
@@ -506,7 +506,7 @@ namespace Backend.Tests.Controllers
             var accessTokenStr = "access-token";
             var refreshTokenStr = "refresh-token";
             tokenService.Setup(s => s.GenerateAccessToken(user)).Returns(accessTokenStr);
-            tokenService.Setup(s => s.GenerateRefreshToken(user, It.IsAny<string>())).ReturnsAsync(
+            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, It.IsAny<string>())).ReturnsAsync(
                 new RefreshToken { Token = refreshTokenStr });
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
@@ -532,7 +532,7 @@ namespace Backend.Tests.Controllers
         {
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
             var emailService = new Mock<IEmailService>();
@@ -548,8 +548,8 @@ namespace Backend.Tests.Controllers
             var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
             var refreshToken = new RefreshToken { Token = "token" };
-            tokenService.Setup(s => s.FindRefreshToken(It.IsAny<string>())).ReturnsAsync(refreshToken);
-            tokenService.Setup(s => s.RevokeRefreshToken(refreshToken)).Returns(Task.CompletedTask);
+            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
+            tokenService.Setup(s => s.RevokeRefreshTokenAsync(refreshToken)).Returns(Task.CompletedTask);
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
 
             var emailService = new Mock<IEmailService>();

@@ -19,19 +19,19 @@ namespace Backend.Services
         /// <param name="user">The user for whom to generate the refresh token.</param>
         /// <param name="ipAddress">The IP address associated with the refresh token.</param>
         /// <returns>The generated refresh token.</returns>
-        Task<RefreshToken> GenerateRefreshToken(User user, string ipAddress);
+        Task<RefreshToken> GenerateRefreshTokenAsync(User user, string ipAddress);
         /// <summary>
         /// Finds a refresh token by its token string.
         /// </summary>
         /// <param name="token">The refresh token string to search for.</param>
         /// <returns>The found refresh token if it exists, otherwise null.</returns>
-        Task<RefreshToken?> FindRefreshToken(string token);
+        Task<RefreshToken?> FindRefreshTokenAsync(string token);
         /// <summary>
         /// Revokes the specified refresh token.
         /// </summary>
         /// <param name="token">The refresh token to revoke.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        Task RevokeRefreshToken(RefreshToken token);
+        Task RevokeRefreshTokenAsync(RefreshToken token);
         /// <summary>
         /// Generates a password reset token for the specified user.
         /// </summary>
