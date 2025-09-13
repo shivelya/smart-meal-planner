@@ -77,7 +77,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Refresh(null!);
+            var result = await controller.RefreshAsync(null!);
 
             Assert.IsType<BadRequestObjectResult>(result.Result);
         }
@@ -92,7 +92,7 @@ namespace Backend.Tests.Controllers
 
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             controller.ModelState.AddModelError("RefreshToken", "Required");
-            var result = await controller.Refresh(null!);
+            var result = await controller.RefreshAsync(null!);
 
             Assert.IsType<BadRequestObjectResult>(result.Result);
         }
@@ -107,7 +107,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Refresh("badtoken");
+            var result = await controller.RefreshAsync("badtoken");
 
             Assert.IsType<UnauthorizedObjectResult>(result.Result);
         }
@@ -123,7 +123,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Refresh("badtoken");
+            var result = await controller.RefreshAsync("badtoken");
 
             Assert.IsType<UnauthorizedObjectResult>(result.Result);
         }
@@ -139,7 +139,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Refresh("badtoken");
+            var result = await controller.RefreshAsync("badtoken");
 
             Assert.IsType<UnauthorizedObjectResult>(result.Result);
         }
@@ -156,7 +156,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Refresh("token");
+            var result = await controller.RefreshAsync("token");
 
             Assert.IsType<UnauthorizedObjectResult>(result.Result);
         }
@@ -175,7 +175,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Refresh("token");
+            var result = await controller.RefreshAsync("token");
 
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
@@ -195,7 +195,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Refresh("token");
+            var result = await controller.RefreshAsync("token");
 
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
@@ -215,7 +215,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Refresh("token");
+            var result = await controller.RefreshAsync("token");
 
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
@@ -235,7 +235,7 @@ namespace Backend.Tests.Controllers
 
             var emailService = new Mock<IEmailService>();
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Refresh("token");
+            var result = await controller.RefreshAsync("token");
 
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
@@ -263,7 +263,7 @@ namespace Backend.Tests.Controllers
             {
                 HttpContext = new DefaultHttpContext()
             };
-            var result = await controller.Refresh("token");
+            var result = await controller.RefreshAsync("token");
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             TokenResponse? value = okResult.Value as TokenResponse;
