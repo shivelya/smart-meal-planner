@@ -292,6 +292,38 @@ namespace Backend.Tests
             Assert.NotNull(entity.FindNavigation(nameof(ShoppingListItem.User)));
             Assert.NotNull(entity.FindNavigation(nameof(ShoppingListItem.Food)));
         }
+
+        [Fact] public void RecipeIngredientFoodRelationship_IsRestrict()
+        {
+            var builder = InitializeContext();
+            var entity = builder.Model.FindEntityType(typeof(RecipeIngredient));
+            Assert.NotNull(entity);
+            var foreignKey = entity.GetForeignKeys().FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Food));
+            Assert.NotNull(foreignKey);
+            Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+        }
+
+        [Fact]
+        public void PantryItemFoodRelationship_IsRestrict()
+        {
+            var builder = InitializeContext();
+            var entity = builder.Model.FindEntityType(typeof(PantryItem));
+            Assert.NotNull(entity);
+            var foreignKey = entity.GetForeignKeys().FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Food));
+            Assert.NotNull(foreignKey);
+            Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+        }
+
+        [Fact]
+        public void ShoppingListItemFoodRelationship_IsRestrict()
+        {
+            var builder = InitializeContext();
+            var entity = builder.Model.FindEntityType(typeof(ShoppingListItem));
+            Assert.NotNull(entity);
+            var foreignKey = entity.GetForeignKeys().FirstOrDefault(fk => fk.PrincipalEntityType.ClrType == typeof(Food));
+            Assert.NotNull(foreignKey);
+            Assert.Equal(DeleteBehavior.Restrict, foreignKey.DeleteBehavior);
+        }
     }
 
     public class CategorySeedingPlannerContext : PlannerContext
