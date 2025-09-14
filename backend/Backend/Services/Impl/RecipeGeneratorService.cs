@@ -4,11 +4,6 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Helpers
 {
-    public interface IRecipeGenerator
-    {
-        Task<CreateUpdateMealPlanRequestDto> GenerateMealPlan(int meals, int userId, bool useExternal);
-    }
-
     public class ManualRecipeGenerator(PlannerContext context, ILogger<ManualRecipeGenerator> logger, IEnumerable<IExternalRecipeGenerator> generators) : IRecipeGenerator
     {
         private readonly PlannerContext _context = context;
