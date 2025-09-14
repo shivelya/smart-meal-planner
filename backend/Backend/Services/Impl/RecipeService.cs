@@ -10,17 +10,9 @@ namespace Backend.Services.Impl
         private readonly PlannerContext _context = context;
         private readonly ILogger<RecipeService> _logger = logger;
 
-        /// <summary>
-        /// Creates a new recipe for the specified user.
-        /// </summary>
-        /// <param name="request">The DTO containing recipe details.</param>
-        /// <param name="userId">The user ID to associate with the recipe.</param>
-        /// <returns>The created recipe DTO.</returns>
-        /// <exception cref="ValidationException">Thrown when required fields are missing or ingredient type is unknown.</exception>
         public async Task<RecipeDto> CreateAsync(CreateUpdateRecipeDtoRequest request, int userId)
         {
             _logger.LogInformation("Creating recipe for user {UserId}: {@Request}", userId, request);
-            Recipe recipe = new() { UserId = userId };
 
             if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Instructions) || request.Ingredients == null || request.Ingredients.Count == 0)
             {
@@ -28,10 +20,20 @@ namespace Backend.Services.Impl
                 throw new ValidationException("Title, instructions, and at least one ingredient are required to create recipe.");
             }
 
-            recipe.Title = request.Title;
-            recipe.Instructions = request.Instructions;
-            recipe.Source = request.Source;
-            recipe.Ingredients = await CreateIngredients(request.Ingredients);
+            if (await _context.Users.FindAsync(userId) == null)
+            {
+                _logger.LogWarning("User ID {UserId} does not exist.", userId);
+                throw new ValidationException("User ID does not exist.");
+            }
+
+            Recipe recipe = new()
+            {
+                UserId = userId,
+                Title = request.Title,
+                Instructions = request.Instructions,
+                Source = request.Source,
+                Ingredients = await CreateIngredients(request.Ingredients)
+            };
 
             await _context.Recipes.AddAsync(recipe);
             await _context.SaveChangesAsync();
@@ -39,60 +41,42 @@ namespace Backend.Services.Impl
             return recipe.ToDto();
         }
 
-        /// <summary>
-        /// Deletes a recipe by its unique ID for the specified user.
-        /// </summary>
-        /// <param name="id">The recipe's unique identifier.</param>
-        /// <param name="userId">The user ID who owns the recipe.</param>
-        /// <returns>True if the recipe was deleted, otherwise false.</returns>
-        /// <exception cref="ArgumentException">Thrown when the recipe is not found or user does not have permission.</exception>
         public async Task<bool> DeleteAsync(int id, int userId)
         {
             _logger.LogInformation("Deleting recipe with ID {Id} for user {UserId}", id, userId);
-            var recipe = await _context.Recipes.FirstOrDefaultAsync(r => r.Id == id);
+            var recipe = await _context.Recipes.FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);
             if (recipe is null)
             {
                 _logger.LogWarning("No such ingredient found for recipe ID {Id}", id);
                 throw new ArgumentException("No such ingredient found.");
             }
-            if (recipe.UserId != userId)
-            {
-                _logger.LogWarning("User {UserId} does not have permission to delete recipe {Id}", userId, id);
-                throw new ArgumentException("User does not have permission to delete ingredient.");
-            }
+
             _context.Recipes.Remove(recipe);
             int num = await _context.SaveChangesAsync();
             _logger.LogInformation("Recipe with ID {Id} deleted", id);
             return num > 0;
         }
 
-        /// <summary>
-        /// Retrieves a recipe by its unique ID for the specified user.
-        /// </summary>
-        /// <param name="id">The recipe's unique identifier.</param>
-        /// <param name="userId">The user ID who owns the recipe.</param>
-        /// <returns>The recipe DTO if found, otherwise null.</returns>
         public async Task<RecipeDto?> GetByIdAsync(int id, int userId)
         {
             _logger.LogInformation("Retrieving recipe with ID {Id} for user {UserId}", id, userId);
             var entity = await _context.Recipes
+                .AsNoTracking()
                 .Include(r => r.Ingredients)
+                .ThenInclude(i => i.Food)
+                .ThenInclude(f => f.Category)
                 .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);
+
             if (entity is null)
             {
                 _logger.LogWarning("Recipe with ID {Id} not found for user {UserId}", id, userId);
                 return null;
             }
+
             _logger.LogInformation("Recipe retrieved: {@Recipe}", entity);
             return entity.ToDto();
         }
 
-        /// <summary>
-        /// Retrieves multiple recipes by their IDs for the specified user.
-        /// </summary>
-        /// <param name="ids">A collection of recipe IDs to retrieve.</param>
-        /// <param name="userId">The user ID who owns the recipes.</param>
-        /// <returns>A collection of recipe DTOs.</returns>
         public async Task<GetRecipesResult> GetByIdsAsync(IEnumerable<int> ids, int userId)
         {
             var idSet = ids.Distinct().ToList();
@@ -104,7 +88,10 @@ namespace Backend.Services.Impl
             }
 
             var entities = await _context.Recipes
+                .AsNoTracking()
                 .Include(r => r.Ingredients)
+                .ThenInclude(i => i.Food)
+                .ThenInclude(f => f.Category)
                 .Where(r => r.UserId == userId && idSet.Contains(r.Id))
                 .ToListAsync();
             _logger.LogInformation("Retrieved {Count} recipes", entities.Count);
@@ -118,6 +105,8 @@ namespace Backend.Services.Impl
             var query = _context.Recipes
                 .AsNoTracking()
                 .Include(r => r.Ingredients)
+                .ThenInclude(i => i.Food)
+                .ThenInclude(f => f.Category)
                 .Where(r => r.UserId == userId)
                 .AsQueryable();
 
@@ -164,28 +153,16 @@ namespace Backend.Services.Impl
             return new GetRecipesResult { TotalCount = count, Items = [.. list.Select(r => r.ToDto())] };
         }
 
-        /// <summary>
-        /// Updates an existing recipe for the specified user.
-        /// </summary>
-        /// <param name="id">The recipe's unique identifier.</param>
-        /// <param name="recipeDto">The DTO containing updated recipe details.</param>
-        /// <param name="userId">The user ID who owns the recipe.</param>
-        /// <returns>The updated recipe DTO.</returns>
-        /// <exception cref="ArgumentException">Thrown when the recipe is not found.</exception>
-        /// <exception cref="ValidationException">Thrown when the user does not have permission to update the recipe.</exception>
         public async Task<RecipeDto> UpdateAsync(int id, CreateUpdateRecipeDtoRequest recipeDto, int userId)
         {
             _logger.LogInformation("Updating recipe with ID {Id} for user {UserId}: {@RecipeDto}", id, userId, recipeDto);
             var entity = await _context.Recipes
                 .Include(r => r.Ingredients)
-                .FirstOrDefaultAsync(r => r.Id == id)
+                .ThenInclude(i => i.Food)
+                .ThenInclude(f => f.Category)
+                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId)
                 ?? throw new ArgumentException("Recipe with id {0} could not be found.", id.ToString());
 
-            if (entity.UserId != userId)
-            {
-                _logger.LogWarning("User {UserId} does not have permission to update recipe {Id}", userId, id);
-                throw new ValidationException("Do not have permission to update this recipe.");
-            }
             entity.Title = recipeDto.Title;
             entity.Instructions = recipeDto.Instructions;
             entity.Source = recipeDto.Source;
@@ -202,16 +179,20 @@ namespace Backend.Services.Impl
 
         public GetPantryItemsResult CookRecipe(int id, int userId)
         {
-            var recipe = _context.Recipes.AsNoTracking().Include(r => r.Ingredients).FirstOrDefault(r => r.Id == id)
+            var recipe = _context.Recipes.AsNoTracking().Include(r => r.Ingredients).FirstOrDefault(r => r.Id == id && r.UserId == userId)
                 ?? throw new ArgumentException("id is not a valid id of a recipe.");
 
-            if (recipe.UserId != userId)
-                throw new ValidationException("User does not have permission to access this recipe.");
-
-            var pantry = _context.PantryItems.Where(p => p.UserId == userId).ToList();
+            var pantry = _context.PantryItems
+                .AsNoTracking()
+                .Include(p => p.Food)
+                .ThenInclude(f => f.Category)
+                .Where(p => p.UserId == userId)
+                .ToList();
             var recipeFoodIds = recipe.Ingredients.Select(i => i.FoodId).ToList();
             var usedPantryItems = pantry.Where(p => recipeFoodIds.Contains(p.FoodId)).ToList();
 
+            // don't actually modify the database, just return the items that would be used. They need to be verified by the user first.
+            _logger.LogInformation("Recipe with ID {Id} cooked for user {UserId}, using {Count} pantry items", id, userId, usedPantryItems.Count);
             return new GetPantryItemsResult { TotalCount = usedPantryItems.Count, Items = usedPantryItems.Select(p => p.ToDto()) };
         }
 
