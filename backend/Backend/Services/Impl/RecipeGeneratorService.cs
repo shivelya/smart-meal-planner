@@ -13,6 +13,21 @@ namespace Backend.Services.Impl
 
         public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(int mealCount, int userId, bool useExternal)
         {
+            if (mealCount <= 0)
+            {
+                _logger.LogWarning("GenerateMealPlanAsync called with non-positive mealCount: {MealCount}", mealCount);
+                throw new ArgumentException("Meal count must be greater than zero.", nameof(mealCount));
+            }
+
+            if (!_context.Users.Any(u => u.Id == userId))
+            {
+                _logger.LogWarning("GenerateMealPlanAsync called with non-existent userId: {UserId}", userId);
+                throw new ArgumentException("User does not exist.", nameof(userId));
+            }
+
+            // we have two modes of operation:
+            // if not using external, generate meal plan manually. Then if we don't have enough meals, fall back to external generators
+            // if using external, call each generator in turn until we have enough meals
             CreateUpdateMealPlanRequestDto mealPlanDto;
             if (!useExternal)
                 mealPlanDto = await GenerateManually(mealCount, userId);
@@ -20,15 +35,29 @@ namespace Backend.Services.Impl
                 mealPlanDto = new CreateUpdateMealPlanRequestDto { Meals = [] };
 
             if (mealPlanDto.Meals.Count() == mealCount)
+            {
+                _logger.LogInformation("Generated meal plan with {MealCount} meals for user {UserId} using manual generation.", mealCount, userId);
                 return mealPlanDto;
+            }
 
-            var pantry = _context.PantryItems.Include(p => p.Food).Where(p => p.UserId == userId);
+            // get pantry items
+            // a recipe can only be chosen if the pantry has enough of all its ingredients
+            var pantry = await _context.PantryItems
+                .AsNoTracking()
+                .Include(p => p.Food)
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
+
+            // copy to a list so we can add to it
             var meals = mealPlanDto.Meals.ToList();
 
             foreach (var generator in _generators)
             {
+                // if we have enough meals, break out
                 if (meals.Count == mealCount) break;
 
+                // call the generator
+                _logger.LogInformation("Calling external recipe generator {GeneratorName} for user {UserId}.", generator.GetType().Name, userId);
                 var mealPlanEntries = await generator.GenerateMealPlanAsync(mealCount - meals.Count, pantry);
                 meals.AddRange(mealPlanEntries);
             }
@@ -42,13 +71,19 @@ namespace Backend.Services.Impl
             // a recipe can only be chosen if the pantry has enough of all its ingredients
             // when a recipe is chosen, subtract its ingredient rquirements from the pantry
             // don't pick the same dominant ingredient repeatedly
+
+            var pantry = await _context.PantryItems
+                .AsNoTracking()
+                .Include(p => p.Food)
+                .Where(p => p.UserId == userId)
+                .ToListAsync();
+
             var recipes = await _context.Recipes
                 .AsNoTracking()
                 .Include(r => r.Ingredients)
                 .ThenInclude(i => i.Food)
                 .Where(r => r.UserId == userId)
                 .ToListAsync();
-            var pantry = await _context.PantryItems.AsNoTracking().Include(p => p.Food).Where(p => p.UserId == userId).ToListAsync();
 
             var selectedRecipes = new List<Recipe>();
 
@@ -114,12 +149,17 @@ namespace Backend.Services.Impl
                 var a = pantry.FirstOrDefault(p => p.Food.Name.Equals(ing.Food.Name, StringComparison.CurrentCultureIgnoreCase));
                 if (a != null)
                 {
-                    if (a.Quantity >= ing.Quantity)
-                        // this ingredient is in the pantry
-                        score += 2;
-                    else
-                        // this ingredient is in the pantry but not enough of it
-                        score += 1;
+                    // we have this ingredient in the pantry
+                    // we aren't sophisticated enough to compare units, so it gets a flat score
+                    score += 2;
+
+                    // TODO: we could do this later
+                    // if (a.Quantity >= ing.Quantity)
+                    //     // this ingredient is in the pantry
+                    //     score += 2;
+                    // else
+                    //     // this ingredient is in the pantry but not enough of it
+                    //     score += 1;
                 }
             }
 

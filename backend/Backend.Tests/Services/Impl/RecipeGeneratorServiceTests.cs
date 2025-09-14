@@ -47,6 +47,27 @@ namespace Backend.Tests.Helpers
         }
 
         [Fact]
+        public async Task GenerateMealPlanAsync_ThrowsArgumentException_WhenMealCountIsZeroOrNegative()
+        {
+            var user = new User { Id = 1, Email = "", PasswordHash = "" };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await _generator.GenerateMealPlanAsync(0, 1, false));
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await _generator.GenerateMealPlanAsync(-1, 1, false));
+        }
+
+        [Fact]
+        public async Task GenerateMealPlanAsync_ThrowsArgumentException_WhenUserDoesNotExist()
+        {
+            // No user added to context
+            await Assert.ThrowsAsync<ArgumentException>(async () =>
+                await _generator.GenerateMealPlanAsync(1, 999, false));
+        }
+
+        [Fact]
         public async Task GenerateMealPlan_ReturnsEmpty_WhenNoPantryItems()
         {
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
@@ -146,7 +167,7 @@ namespace Backend.Tests.Helpers
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(2, It.IsAny<IQueryable<PantryItem>>()))
+            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(2, It.IsAny<IEnumerable<PantryItem>>()))
                 .ReturnsAsync([new GeneratedMealPlanEntryDto { Title = "test", Source = "", Instructions = "" }]);
 
             var result = await _generator.GenerateMealPlanAsync(2, 1, false);
@@ -177,7 +198,7 @@ namespace Backend.Tests.Helpers
             await _context.SaveChangesAsync();
 
             // Setup external generator to return a different recipe
-            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(1, It.IsAny<IQueryable<PantryItem>>()))
+            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(1, It.IsAny<IEnumerable<PantryItem>>()))
                 .ReturnsAsync([
                     new() {
                         Source = "Spoonacular",
