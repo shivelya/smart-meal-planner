@@ -63,7 +63,7 @@ namespace Backend
 
             modelBuilder.Entity<MealPlanEntry>()
                 .HasOne(mpe => mpe.Recipe)
-                .WithMany(r => r.MealPlanEntries)
+                .WithMany(r => r.Meals)
                 .HasForeignKey(mpe => mpe.RecipeId);
         }
 
@@ -72,8 +72,7 @@ namespace Backend
             modelBuilder.Entity<MealPlan>()
                 .HasOne(mp => mp.User)
                 .WithMany(u => u.MealPlans)
-                .HasForeignKey(mp => mp.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
+                .HasForeignKey(mp => mp.UserId);
         }
 
         private static void SetUpRecipeIngredientRelationships(ModelBuilder modelBuilder)
@@ -89,7 +88,8 @@ namespace Backend
             modelBuilder.Entity<RecipeIngredient>()
                 .HasOne(ri => ri.Food)
                 .WithMany()
-                .HasForeignKey(ri => ri.FoodId);
+                .HasForeignKey(ri => ri.FoodId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
 
         private static void SetUpRecipeRelationships(ModelBuilder modelBuilder)
@@ -114,7 +114,8 @@ namespace Backend
             modelBuilder.Entity<PantryItem>()
                 .HasOne(p => p.Food)
                 .WithMany()
-                .HasForeignKey(p => p.FoodId);
+                .HasForeignKey(p => p.FoodId)
+                .OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<PantryItem>()
                 .HasIndex(pi => new { pi.UserId, pi.FoodId })
@@ -143,7 +144,8 @@ namespace Backend
             modelBuilder.Entity<ShoppingListItem>()
                 .HasOne(s => s.Food)
                 .WithMany()
-                .HasForeignKey(s => s.FoodId);
+                .HasForeignKey(s => s.FoodId)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
