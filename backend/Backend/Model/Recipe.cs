@@ -11,6 +11,6 @@ namespace Backend.Model
 
         public User User { get; set; } = null!;
         public ICollection<RecipeIngredient> Ingredients { get; set; } = new List<RecipeIngredient>();
-        public ICollection<MealPlanEntry> MealPlanEntries { get; set; } = new List<MealPlanEntry>();
+        public ICollection<MealPlanEntry> Meals { get; set; } = new List<MealPlanEntry>();
     }
 }
