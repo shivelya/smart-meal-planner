@@ -195,6 +195,7 @@
 |------|---------|----------|
 | A user selects one or more recipes and deletes them | ✅ | ⬜ |
 | Deleted recipes no longer exist within their account for meal plans or searches | ✅ | ⬜ |
+| User is warned that deleting a recipe will also remove any associated meals they have in meal plans |  | ⬜ |
 
 **API**
 - `DELETE /api/recipe/{id}`
