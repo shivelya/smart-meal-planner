@@ -10,7 +10,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public void Refresh_HasAuthorizeAttribute()
         {
-            var method = typeof(AuthController).GetMethod("Refresh");
+            var method = typeof(AuthController).GetMethod("RefreshAsync");
             Assert.NotNull(method);
             Assert.NotNull(method.GetCustomAttribute<AuthorizeAttribute>());
         }
@@ -46,7 +46,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public void Refresh_HasHttpPostAndRouteAttribute()
         {
-            var method = typeof(AuthController).GetMethod("Refresh");
+            var method = typeof(AuthController).GetMethod("RefreshAsync");
             Assert.NotNull(method);
             Assert.NotNull(method.GetCustomAttribute<HttpPostAttribute>());
             var route = method.GetCustomAttribute<HttpPostAttribute>()?.Template;

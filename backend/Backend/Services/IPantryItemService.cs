@@ -31,7 +31,7 @@ namespace Backend.Services
         /// <param name="pantryItemDtos">The list of pantry items to be created.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>The created pantry items.</returns>
-        Task<IEnumerable<PantryItemDto>> CreatePantryItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> pantryItemDtos, int userId);
+        Task<GetPantryItemsResult> CreatePantryItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> pantryItemDtos, int userId);
 
         /// <summary>
         /// Updates an existing pantry item.

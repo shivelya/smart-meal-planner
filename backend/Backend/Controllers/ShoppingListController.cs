@@ -21,12 +21,12 @@ namespace Backend.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public ActionResult<GetShoppingListResult> GetShoppingList()
+        public async Task<ActionResult<GetShoppingListResult>> GetShoppingListAsync()
         {
             try
             {
                 var userId = GetUserId();
-                var result = _service.GetShoppingList(userId);
+                var result = await _service.GetShoppingListAsync(userId);
                 return Ok(result);
             }
             catch (Exception ex)
