@@ -65,7 +65,7 @@ namespace Backend.Tests.Services.Impl
             var result = await _service.CreatePantryItemsAsync(dtos, userId);
 
             // Assert
-            Assert.Equal(2, result.Count());
+            Assert.Equal(2, result.TotalCount);
         }
 
         [Fact]
@@ -123,6 +123,7 @@ namespace Backend.Tests.Services.Impl
                 Food = new Food { Id = 1, Name = "banana", Category = new Category { Name = "produce" } }
             };
             plannerContext.PantryItems.Add(item);
+            plannerContext.SaveChanges();
 
             // Act
             var result = await _service.GetPantryItemByIdAsync(1);
@@ -363,12 +364,14 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task CreatePantryItemsAsync_Throws_WhenFoodIsNull()
+        public async Task CreatePantryItemsAsync_ReturnsEmpty_WhenFoodIsNull()
         {
             var service = CreateServiceWithData(out int userId, out var context);
 
             var dtos = new[] { new CreateUpdatePantryItemRequestDto { Food = null!, Quantity = 1 } };
-            await Assert.ThrowsAsync<ArgumentException>(() => service.CreatePantryItemsAsync(dtos, 1));
+            var result = await service.CreatePantryItemsAsync(dtos, 1);
+            Assert.Empty(result.Items);
+            Assert.Equal(0, result.TotalCount);
         }
 
         [Fact]

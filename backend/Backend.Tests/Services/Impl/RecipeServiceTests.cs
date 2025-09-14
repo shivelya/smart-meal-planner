@@ -352,7 +352,7 @@ namespace Backend.Tests.Services.Impl
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
             var dto = new CreateUpdateRecipeDtoRequest { Id = 8, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
-            await Assert.ThrowsAsync<ValidationException>(() => _service.UpdateAsync(8, dto, 1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateAsync(8, dto, 1));
         }
 
         [Fact]
@@ -415,7 +415,7 @@ namespace Backend.Tests.Services.Impl
             var recipe = new Recipe { Id = 1, UserId = 2, Ingredients = [], Source = "", Title = "", Instructions = "" };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
-            Assert.Throws<ValidationException>(() => _service.CookRecipe(1, 1));
+            Assert.Throws<ArgumentException>(() => _service.CookRecipe(1, 1));
         }
 
         [Fact]

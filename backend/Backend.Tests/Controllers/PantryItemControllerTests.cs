@@ -51,12 +51,13 @@ namespace Backend.Tests.Controllers
         {
             var dtos = new List<CreateUpdatePantryItemRequestDto> { new() { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" } };
             var resultDtos = new List<PantryItemDto> { new() { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", Category = new CategoryDto { Id = 1, Name = "produce " } }, Quantity = 2, Unit = "kg" } };
-            _serviceMock.Setup(s => s.CreatePantryItemsAsync(dtos, userId)).ReturnsAsync(resultDtos);
+            _serviceMock.Setup(s => s.CreatePantryItemsAsync(dtos, userId)).ReturnsAsync(new GetPantryItemsResult { TotalCount = resultDtos.Count, Items = resultDtos });
 
             var result = await _controller.AddItemsAsync(dtos);
 
             var okResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            Assert.Equal(resultDtos, okResult.Value);
+            var dto = Assert.IsType<GetPantryItemsResult>(okResult.Value);
+            Assert.Equal(resultDtos, dto.Items);
         }
 
         [Fact]
@@ -195,11 +196,13 @@ namespace Backend.Tests.Controllers
                 new() { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "tomato", Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 2, Unit = "kg" },
                 new() { Id = 2, FoodId = 2, Food = new FoodDto { Id = 2, Name = "banana", Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 3, Unit = "g" }
             };
-            _serviceMock.Setup(s => s.CreatePantryItemsAsync(It.IsAny<IEnumerable<CreateUpdatePantryItemRequestDto>>(), userId)).ReturnsAsync(resultDtos);
+            _serviceMock.Setup(s => s.CreatePantryItemsAsync(It.IsAny<IEnumerable<CreateUpdatePantryItemRequestDto>>(), userId))
+                .ReturnsAsync(new GetPantryItemsResult { TotalCount = resultDtos.Count, Items = resultDtos });
 
             var result = await _controller.AddItemsAsync(dtos);
             var okResult = Assert.IsType<CreatedAtActionResult>(result.Result);
-            Assert.Equal(resultDtos, okResult.Value);
+            var dto = Assert.IsType<GetPantryItemsResult>(okResult.Value);
+            Assert.Equal(resultDtos, dto.Items);
         }
 
         [Fact]
