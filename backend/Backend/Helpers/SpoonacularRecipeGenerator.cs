@@ -8,7 +8,7 @@ namespace Backend.Helpers
 {
     public interface IExternalRecipeGenerator
     {
-        Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry);
+        Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlanAsync(int meals, IEnumerable<PantryItem> pantry);
     }
 
     public class SpoonacularRecipeGenerator(ILogger<SpoonacularRecipeGenerator> logger, HttpClient httpClient, IConfiguration configuration) : IExternalRecipeGenerator
@@ -18,7 +18,7 @@ namespace Backend.Helpers
         private readonly IConfiguration _configuration = configuration;
 
         //expects the PantryItem objects to include the Food object
-        public async Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlan(int meals, IEnumerable<PantryItem> pantry)
+        public async Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlanAsync(int meals, IEnumerable<PantryItem> pantry)
         {
             // GET https://api.spoonacular.com/recipes/findByIngredients
             //ingredients=apples,+bananas

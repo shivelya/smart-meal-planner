@@ -1,16 +1,17 @@
 using Backend.DTOs;
+using Backend.Helpers;
 using Backend.Model;
 using Microsoft.EntityFrameworkCore;
 
-namespace Backend.Helpers
+namespace Backend.Services.Impl
 {
-    public class ManualRecipeGenerator(PlannerContext context, ILogger<ManualRecipeGenerator> logger, IEnumerable<IExternalRecipeGenerator> generators) : IRecipeGenerator
+    public class RecipeGeneratorService(PlannerContext context, ILogger<RecipeGeneratorService> logger, IEnumerable<IExternalRecipeGenerator> generators) : IRecipeGenerator
     {
         private readonly PlannerContext _context = context;
-        private readonly ILogger<ManualRecipeGenerator> _logger = logger;
+        private readonly ILogger<RecipeGeneratorService> _logger = logger;
         private readonly IEnumerable<IExternalRecipeGenerator> _generators = generators;
 
-        public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlan(int mealCount, int userId, bool useExternal)
+        public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(int mealCount, int userId, bool useExternal)
         {
             CreateUpdateMealPlanRequestDto mealPlanDto;
             if (!useExternal)
@@ -28,7 +29,7 @@ namespace Backend.Helpers
             {
                 if (meals.Count == mealCount) break;
 
-                var mealPlanEntries = await generator.GenerateMealPlan(mealCount - meals.Count, pantry);
+                var mealPlanEntries = await generator.GenerateMealPlanAsync(mealCount - meals.Count, pantry);
                 meals.AddRange(mealPlanEntries);
             }
 
