@@ -16,7 +16,7 @@ namespace Backend.Model
         public User User { get; set; } = null!;
     }
 
-        public class RecipeIngredient : IngredientUsage
+    public class RecipeIngredient : IngredientUsage
     {
         public int RecipeId { get; set; }
         public Recipe Recipe { get; set; } = null!;
