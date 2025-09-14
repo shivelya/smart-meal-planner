@@ -20,11 +20,11 @@ namespace Backend.Helpers
             services.AddScoped<IPantryItemService, PantryItemService>();
             services.AddScoped<IRecipeService, RecipeService>();
             services.AddScoped<IMealPlanService, MealPlanService>();
-
+            services.AddScoped<IRecipeGenerator, RecipeGeneratorService>();
             services.AddScoped<IEmailService, BrevoEmailService>();
+
             services.AddScoped<ISmtpClient, SmtpClientAdapter>();
             services.AddScoped<IRecipeExtractor, ManualRecipeExtractor>();
-            services.AddScoped<IRecipeGenerator, ManualRecipeGenerator>();
 
             services.AddTransient<IExternalRecipeGenerator, SpoonacularRecipeGenerator>();
             services.AddHttpClient<ManualRecipeExtractor>();

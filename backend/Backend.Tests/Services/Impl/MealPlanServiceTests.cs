@@ -8,6 +8,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
 using Moq;
 using Microsoft.Extensions.Configuration;
+using Backend.Services;
 
 namespace Backend.Tests.Services.Impl
 {
@@ -287,7 +288,7 @@ namespace Backend.Tests.Services.Impl
         public async Task GenerateMealPlanAsync_ReturnsGeneratedMealPlan()
         {
             var mealPlan = new CreateUpdateMealPlanRequestDto { Meals = [] };
-            _mockRecipeGenerator.Setup(r => r.GenerateMealPlan(2, It.IsAny<int>(), false)).ReturnsAsync(mealPlan);
+            _mockRecipeGenerator.Setup(r => r.GenerateMealPlanAsync(2, It.IsAny<int>(), false)).ReturnsAsync(mealPlan);
             var mock = new GenerateMealPlanRequestDto
             {
                 Days = 2,

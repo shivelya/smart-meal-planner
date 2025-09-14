@@ -5,14 +5,15 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Configuration;
 using Moq;
 using Backend.DTOs;
+using Backend.Services.Impl;
 
 namespace Backend.Tests.Helpers
 {
     public class ManualRecipeGeneratorTests : IDisposable
     {
         private readonly PlannerContext _context;
-        private readonly ManualRecipeGenerator _generator;
-        private readonly ILogger<ManualRecipeGenerator> _logger;
+        private readonly RecipeGeneratorService _generator;
+        private readonly ILogger<RecipeGeneratorService> _logger;
         private readonly Mock<IExternalRecipeGenerator> _externalGeneratorMock;
 
         public ManualRecipeGeneratorTests()
@@ -22,11 +23,11 @@ namespace Backend.Tests.Helpers
                 .Options;
             var config = new ConfigurationBuilder().Build();
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            _logger = loggerFactory.CreateLogger<ManualRecipeGenerator>();
+            _logger = loggerFactory.CreateLogger<RecipeGeneratorService>();
             _context = new PlannerContext(options, config, loggerFactory.CreateLogger<PlannerContext>());
             _externalGeneratorMock = new Mock<IExternalRecipeGenerator>();
             var generators = new List<IExternalRecipeGenerator> { _externalGeneratorMock.Object };
-            _generator = new ManualRecipeGenerator(_context, _logger, generators);
+            _generator = new RecipeGeneratorService(_context, _logger, generators);
         }
 
         public void Dispose()
@@ -41,7 +42,7 @@ namespace Backend.Tests.Helpers
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            var result = await _generator.GenerateMealPlan(2, 1, false);
+            var result = await _generator.GenerateMealPlanAsync(2, 1, false);
             Assert.Empty(result.Meals);
         }
 
@@ -53,7 +54,7 @@ namespace Backend.Tests.Helpers
             _context.Users.Add(user);
             _context.Recipes.Add(recipe);
             await _context.SaveChangesAsync();
-            var result = await _generator.GenerateMealPlan(2, 1, false);
+            var result = await _generator.GenerateMealPlanAsync(2, 1, false);
             Assert.Empty(result.Meals);
         }
 
@@ -80,7 +81,7 @@ namespace Backend.Tests.Helpers
             _context.PantryItems.Add(pantry);
             _context.Recipes.Add(recipe);
             await _context.SaveChangesAsync();
-            var result = await _generator.GenerateMealPlan(1, 1, false);
+            var result = await _generator.GenerateMealPlanAsync(1, 1, false);
             Assert.Single(result.Meals);
             Assert.Equal(recipe.Id, result.Meals.First().RecipeId);
         }
@@ -105,7 +106,7 @@ namespace Backend.Tests.Helpers
             _context.Foods.Add(food);
             _context.Recipes.Add(recipe);
             await _context.SaveChangesAsync();
-            var result = await _generator.GenerateMealPlan(1, 1, false);
+            var result = await _generator.GenerateMealPlanAsync(1, 1, false);
             Assert.Empty(result.Meals);
         }
 
@@ -123,7 +124,7 @@ namespace Backend.Tests.Helpers
                     new RecipeIngredient { RecipeId = 1, FoodId = 1, Food = food, Quantity = 1 }
                 ]
             };
-            var score = typeof(ManualRecipeGenerator)
+            var score = typeof(RecipeGeneratorService)
                 .GetMethod("ScoreRecipe", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
                 .Invoke(null, [recipe, pantry]);
             Assert.Equal(2, score);
@@ -135,7 +136,7 @@ namespace Backend.Tests.Helpers
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            var result = await _generator.GenerateMealPlan(2, 1, false);
+            var result = await _generator.GenerateMealPlanAsync(2, 1, false);
             Assert.Empty(result.Meals);
         }
 
@@ -145,10 +146,10 @@ namespace Backend.Tests.Helpers
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            _externalGeneratorMock.Setup(g => g.GenerateMealPlan(2, It.IsAny<IQueryable<PantryItem>>()))
+            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(2, It.IsAny<IQueryable<PantryItem>>()))
                 .ReturnsAsync([new GeneratedMealPlanEntryDto { Title = "test", Source = "", Instructions = "" }]);
 
-            var result = await _generator.GenerateMealPlan(2, 1, false);
+            var result = await _generator.GenerateMealPlanAsync(2, 1, false);
 
             Assert.Single(result.Meals);
             var meal = Assert.IsType<GeneratedMealPlanEntryDto>(result.Meals.First());
@@ -176,7 +177,7 @@ namespace Backend.Tests.Helpers
             await _context.SaveChangesAsync();
 
             // Setup external generator to return a different recipe
-            _externalGeneratorMock.Setup(g => g.GenerateMealPlan(1, It.IsAny<IQueryable<PantryItem>>()))
+            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(1, It.IsAny<IQueryable<PantryItem>>()))
                 .ReturnsAsync([
                     new() {
                         Source = "Spoonacular",
@@ -186,7 +187,7 @@ namespace Backend.Tests.Helpers
                 ]);
 
             // Act: Call with useExternal = true
-            var result = await _generator.GenerateMealPlan(1, 1, true);
+            var result = await _generator.GenerateMealPlanAsync(1, 1, true);
 
             // Assert: Only the external recipe is used, not the manual one
             Assert.Single(result.Meals);

@@ -1,6 +1,5 @@
 using System.ComponentModel.DataAnnotations;
 using System.Security;
-using System.Threading.Tasks;
 using Backend.DTOs;
 using Backend.Helpers;
 using Backend.Model;
@@ -170,7 +169,7 @@ namespace Backend.Services.Impl
                 throw new ArgumentException("Days must be positive.");
             }
 
-            var mealPlan = await _recipeGenerator.GenerateMealPlan(request.Days, userId, request.UseExternal);
+            var mealPlan = await _recipeGenerator.GenerateMealPlanAsync(request.Days, userId, request.UseExternal);
             mealPlan.StartDate = request.StartDate;
 
             _logger.LogInformation("Meal plan successfully generated.");
