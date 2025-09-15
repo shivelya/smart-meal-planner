@@ -232,7 +232,7 @@ namespace Backend.Tests.Controllers
         public async Task CookMeal_ReturnsOk_WhenServiceReturnsResult()
         {
             var pantryResult = new GetPantryItemsResult { TotalCount = 1, Items = [] };
-            _mockService.Setup(s => s.CookMeal(1, 2, userId)).ReturnsAsync(pantryResult);
+            _mockService.Setup(s => s.CookMealAsync(1, 2, userId)).ReturnsAsync(pantryResult);
 
             var result = await _controller.CookMealAsync(1, 2);
 
@@ -243,7 +243,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task CookMeal_Returns500_WhenServiceThrows()
         {
-            _mockService.Setup(s => s.CookMeal(1, 2, userId)).Throws(new Exception("fail"));
+            _mockService.Setup(s => s.CookMealAsync(1, 2, userId)).Throws(new Exception("fail"));
 
             var result = await _controller.CookMealAsync(1, 2);
 

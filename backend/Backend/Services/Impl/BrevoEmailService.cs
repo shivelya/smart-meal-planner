@@ -40,23 +40,55 @@ namespace Backend.Services.Impl
         /// <returns>A task representing the asynchronous operation.</returns>
         public async Task SendPasswordResetEmailAsync(string toEmail, string resetCode)
         {
-            var emailMessage = new MimeMessage();
-            emailMessage.From.Add(new MailboxAddress(
-                _config["Email:FromName"],
-                _config["Email:FromEmail"]));
-            emailMessage.To.Add(MailboxAddress.Parse(toEmail));
-            emailMessage.Subject = "Reset your password";
-            var resetLink = _config["Email:ResetLink"];
-            emailMessage.Body = new TextPart("html") { Text = $"<p>Click <a href=\"{resetLink}/?code={resetCode}\">here</a> to reset your password.</p>" };
+            _logger.LogInformation("Entering SendPasswordResetEmailAsync: toEmail={ToEmail}, resetCode={ResetCode}", toEmail, resetCode);
+            try
+            {
+                if (string.IsNullOrWhiteSpace(toEmail))
+                {
+                    _logger.LogWarning("SendPasswordResetEmailAsync: toEmail is null or empty");
+                    throw new ArgumentException("Recipient email is required.");
+                }
+                if (string.IsNullOrWhiteSpace(resetCode))
+                {
+                    _logger.LogWarning("SendPasswordResetEmailAsync: resetCode is null or empty");
+                    throw new ArgumentException("Reset code is required.");
+                }
+                var fromName = _config["Email:FromName"];
+                var fromEmail = _config["Email:FromEmail"];
+                var mailServer = _config["Email:MailServer"];
+                var smtpUser = _config["Email:SMTPUser"];
+                var smtpPassword = _config["Email:SMTPPassword"];
+                var resetLink = _config["Email:ResetLink"];
+                if (string.IsNullOrWhiteSpace(fromName) || string.IsNullOrWhiteSpace(fromEmail) || string.IsNullOrWhiteSpace(mailServer) || string.IsNullOrWhiteSpace(smtpUser) || string.IsNullOrWhiteSpace(smtpPassword) || string.IsNullOrWhiteSpace(resetLink))
+                {
+                    _logger.LogError("SendPasswordResetEmailAsync: Missing required email configuration");
+                    throw new InvalidOperationException("Missing required email configuration.");
+                }
 
-            int port;
-            port = int.TryParse(_config["Email:Port"], out port) ? port : 587;
-            await _smtpClient.ConnectAsync(_config["Email:MailServer"]!, port, SecureSocketOptions.StartTls);
-            await _smtpClient.AuthenticateAsync(_config["Email:SMTPUser"]!, _config["Email:SMTPPassword"]!);
-            await _smtpClient.SendAsync(emailMessage);
-            await _smtpClient.DisconnectAsync(true);
+                var emailMessage = new MimeMessage();
+                emailMessage.From.Add(new MailboxAddress(fromName, fromEmail));
+                emailMessage.To.Add(MailboxAddress.Parse(toEmail));
+                emailMessage.Subject = "Reset your password";
+                emailMessage.Body = new TextPart("html") { Text = $"<p>Click <a href=\"{resetLink}/?code={resetCode}\">here</a> to reset your password.</p>" };
 
-            _logger.LogInformation("Password reset email sent to {Email}", toEmail);
+                int port;
+                port = int.TryParse(_config["Email:Port"], out port) ? port : 587;
+                await _smtpClient.ConnectAsync(mailServer, port, SecureSocketOptions.StartTls);
+                await _smtpClient.AuthenticateAsync(smtpUser, smtpPassword);
+                await _smtpClient.SendAsync(emailMessage);
+                await _smtpClient.DisconnectAsync(true);
+
+                _logger.LogInformation("SendPasswordResetEmailAsync: Password reset email sent to {Email}", toEmail);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SendPasswordResetEmailAsync: Failed to send password reset email to {Email}", toEmail);
+                throw;
+            }
+            finally
+            {
+                _logger.LogInformation("Exiting SendPasswordResetEmailAsync: toEmail={ToEmail}", toEmail);
+            }
         }
     }
 }

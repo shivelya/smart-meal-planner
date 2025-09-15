@@ -10,37 +10,53 @@ namespace Backend.Services.Impl
 
         public async Task<GetFoodsResult> SearchFoodsAsync(string search, int? skip, int? take)
         {
-            var foodsQuery = _context.Foods
-                .AsNoTracking()
-                .Where(i => i.Name.Contains(search, StringComparison.InvariantCultureIgnoreCase));
-
-            var count = await foodsQuery.CountAsync();
-
-            if (skip != null)
+            _logger.LogInformation("Entering SearchFoodsAsync: search={Search}, skip={Skip}, take={Take}", search, skip, take);
+            try
             {
-                if (skip < 0)
+                if (string.IsNullOrWhiteSpace(search))
                 {
-                    _logger.LogError("Negative skip used for search.");
-                    throw new ArgumentException("skip must be non-negative");
+                    _logger.LogWarning("SearchFoodsAsync: search string is null or empty");
+                    throw new ArgumentException("search string is required");
+                }
+                var foodsQuery = _context.Foods
+                    .AsNoTracking()
+                    .Where(i => i.Name.Contains(search, StringComparison.InvariantCultureIgnoreCase));
+
+                var count = await foodsQuery.CountAsync();
+
+                if (skip != null)
+                {
+                    if (skip < 0)
+                    {
+                        _logger.LogError("SearchFoodsAsync: Negative skip {Skip}", skip);
+                        throw new ArgumentException("skip must be non-negative");
+                    }
+                    foodsQuery = foodsQuery.Skip(skip.Value);
                 }
 
-                foodsQuery = foodsQuery.Skip(skip.Value);
-            }
-
-            if (take != null)
-            {
-                if (take < 0)
+                if (take != null)
                 {
-                    _logger.LogError("Negative take used for search.");
-                    throw new ArgumentException("take must be non-negative");
+                    if (take < 0)
+                    {
+                        _logger.LogError("SearchFoodsAsync: Negative take {Take}", take);
+                        throw new ArgumentException("take must be non-negative");
+                    }
+                    foodsQuery = foodsQuery.Take(take.Value);
                 }
 
-                foodsQuery = foodsQuery.Take(take.Value);
+                var foods = await foodsQuery.OrderBy(i => i.Name).ToListAsync();
+                _logger.LogInformation("SearchFoodsAsync: Found {Count} foods", foods.Count);
+                return new GetFoodsResult { TotalCount = count, Items = foods.Select(i => i.ToDto()) };
             }
-
-            var foods = await foodsQuery.OrderBy(i => i.Name).ToListAsync();
-
-            return new GetFoodsResult { TotalCount = count, Items = foods.Select(i => i.ToDto()) };
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "SearchFoodsAsync: Failed to search foods");
+                throw;
+            }
+            finally
+            {
+                _logger.LogInformation("Exiting SearchFoodsAsync: search={Search}", search);
+            }
         }
     }
 }

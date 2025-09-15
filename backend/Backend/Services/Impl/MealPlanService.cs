@@ -17,21 +17,23 @@ namespace Backend.Services.Impl
         // because meal plans can have many meals and recipes can have many ingredients
         public async Task<GetMealPlansResult> GetMealPlansAsync(int userId, int? skip, int? take)
         {
+            _logger.LogInformation("Entering GetMealPlansAsync: userId={UserId}, skip={Skip}, take={Take}", userId, skip, take);
+
             if (skip != null && skip < 0)
             {
-                _logger.LogWarning("Skip must be non-negative.");
+                _logger.LogWarning("GetMealPlansAsync: Skip must be non-negative. skip={Skip}", skip);
                 throw new ArgumentException("Skip must be non-negative.");
             }
 
             if (take != null && take <= 0)
             {
-                _logger.LogWarning("Take must be positive.");
+                _logger.LogWarning("GetMealPlansAsync: Take must be positive. take={Take}", take);
                 throw new ArgumentException("Take must be positive.");
             }
 
             if (await _context.Users.FirstOrDefaultAsync(u => u.Id == userId) == null)
             {
-                _logger.LogWarning("Attempting to get meal plans for non-existent user.");
+                _logger.LogWarning("GetMealPlansAsync: Attempting to get meal plans for non-existent user. userId={UserId}", userId);
                 throw new SecurityException("Attempting to get meal plans for non-existent user.");
             }
 
@@ -51,21 +53,25 @@ namespace Backend.Services.Impl
             var plans = await query.ToListAsync();
             var count = await _context.MealPlans.CountAsync();
 
+            _logger.LogInformation("GetMealPlansAsync: Retrieved {Count} meal plans for userId={UserId}", plans.Count, userId);
+            _logger.LogInformation("Exiting GetMealPlansAsync: userId={UserId}", userId);
+
             return new GetMealPlansResult { TotalCount = count, MealPlans = plans.Select(p => p.ToDto()) };
         }
 
         public async Task<MealPlanDto> AddMealPlanAsync(int userId, CreateUpdateMealPlanRequestDto request)
         {
+            _logger.LogInformation("Entering AddMealPlanAsync: userId={UserId}", userId);
             var user = await _context.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
             if (user == null)
             {
-                _logger.LogWarning("Attempting to create meal plan for non-existent user.");
+                _logger.LogWarning("AddMealPlanAsync: Attempting to create meal plan for non-existent user. userId={UserId}", userId);
                 throw new SecurityException("Attempting to create meal pln for non-existent user.");
             }
 
             if (request.Meals.IsNullOrEmpty())
             {
-                _logger.LogWarning("Cannot create meal plan with no meals.");
+                _logger.LogWarning("AddMealPlanAsync: Cannot create meal plan with no meals. userId={UserId}", userId);
                 throw new ValidationException("Cannot create meal plan with no meals.");
             }
 
@@ -75,15 +81,18 @@ namespace Backend.Services.Impl
             await _context.MealPlans.AddAsync(newMealPlan);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("AddMealPlanAsync: Meal plan created for userId={UserId}, mealPlanId={MealPlanId}", userId, newMealPlan.Id);
+            _logger.LogInformation("Exiting AddMealPlanAsync: userId={UserId}, mealPlanId={MealPlanId}", userId, newMealPlan.Id);
             return newMealPlan.ToDto();
         }
 
         public async Task<MealPlanDto> UpdateMealPlanAsync(int id, int userId, CreateUpdateMealPlanRequestDto request)
         {
+            _logger.LogInformation("Entering UpdateMealPlanAsync: userId={UserId}, mealPlanId={MealPlanId}", userId, id);
             var user = await _context.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
             if (user == null)
             {
-                _logger.LogWarning("Attempting to create meal plan for non-existent user.");
+                _logger.LogWarning("UpdateMealPlanAsync: Attempting to update meal plan for non-existent user. userId={UserId}", userId);
                 throw new SecurityException("Attempting to create meal pln for non-existent user.");
             }
 
@@ -94,13 +103,13 @@ namespace Backend.Services.Impl
 
             if (mealPlan == null)
             {
-                _logger.LogWarning("Cannot find meal plan to update.");
+                _logger.LogWarning("UpdateMealPlanAsync: Cannot find meal plan to update. userId={UserId}, mealPlanId={MealPlanId}", userId, id);
                 throw new SecurityException("Cannot find meal plan to update.");
             }
 
             if (request.Id != null && request.Id != id)
             {
-                _logger.LogWarning("Attempting to update a different meal plan than the one defined by the id.");
+                _logger.LogWarning("UpdateMealPlanAsync: Attempting to update a different meal plan than the one defined by the id. userId={UserId}, mealPlanId={MealPlanId}", userId, id);
                 throw new SecurityException("Attempting to update a different meal plan than the one defined by the id.");
             }
 
@@ -147,60 +156,69 @@ namespace Backend.Services.Impl
             }
 
             await _context.SaveChangesAsync();
+            _logger.LogInformation("UpdateMealPlanAsync: Meal plan updated for userId={UserId}, mealPlanId={MealPlanId}", userId, id);
+            _logger.LogInformation("Exiting UpdateMealPlanAsync: userId={UserId}, mealPlanId={MealPlanId}", userId, id);
             return mealPlan.ToDto();
         }
 
         public async Task<bool> DeleteMealPlanAsync(int id, int userId)
         {
+            _logger.LogInformation("Entering DeleteMealPlanAsync: userId={UserId}, mealPlanId={MealPlanId}", userId, id);
+
             var user = await _context.Users.Where(u => u.Id == userId).FirstOrDefaultAsync();
             if (user == null)
             {
-                _logger.LogWarning("Attempting to delete meal plan for non-existent user.");
-                throw new SecurityException("Attempting to delete meal pln for non-existent user.");
+                _logger.LogWarning("DeleteMealPlanAsync: Attempting to delete meal plan for non-existent user. userId={UserId}", userId);
+                throw new SecurityException("Attempting to delete meal plan for non-existent user.");
             }
 
             var mealPlan = await _context.MealPlans.Where(m => m.Id == id && m.UserId == userId).FirstOrDefaultAsync();
             if (mealPlan == null)
             {
-                _logger.LogWarning("Attempting to delete non-existent meal plan.");
+                _logger.LogWarning("DeleteMealPlanAsync: Attempting to delete non-existent meal plan. userId={UserId}, mealPlanId={MealPlanId}", userId, id);
                 throw new ValidationException("Attemptint to delete non-existent meal plan.");
             }
 
             _context.MealPlans.Remove(mealPlan);
             var deleted = await _context.SaveChangesAsync();
-            _logger.LogInformation("Meal plan successfully removed.");
+
+            _logger.LogInformation("DeleteMealPlanAsync: Meal plan successfully removed. userId={UserId}, mealPlanId={MealPlanId}", userId, id);
+            _logger.LogInformation("Exiting DeleteMealPlanAsync: userId={UserId}, mealPlanId={MealPlanId}", userId, id);
 
             return deleted > 0;
         }
 
-        //here, too, we don't lost the whole object graph. Recipes are not eagerly loaded
+        //here, too, we don't load the whole object graph. Recipes are not eagerly loaded
         //because meal plans can have many meals and recipes can have many ingredients
         public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(GenerateMealPlanRequestDto request, int userId)
         {
+            _logger.LogInformation("Entering GenerateMealPlanAsync: userId={UserId}, days={Days}, useExternal={UseExternal}", userId, request.Days, request.UseExternal);
             if (request.Days <= 0)
             {
                 // should be validated in controller, but just in case
-                _logger.LogWarning("Days must be positive");
+                _logger.LogWarning("GenerateMealPlanAsync: Days must be positive. days={Days}", request.Days);
                 throw new ArgumentException("Days must be positive.");
             }
 
             var mealPlan = await _recipeGeneratorService.GenerateMealPlanAsync(request.Days, userId, request.UseExternal);
             mealPlan.StartDate = request.StartDate;
 
-            _logger.LogInformation("Meal plan successfully generated.");
+            _logger.LogInformation("GenerateMealPlanAsync: Meal plan successfully generated for userId={UserId}", userId);
+            _logger.LogInformation("Exiting GenerateMealPlanAsync: userId={UserId}", userId);
 
             return mealPlan;
         }
 
-        public async Task<GetPantryItemsResult> CookMeal(int id, int mealEntryId, int userId)
+        public async Task<GetPantryItemsResult> CookMealAsync(int id, int mealEntryId, int userId)
         {
+            _logger.LogInformation("Entering CookMealAsync: userId={UserId}, mealPlanId={MealPlanId}, mealEntryId={MealEntryId}", userId, id, mealEntryId);
             var mealPlan = await _context.MealPlans
                 .AsNoTracking()
                 .FirstOrDefaultAsync(m => m.Id == id && m.UserId == userId);
 
             if (mealPlan == null)
             {
-                _logger.LogWarning("Valid meal plan id required.");
+                _logger.LogWarning("CookMealAsync: Valid meal plan id required. userId={UserId}, mealPlanId={MealPlanId}", userId, id);
                 throw new ArgumentException("Valid meal plan id required.");
             }
 
@@ -211,7 +229,7 @@ namespace Backend.Services.Impl
 
             if (mealPlanEntry == null)
             {
-                _logger.LogWarning("Valid meal plan entry id required.");
+                _logger.LogWarning("CookMealAsync: Valid meal plan entry id required. userId={UserId}, mealPlanId={MealPlanId}, mealEntryId={MealEntryId}", userId, id, mealEntryId);
                 throw new ArgumentException("Valid meal plan entry id required.");
             }
 
@@ -219,7 +237,7 @@ namespace Backend.Services.Impl
             // but you can't cook a meal without a recipe
             if (mealPlanEntry.Recipe == null)
             {
-                _logger.LogWarning("Cannot cook a meal without a recipe.");
+                _logger.LogWarning("CookMealAsync: Cannot cook a meal without a recipe. userId={UserId}, mealPlanId={MealPlanId}, mealEntryId={MealEntryId}", userId, id, mealEntryId);
                 throw new ValidationException("Cannot cook a meal without a recipe.");
             }
 
@@ -239,6 +257,9 @@ namespace Backend.Services.Impl
 
             var recipeFoodIds = mealPlanEntry.Recipe.Ingredients.Select(i => i.FoodId).ToHashSet();
             var usedPantryItems = pantry.Where(p => recipeFoodIds.Contains(p.FoodId));
+
+            _logger.LogInformation("CookMealAsync: Cooked meal for userId={UserId}, mealPlanId={MealPlanId}, mealEntryId={MealEntryId}", userId, id, mealEntryId);
+            _logger.LogInformation("Exiting CookMealAsync: userId={UserId}, mealPlanId={MealPlanId}, mealEntryId={MealEntryId}", userId, id, mealEntryId);
 
             return new GetPantryItemsResult { TotalCount = usedPantryItems.Count(), Items = usedPantryItems.Select(p => p.ToDto()) }; 
         }

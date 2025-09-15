@@ -12,65 +12,79 @@ namespace Backend.Services.Impl
 
         public async Task<PantryItemDto> CreatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId)
         {
+            _logger.LogInformation("Entering CreatePantryItemAsync: userId={UserId}, dto={Dto}", userId, pantryItemDto);
             if (_context.Users.Find(userId) == null)
             {
-                _logger.LogWarning("UserId provided was not valid.");
+                _logger.LogWarning("CreatePantryItemAsync: Invalid userId {UserId}", userId);
                 throw new ArgumentException("UserId provided was not valid.");
             }
 
             if (pantryItemDto == null)
             {
-                _logger.LogWarning("pantryItem is required");
+                _logger.LogWarning("CreatePantryItemAsync: pantryItemDto is null for userId {UserId}", userId);
                 throw new ArgumentException("pantryItem is required.");
             }
 
             if (pantryItemDto.Id != null)
             {
-                _logger.LogWarning("PantryItemDto.Id must be null for creates.");
+                _logger.LogWarning("CreatePantryItemAsync: PantryItemDto.Id must be null for creates. userId={UserId}, id={Id}", userId, pantryItemDto.Id);
                 throw new ArgumentException("PantryItemDto.Id must be null for creates.");
             }
 
-            _logger.LogInformation("Creating for user {UserId} pantry item {dtoItem}", userId, pantryItemDto);
+            if (pantryItemDto.Quantity < 0)
+            {
+                _logger.LogWarning("CreatePantryItemAsync: Negative quantity {Quantity} for userId {UserId}", pantryItemDto.Quantity, userId);
+                throw new ArgumentException("Cannot set pantry item with negative quantity.");
+            }
+
+            if (pantryItemDto.Food == null)
+            {
+                _logger.LogWarning("CreatePantryItemAsync: Food is null for userId {UserId}", userId);
+                throw new ArgumentException("Food is required.");
+            }
+
+            _logger.LogInformation("CreatePantryItemAsync: Creating pantry item for userId={UserId}, dto={Dto}", userId, pantryItemDto);
             PantryItem entity = await CreatePantryItem(pantryItemDto, userId);
             await _context.SaveChangesAsync();
 
-            _logger.LogInformation("Pantry item created");
-
+            _logger.LogInformation("CreatePantryItemAsync: Pantry item created for userId={UserId}, itemId={ItemId}", userId, entity.Id);
+            _logger.LogInformation("Exiting CreatePantryItemAsync: userId={UserId}, itemId={ItemId}", userId, entity.Id);
             return entity.ToDto();
         }
 
         public async Task<GetPantryItemsResult> CreatePantryItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> pantryItemDtos, int userId)
         {
-            _logger.LogInformation("Creating for user {id} {count} pantry items", userId, pantryItemDtos.Count());
+            _logger.LogInformation("Entering CreatePantryItemsAsync: userId={UserId}, count={Count}", userId, pantryItemDtos.Count());
 
             if (pantryItemDtos.Any(dto => dto.Food == null))
-                _logger.LogWarning("Pantry items with no foods were added. These will be filtered out.");
+                _logger.LogWarning("CreatePantryItemsAsync: Some pantry items have null Food for userId={UserId}", userId);
 
             var tasks = pantryItemDtos.Where(p => p != null && p.Food != null).Select(async dto => await CreatePantryItem(dto, userId));
             var pantryItems = await Task.WhenAll(tasks);
 
             int count = await _context.SaveChangesAsync();
 
-            _logger.LogInformation("{count} pantry items created.", count);
-
+            _logger.LogInformation("CreatePantryItemsAsync: {Count} pantry items created for userId={UserId}", count, userId);
+            _logger.LogInformation("Exiting CreatePantryItemsAsync: userId={UserId}, totalCreated={Total}", userId, pantryItems.Length);
             return new GetPantryItemsResult { TotalCount = pantryItems.Length, Items = pantryItems.Select(i => i.ToDto()) };
         }
 
         public async Task<bool> DeletePantryItemAsync(int id)
         {
-            _logger.LogInformation("Deleting pantry item {id}", id);
+            _logger.LogInformation("Entering DeletePantryItemAsync: itemId={ItemId}", id);
             var entity = await _context.PantryItems.FindAsync(id);
             if (entity is null) return false;
 
             _context.PantryItems.Remove(entity);
             var deleted = await _context.SaveChangesAsync();
-            _logger.LogInformation("{deleted} pantry items deleted", deleted);
+            _logger.LogInformation("DeletePantryItemAsync: {Deleted} pantry items deleted, itemId={ItemId}", deleted, id);
+            _logger.LogInformation("Exiting DeletePantryItemAsync: itemId={ItemId}, deleted={Deleted}", id, deleted);
             return deleted > 0;
         }
 
         public async Task<DeleteRequest> DeletePantryItemsAsync(IEnumerable<int> ids)
         {
-            _logger.LogInformation("Deleting {count} pantry items", ids.Count());
+            _logger.LogInformation("Entering DeletePantryItemsAsync: count={Count}", ids.Count());
             var entities = _context.PantryItems.Where(p => ids.Contains(p.Id));
             var deletedIds = await entities
                 .Select(e => e.Id)
@@ -79,13 +93,14 @@ namespace Backend.Services.Impl
             _context.PantryItems.RemoveRange(entities);
             int count = await _context.SaveChangesAsync();
 
-            _logger.LogInformation("{count} pantry items deleted", count);
+            _logger.LogInformation("DeletePantryItemsAsync: {Count} pantry items deleted", count);
+            _logger.LogInformation("Exiting DeletePantryItemsAsync: deletedIds={DeletedIds}", string.Join(",", deletedIds));
             return new DeleteRequest { Ids = deletedIds };
         }
 
         public async Task<GetPantryItemsResult> GetAllPantryItemsAsync(int? skip, int? take)
         {
-            _logger.LogInformation("Getting {take} pantry items, skip {skip}", take, skip);
+            _logger.LogInformation("Entering GetAllPantryItemsAsync: take={Take}, skip={Skip}", take, skip);
             var query = _context.PantryItems
                 .AsNoTracking()
                 .Include(i => i.Food)
@@ -98,7 +113,7 @@ namespace Backend.Services.Impl
             {
                 if (skip < 0)
                 {
-                    _logger.LogWarning("Negative skip used for get all.");
+                    _logger.LogWarning("GetAllPantryItemsAsync: Negative skip {Skip}", skip);
                     throw new ArgumentException("Non-negative skip must be used for pagination.");
                 }
 
@@ -109,7 +124,7 @@ namespace Backend.Services.Impl
             {
                 if (take < 0)
                 {
-                    _logger.LogWarning("Negative take used for get all.");
+                    _logger.LogWarning("GetAllPantryItemsAsync: Negative take {Take}", take);
                     throw new ArgumentException("Non-negative take must be used for pagination.");
                 }
 
@@ -118,45 +133,48 @@ namespace Backend.Services.Impl
 
             var items = await query.ToListAsync();
 
+            _logger.LogInformation("Exiting GetAllPantryItemsAsync: returned {Count} items", items.Count);
             return new GetPantryItemsResult { Items = items.Select(i => i.ToDto()), TotalCount = totalCount };
         }
 
         public async Task<PantryItemDto?> GetPantryItemByIdAsync(int id)
         {
-            _logger.LogInformation("Getting pantry item {id}", id);
+            _logger.LogInformation("Entering GetPantryItemByIdAsync: itemId={ItemId}", id);
             var entity = await _context.PantryItems
                 .AsNoTracking()
                 .Include(i => i.Food)
                 .ThenInclude(f => f.Category)
                 .FirstOrDefaultAsync(i => i.Id == id);
 
+            _logger.LogInformation("Exiting GetPantryItemByIdAsync: itemId={ItemId}, found={Found}", id, entity != null);
             return entity?.ToDto();
         }
 
         public async Task<PantryItemDto> UpdatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId)
         {
+                _logger.LogInformation("Entering UpdatePantryItemAsync: userId={UserId}, dto={Dto}", userId, pantryItemDto);
             if (pantryItemDto == null)
             {
-                _logger.LogWarning("pantryItem is required");
+                    _logger.LogWarning("UpdatePantryItemAsync: pantryItemDto is null for userId {UserId}", userId);
                 throw new ArgumentException("pantryItem is required.");
             }
 
             if (pantryItemDto.Id == null)
             {
-                _logger.LogWarning("PantryItemDto.Id is required for updates.");
+                    _logger.LogWarning("UpdatePantryItemAsync: PantryItemDto.Id is required for updates. userId={UserId}", userId);
                 throw new ArgumentException("PantryItemDto.Id is required for updates.");
             }
 
             var item = await _context.PantryItems.FirstOrDefaultAsync(item => item.Id == pantryItemDto.Id && item.UserId == userId);
             if (item == null)
             {
-                _logger.LogWarning("Could not find pantry item {id} to update.", pantryItemDto.Id);
+                    _logger.LogWarning("UpdatePantryItemAsync: Could not find pantry item {Id} for userId {UserId}", pantryItemDto.Id, userId);
                 throw new ArgumentException("Could not find pantry item {0} to update.", pantryItemDto.Id.ToString());
             }
 
             if (pantryItemDto.Quantity < 0)
             {
-                _logger.LogWarning("Cannot set pantry item with negative quantity.");
+                    _logger.LogWarning("UpdatePantryItemAsync: Negative quantity {Quantity} for userId {UserId}", pantryItemDto.Quantity, userId);
                 throw new ArgumentException("Cannot set pantry item with negative quantity.");
             }
 
@@ -165,11 +183,14 @@ namespace Backend.Services.Impl
             item.FoodId = await UpdatePantryItemFood(pantryItemDto);
 
             await _context.SaveChangesAsync();
+                _logger.LogInformation("UpdatePantryItemAsync: Updated pantry item for userId={UserId}, itemId={ItemId}", userId, item.Id);
+                _logger.LogInformation("Exiting UpdatePantryItemAsync: userId={UserId}, itemId={ItemId}", userId, item.Id);
             return item.ToDto();
         }
 
         public async Task<GetPantryItemsResult> Search(string search, int userId, int? take, int? skip)
         {
+                _logger.LogInformation("Entering Search: userId={UserId}, search={Search}, take={Take}, skip={Skip}", userId, search, take, skip);
             var items = _context.PantryItems
                 .Where(i => i.UserId == userId)
                 .Where(i => i.Food.Name.Contains(search.ToLower(), StringComparison.InvariantCultureIgnoreCase))
@@ -182,7 +203,7 @@ namespace Backend.Services.Impl
             {
                 if (skip < 0)
                 {
-                    _logger.LogWarning("Negative skip used for search.");
+                        _logger.LogWarning("Search: Negative skip {Skip}", skip);
                     throw new ArgumentException("Non-negative skip must be used for pagination.");
                 }
 
@@ -193,7 +214,7 @@ namespace Backend.Services.Impl
             {
                 if (take < 0)
                 {
-                    _logger.LogWarning("Negative take used for search.");
+                        _logger.LogWarning("Search: Negative take {Take}", take);
                     throw new ArgumentException("Non-negative take must be used for pagination.");
                 }
 
@@ -201,6 +222,7 @@ namespace Backend.Services.Impl
             }
 
             var results = await items.ToListAsync();
+                _logger.LogInformation("Exiting Search: userId={UserId}, returned={Returned}", userId, results.Count);
             return new GetPantryItemsResult { TotalCount = count, Items = items.Select(i => i.ToDto()) };
         }
 
@@ -208,7 +230,7 @@ namespace Backend.Services.Impl
         {
             if (pantryItemDto.Food == null)
             {
-                _logger.LogWarning("Food is required.");
+                _logger.LogWarning("UpdatePantryItemFood: Food is null");
                 throw new ArgumentException("Food is required.");
             }
 
@@ -220,7 +242,7 @@ namespace Backend.Services.Impl
                 foodId = food.Id;
                 if (await _context.Foods.FirstOrDefaultAsync(i => i.Id == foodId) == null)
                 {
-                    _logger.LogWarning("FoodId provided was not valid.");
+                    _logger.LogWarning("UpdatePantryItemFood: FoodId {FoodId} not valid", foodId);
                     throw new ValidationException("FoodId provided was not valid.");
                 }
             }
@@ -229,7 +251,7 @@ namespace Backend.Services.Impl
                 var food1 = (NewFoodReferenceDto)pantryItemDto.Food;
                 if (await _context.Categories.FirstOrDefaultAsync(c => c.Id == food1.CategoryId) == null)
                 {
-                    _logger.LogWarning("FoodName was provided without CategoryId");
+                    _logger.LogWarning("UpdatePantryItemFood: CategoryId {CategoryId} not valid for new food", food1.CategoryId);
                     throw new ArgumentException("CategoryId is required on pantry items with new foods.");
                 }
 
@@ -237,7 +259,7 @@ namespace Backend.Services.Impl
             }
             else
             {
-                _logger.LogError("FoodId or FoodName must be provided.");
+                _logger.LogError("UpdatePantryItemFood: Unknown food mode {Mode}", pantryItemDto.Food.Mode);
                 throw new ArgumentException("FoodId or FoodName must be provided.");
             }
 
@@ -248,7 +270,7 @@ namespace Backend.Services.Impl
         {
             if (pantryItemDto.Quantity < 0)
             {
-                _logger.LogWarning("Cannot set pantry item with negative quantity.");
+                _logger.LogWarning("CreatePantryItem: Negative quantity {Quantity} for userId {UserId}", pantryItemDto.Quantity, userId);
                 throw new ArgumentException("Cannot set pantry item with negative quantity.");
             }
 
@@ -265,6 +287,7 @@ namespace Backend.Services.Impl
             await _context.PantryItems.AddAsync(entity);
             await _context.SaveChangesAsync();
 
+            _logger.LogInformation("CreatePantryItem: Created pantry item for userId={UserId}, itemId={ItemId}", userId, entity.Id);
             return entity;
         }
 
@@ -278,6 +301,7 @@ namespace Backend.Services.Impl
 
             _context.Foods.Add(food);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("CreateNewFood: Created new food {FoodName} with id={FoodId}", food.Name, food.Id);
             return food.Id;
         }
     }
