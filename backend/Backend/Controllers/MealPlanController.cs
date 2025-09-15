@@ -16,7 +16,7 @@ namespace Backend.Controllers
         private readonly int MAXDAYS = configuration.GetValue("MaxMealPlanGenerationDays", 14);
 
         /// <summary>
-        /// Returns a list of all meal plans
+        /// Returns a list of all meal plans. Meals are included in the response but recipes are not and will needed loaeded separately.
         /// </summary>
         /// <param name="skip">The number of results to skip for pagination.</param>
         /// <param name="take">The number of results to take for pagination.</param>
@@ -28,7 +28,8 @@ namespace Backend.Controllers
         {
             try
             {
-                var plans = await _service.GetMealPlansAsync(skip, take);
+                var userId = GetUserId();
+                var plans = await _service.GetMealPlansAsync(userId, skip, take);
 
                 _logger.LogInformation("GET for meal plans completed with {count} results", plans.TotalCount);
 
@@ -136,7 +137,16 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Generates a meal plan based on the user's pantry items
+        /// Generates a meal plan based on the user's pantry items. Is not inserted into the DB until the user verifies the list.
+        /// Recipes will be chosen based on the user's pantry items, but if there are not enough recipes to fill the meal plan,
+        /// recipes will be pulled from external sources. Recipes will not be duplicated within the generated meal plan.
+        /// If the user has no recipes or pantry items, all recipes will be pulled from external sources. If the user chooses to
+        /// use only external sources, no recipes from the user's account will be used. The user can then modify the plan
+        /// as they see fit and save it. The generated meal plan will have no name or description, and the start date
+        /// will be as specified in the request. If the user wants to change these, they can do so when saving the meal plan.
+        /// The maximum number of days that can be generated is set in configuration, and defaults to 14. If the user
+        /// requests more than this, a 400 error will be returned. Recipes are not eagerly loaded in the response
+        /// to avoid returning too much data, so the user will need to load recipes separately if they want to see them.
         /// </summary>
         /// <param name="request">An object describing how to generate the meal plan. Includes a number of days to generate for,
         /// the start date for the meal plan, and whether the recipes should come only from external sources.</param>
@@ -176,7 +186,11 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Returns all pantry items used while cooking this meal.
+        /// Returns all pantry items used while cooking this meal. These can be deleted by the user if they wish.
+        /// Quantity is not adjusted automatically, as the user may have multiple of the same item in their pantry.
+        /// This tool is not sophisticated to determine quantity based on unit types, so the user must manually
+        /// adjust quantities or delete items as they see fit. If the meal has already been marked as cooked,
+        /// this is a no-op and will simply return the pantry items again.
         /// </summary>
         /// <param name="id">The id of the meal plan the meal was taken from.</param>
         /// <param name="mealEntryId">The id of the meal within the meal plan being cooked.</param>
