@@ -327,3 +327,21 @@ _No content_
   ]
 }
 ```
+
+---
+
+## Story: Understanding units of measurement
+
+***As a*** user
+***I want*** the system to be able to decide how much of an ingredient I actually have
+***so that*** when planning meals or shopping lists, I can know if I have enough of an item or how much I need to buy
+
+**Acceptance Criteria**
+| Task | Backend | Frontend |
+|------|---------|----------|
+| When "cooking" a meal or recipe, the pantry items returned to the user have quantities associated with them. | ⬜ | ⬜ |
+| When meal planning, the generator will take ingredient quantities into account to know whether the user has enough for a recipe. | ⬜ | ⬜ |
+| When generating a shopping list, quantities will be given based on ingredient quantities in recipes. | ⬜ | ⬜ |
+| If a unit is given that the system doesn't recognize, it will be assumed to be whole units of said ingredient. | ⬜ | ⬜ |
+| If a unit is not given but a quantity is, it will be assumed to be whole units of said ingredient. | ⬜ | ⬜ |
+| If neither a unit nor a quantity is given, quantity is not taken into consideration during generation and planning. | ⬜ | ⬜ |

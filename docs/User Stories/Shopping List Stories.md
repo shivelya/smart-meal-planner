@@ -196,3 +196,25 @@
   "notes": "string"
 }
 ```
+
+## Story: Send List to Apps for Shopping
+
+***As a***user
+***I want*** to send my shopping list to an app or website of my choice
+***so that*** I can shop for my items online.
+
+**Acceptance Criteria**
+| Task | Backend | Frontend |
+|------|---------|----------|
+| While viewing the shopping list, I can click a button to send the list to my company of choice. | ⬜ | ⬜ |
+| In my profile, I can configure which app I'd like to send the list to. | ⬜ | ⬜ |
+| Sending my shopping list to an app does not change purchased status of the items in the list, in case the user does not actually purchase them. | ⬜ | ⬜ |
+| The user will have a way of setting the whole list to "purchased". | ⬜ | ⬜ |
+
+**API**
+ - `GET /shopping-list/send`
+
+ **Response (200)**
+
+ **Response (428 Preconditon Required)**
+ `User does not have an app chosen in their profile to send the list to.`
