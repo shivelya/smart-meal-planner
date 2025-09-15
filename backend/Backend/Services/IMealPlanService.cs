@@ -7,10 +7,11 @@ namespace Backend.Services
         /// <summary>
         /// Retrieves all meal plans.
         /// </summary>
+        /// <param name="userId">Id of the current user.</param>
         /// <param name="skip">The number to skip for pagination.</param>
         /// <param name="take">The number to take for pagination.</param>
         /// <returns>An enumerable collection of meal plan DTOs along with the total count.</returns>
-        Task<GetMealPlansResult> GetMealPlansAsync(int? skip, int? take);
+        Task<GetMealPlansResult> GetMealPlansAsync(int userId, int? skip, int? take);
         /// <summary>
         /// Creates a new meal plan.
         /// </summary>

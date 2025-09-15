@@ -35,14 +35,65 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task GetMealPlansAsync_ThrowsOnNegativeSkip()
         {
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.GetMealPlansAsync(-1, 10));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.GetMealPlansAsync(1, -1, 10));
         }
 
         [Fact]
         public async Task GetMealPlansAsync_ThrowsOnNonPositiveTake()
         {
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.GetMealPlansAsync(0, 0));
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.GetMealPlansAsync(0, -1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.GetMealPlansAsync(1, 0, 0));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.GetMealPlansAsync(1, 0, -1));
+        }
+
+        [Fact]
+        public async Task GetMealPlansAsync_ThrowsIfUserNotFound()
+        {
+            await Assert.ThrowsAsync<SecurityException>(() => _service.GetMealPlansAsync(999, 0, 10));
+        }
+
+        [Fact]
+        public async Task GetMealPlansAsync_ReturnsEmptyList_IfUserHasNoMealPlans()
+        {
+            var user = new User { Id = 42, Email = "a@b.com", PasswordHash = "pw" };
+            plannerContext.Users.Add(user);
+            plannerContext.SaveChanges();
+
+            var result = await _service.GetMealPlansAsync(42, 0, 10);
+
+            Assert.NotNull(result);
+            Assert.Equal(0, result.TotalCount);
+            Assert.Empty(result.MealPlans);
+        }
+
+        [Fact]
+        public async Task GetMealPlansAsync_ReturnsMealPlansForUser()
+        {
+            var user = new User { Id = 2, Email = "b@c.com", PasswordHash = "pw" };
+            var mealPlan = new MealPlan { Id = 1, UserId = 2, Meals = [] };
+            plannerContext.Users.Add(user);
+            plannerContext.MealPlans.Add(mealPlan);
+            plannerContext.SaveChanges();
+
+            var result = await _service.GetMealPlansAsync(2, 0, 10);
+
+            Assert.Single(result.MealPlans);
+            Assert.Equal(1, result.MealPlans.First().Id);
+        }
+
+        [Fact]
+        public async Task GetMealPlansAsync_AppliesSkipAndTake()
+        {
+            var user = new User { Id = 3, Email = "c@d.com", PasswordHash = "pw" };
+            plannerContext.Users.Add(user);
+            plannerContext.MealPlans.Add(new MealPlan { Id = 1, UserId = 3, Meals = [] });
+            plannerContext.MealPlans.Add(new MealPlan { Id = 2, UserId = 3, Meals = [] });
+            plannerContext.MealPlans.Add(new MealPlan { Id = 3, UserId = 3, Meals = [] });
+            plannerContext.SaveChanges();
+
+            var result = await _service.GetMealPlansAsync(3, 1, 1);
+
+            Assert.Single(result.MealPlans);
+            Assert.Equal(2, result.MealPlans.First().Id);
         }
 
         [Fact]
@@ -75,6 +126,17 @@ namespace Backend.Tests.Services.Impl
 
             Assert.NotNull(result);
             Assert.Equal(1, result.Id);
+            var entry = Assert.Single(result.Meals);
+            Assert.Equal(2, entry.RecipeId);
+            Assert.Equal("n", entry.Notes);
+
+            // Verify it was actually added to the context
+            var fromDb = plannerContext.MealPlans.Include(m => m.Meals).FirstOrDefault(m => m.Id == result.Id);
+            Assert.NotNull(fromDb);
+            Assert.Equal(1, fromDb.UserId);
+            var dbEntry = Assert.Single(fromDb.Meals);
+            Assert.Equal(2, dbEntry.RecipeId);
+            Assert.Equal("n", dbEntry.Notes);
         }
 
         [Fact]
@@ -163,6 +225,17 @@ namespace Backend.Tests.Services.Impl
             Assert.DoesNotContain(22, result.Meals.Select(m => m.Id));
             Assert.Equal("to be added", result.Meals.Where(m => m.Id != 1).First().Notes);
             Assert.Equal(2, result.Meals.Where(m => m.Id != 1).First().RecipeId);
+
+            // Verify it was actually updated in the context
+            var fromDb = plannerContext.MealPlans.Include(m => m.Meals).FirstOrDefault(m => m.Id == result.Id);
+            Assert.NotNull(fromDb);
+            Assert.Equal(1, fromDb.UserId);
+            Assert.Equal(2, fromDb.Meals.Count);
+            Assert.Equal("n", fromDb.Meals.Where(m => m.Id == 1).First().Notes);
+            Assert.Null(fromDb.Meals.Where(m => m.Id == 1).First().RecipeId);
+            Assert.DoesNotContain(22, fromDb.Meals.Select(m => m.Id));
+            Assert.Equal("to be added", fromDb.Meals.Where(m => m.Id != 1).First().Notes);
+            Assert.Equal(2, fromDb.Meals.Where(m => m.Id != 1).First().RecipeId);
         }
 
         [Fact]
