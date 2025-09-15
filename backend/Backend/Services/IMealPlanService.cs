@@ -48,6 +48,6 @@ namespace Backend.Services
         /// <param name="mealEntryId">The id of the meal within the meal plan being cooked.</param>
         /// <param name="userId">The id of the current user.</param>
         /// <returns>A list of pantry items used in cooking the meal.</returns>
-        Task<GetPantryItemsResult> CookMeal(int id, int mealEntryId, int userId);
+        Task<GetPantryItemsResult> CookMealAsync(int id, int mealEntryId, int userId);
     }
 }

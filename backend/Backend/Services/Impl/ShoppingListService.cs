@@ -12,6 +12,7 @@ namespace Backend.Services.Impl
 
         public async Task<GetShoppingListResult> GetShoppingListAsync(int userId)
         {
+            _logger.LogInformation("Entering GetShoppingListAsync: userId={UserId}", userId);
             // sorts by category first, with items with no category at the end, then by food name
             var items = await _context.ShoppingListItems
                 .AsNoTracking()
@@ -23,6 +24,8 @@ namespace Backend.Services.Impl
                 .ThenBy(i => i.Food == null ? i.Notes : i.Food.Name)
                 .ToListAsync();
 
+            _logger.LogInformation("GetShoppingListAsync: Retrieved {Count} items for userId={UserId}", items.Count, userId);
+            _logger.LogInformation("Exiting GetShoppingListAsync: userId={UserId}", userId);
             return new GetShoppingListResult
             {
                 TotalCount = items.Count,
@@ -32,16 +35,17 @@ namespace Backend.Services.Impl
 
         public async Task<ShoppingListItemDto> UpdateShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request, int userId)
         {
+            _logger.LogInformation("Entering UpdateShoppingListItemAsync: userId={UserId}, itemId={ItemId}", userId, request?.Id);
             if (request == null)
             {
                 // shouldn't get here, we check this in controller
-                _logger.LogWarning("request object is required.");
+                _logger.LogWarning("UpdateShoppingListItemAsync: request object is required.");
                 throw new ArgumentException("request object is required.");
             }
 
             if (request.Id == null)
             {
-                _logger.LogWarning("Id is required for updating a shopping list item.");
+                _logger.LogWarning("UpdateShoppingListItemAsync: Id is required for updating a shopping list item.");
                 throw new ArgumentException("Id is required for updating a shopping list item.");
             }
 
@@ -52,7 +56,7 @@ namespace Backend.Services.Impl
 
             if (item == null)
             {
-                _logger.LogWarning("Shopping list item not found.");
+                _logger.LogWarning("UpdateShoppingListItemAsync: Shopping list item not found.");
                 throw new ValidationException("Shopping list item not found.");
             }
 
@@ -64,7 +68,7 @@ namespace Backend.Services.Impl
 
                 if (food == null)
                 {
-                    _logger.LogWarning("Valid food id must be given.");
+                    _logger.LogWarning("UpdateShoppingListItemAsync: Valid food id must be given.");
                     throw new ArgumentException("Valid food id must be given.");
                 }
 
@@ -77,22 +81,24 @@ namespace Backend.Services.Impl
             item.Notes = request.Notes;
 
             await _context.SaveChangesAsync();
-
+            _logger.LogInformation("UpdateShoppingListItemAsync: Updated item for userId={UserId}, itemId={ItemId}", userId, item.Id);
+            _logger.LogInformation("Exiting UpdateShoppingListItemAsync: userId={UserId}, itemId={ItemId}", userId, item.Id);
             return item.ToDto();
         }
 
         public async Task<ShoppingListItemDto> AddShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request, int userId)
         {
+            _logger.LogInformation("Entering AddShoppingListItemAsync: userId={UserId}", userId);
             if (request == null)
             {
                 // shouldn't get here, we check this in controller
-                _logger.LogWarning("request object is required.");
+                _logger.LogWarning("AddShoppingListItemAsync: request object is required.");
                 throw new ArgumentException("request object is required.");
             }
 
             if (request.Id != null)
             {
-                _logger.LogWarning("Id is not allowed for creating a shopping list item.");
+                _logger.LogWarning("AddShoppingListItemAsync: Id is not allowed for creating a shopping list item.");
                 throw new ArgumentException("Id is not allowed for creating a shopping list item.");
             }
 
@@ -109,7 +115,7 @@ namespace Backend.Services.Impl
 
                 if (food == null)
                 {
-                    _logger.LogWarning("If food it is given, it must be valid.");
+                    _logger.LogWarning("AddShoppingListItemAsync: If food it is given, it must be valid.");
                     throw new ArgumentException("Valid food id must be given.");
                 }
             }
@@ -124,15 +130,18 @@ namespace Backend.Services.Impl
 
             await _context.ShoppingListItems.AddAsync(item);
             await _context.SaveChangesAsync();
+            _logger.LogInformation("AddShoppingListItemAsync: Added item for userId={UserId}, itemId={ItemId}", userId, item.Id);
+            _logger.LogInformation("Exiting AddShoppingListItemAsync: userId={UserId}, itemId={ItemId}", userId, item.Id);
             return item.ToDto();
         }
 
         public async Task<bool> DeleteShoppingListItemAsync(int id, int userId)
         {
+            _logger.LogInformation("Entering DeleteShoppingListItemAsync: userId={UserId}, itemId={ItemId}", userId, id);
             if (id <= 0)
             {
                 // shouldn't get here, we check this in controller
-                _logger.LogWarning("Valid id is required.");
+                _logger.LogWarning("DeleteShoppingListItemAsync: Valid id is required.");
                 throw new ArgumentException("Valid id is required.");
             }
 
@@ -141,20 +150,24 @@ namespace Backend.Services.Impl
 
             if (item == null)
             {
-                _logger.LogWarning("Shopping list item not found.");
+                _logger.LogWarning("DeleteShoppingListItemAsync: Shopping list item not found.");
                 throw new ValidationException("Shopping list item not found.");
             }
 
             _context.ShoppingListItems.Remove(item);
-            return await _context.SaveChangesAsync() > 0;
+            var result = await _context.SaveChangesAsync() > 0;
+            _logger.LogInformation("DeleteShoppingListItemAsync: Deleted item for userId={UserId}, itemId={ItemId}", userId, id);
+            _logger.LogInformation("Exiting DeleteShoppingListItemAsync: userId={UserId}, itemId={ItemId}", userId, id);
+            return result;
         }
 
         public async Task GenerateAsync(GenerateShoppingListRequestDto request, int userId)
         {
+            _logger.LogInformation("Entering GenerateAsync: userId={UserId}, mealPlanId={MealPlanId}, restart={Restart}", userId, request?.MealPlanId, request?.Restart);
             if (request == null)
             {
                 // shouldn't get here, we check this in controller
-                _logger.LogWarning("request object is required.");
+                _logger.LogWarning("GenerateAsync: request object is required.");
                 throw new ArgumentException("request object is required.");
             }
 
@@ -170,7 +183,7 @@ namespace Backend.Services.Impl
 
             if (mealPlan == null)
             {
-                _logger.LogWarning("Valid meal plan id must be given.");
+                _logger.LogWarning("GenerateAsync: Valid meal plan id must be given.");
                 throw new ArgumentException("Valid meal plan id must be given.");
             }
 
@@ -183,11 +196,13 @@ namespace Backend.Services.Impl
                 await RestartShoppingListAsync(userId, shoppingList);
 
             // we don't return the shopping list here, the client can call GetShoppingList to get it if needed
-            _logger.LogInformation("Generated shopping list for user {UserId} from meal plan {MealPlanId} (restart={Restart})", userId, request.MealPlanId, request.Restart);
+            _logger.LogInformation("GenerateAsync: Generated shopping list for user {UserId} from meal plan {MealPlanId} (restart={Restart})", userId, request.MealPlanId, request.Restart);
+            _logger.LogInformation("Exiting GenerateAsync: userId={UserId}, mealPlanId={MealPlanId}, restart={Restart}", userId, request.MealPlanId, request.Restart);
         }
 
         private async Task<Dictionary<int, Food>> BuildShoppingListAsync(MealPlan mealPlan, int userId)
         {
+            _logger.LogInformation("Entering BuildShoppingListAsync: userId={UserId}, mealPlanId={MealPlanId}", userId, mealPlan?.Id);
             // get pantry items so we can exclude foods already in pantry from shopping list
             // include food so we can reference it when building the shopping list
             var pantryItems = _context.PantryItems
@@ -198,7 +213,7 @@ namespace Backend.Services.Impl
 
             // loop through every meal
             var shoppingList = new Dictionary<int, Food>();
-            foreach (var meal in mealPlan.Meals)
+            foreach (var meal in mealPlan!.Meals) // mealPlan is not null here because we checked it in the calling method
             {
                 // if theres no recipe or ingredients, skip it
                 if (meal.Recipe == null || meal.Recipe.Ingredients == null)
@@ -224,12 +239,14 @@ namespace Backend.Services.Impl
                         .ToDictionary(i => i.FoodId, i => i.Food)
                 ).ToDictionary(k => k.Key, v => v.Value);
             }
-
+            _logger.LogInformation("BuildShoppingListAsync: Built shopping list with {Count} items for userId={UserId}", shoppingList.Count, userId);
+            _logger.LogInformation("Exiting BuildShoppingListAsync: userId={UserId}, mealPlanId={MealPlanId}", userId, mealPlan?.Id);
             return shoppingList;
         }
 
         private async Task AppendShoppingListAsync(int userId, Dictionary<int, Food> shoppingList)
         {
+            _logger.LogInformation("Entering AppendShoppingListAsync: userId={UserId}, itemCount={ItemCount}", userId, shoppingList.Count);
             // get existing shopping list items for this user that match the foods in the new shopping list
             // include food so we can reference it when building the shopping list
             var existingItems = await _context.ShoppingListItems
@@ -249,10 +266,13 @@ namespace Backend.Services.Impl
             }));
 
             await _context.SaveChangesAsync();
+            _logger.LogInformation("AppendShoppingListAsync: Appended {Count} items for userId={UserId}", toAdd.Count, userId);
+            _logger.LogInformation("Exiting AppendShoppingListAsync: userId={UserId}, itemCount={ItemCount}", userId, shoppingList.Count);
         }
 
         private async Task RestartShoppingListAsync(int userId, Dictionary<int, Food> shoppingList)
         {
+            _logger.LogInformation("Entering RestartShoppingListAsync: userId={UserId}, itemCount={ItemCount}", userId, shoppingList.Count);
             // remove all existing shopping list items for this user. We assume it's not the longest list
             // (especially with the where clause) so doing it in memory is ok for now
             var itemsToRemove = _context.ShoppingListItems
@@ -267,6 +287,8 @@ namespace Backend.Services.Impl
             }));
 
             await _context.SaveChangesAsync();
+            _logger.LogInformation("RestartShoppingListAsync: Restarted shopping list with {Count} items for userId={UserId}", shoppingList.Count, userId);
+            _logger.LogInformation("Exiting RestartShoppingListAsync: userId={UserId}, itemCount={ItemCount}", userId, shoppingList.Count);
         }
     }
 }

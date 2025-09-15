@@ -216,7 +216,7 @@ namespace Backend.Controllers
             var userId = GetUserId();
             try
             {
-                return Ok(await _service.CookMeal(id, mealEntryId, userId));
+                return Ok(await _service.CookMealAsync(id, mealEntryId, userId));
             }
             catch (Exception ex)
             {

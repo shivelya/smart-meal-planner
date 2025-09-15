@@ -13,15 +13,16 @@ namespace Backend.Services.Impl
 
         public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(int mealCount, int userId, bool useExternal)
         {
+            _logger.LogInformation("Entering GenerateMealPlanAsync: userId={UserId}, mealCount={MealCount}, useExternal={UseExternal}", userId, mealCount, useExternal);
             if (mealCount <= 0)
             {
-                _logger.LogWarning("GenerateMealPlanAsync called with non-positive mealCount: {MealCount}", mealCount);
+                _logger.LogWarning("GenerateMealPlanAsync: Called with non-positive mealCount: {MealCount}", mealCount);
                 throw new ArgumentException("Meal count must be greater than zero.", nameof(mealCount));
             }
 
             if (!_context.Users.Any(u => u.Id == userId))
             {
-                _logger.LogWarning("GenerateMealPlanAsync called with non-existent userId: {UserId}", userId);
+                _logger.LogWarning("GenerateMealPlanAsync: Called with non-existent userId: {UserId}", userId);
                 throw new ArgumentException("User does not exist.", nameof(userId));
             }
 
@@ -37,6 +38,7 @@ namespace Backend.Services.Impl
             if (mealPlanDto.Meals.Count() == mealCount)
             {
                 _logger.LogInformation("Generated meal plan with {MealCount} meals for user {UserId} using manual generation.", mealCount, userId);
+                _logger.LogInformation("Exiting GenerateMealPlanAsync: userId={UserId}, totalMeals={TotalMeals}", userId, mealPlanDto.Meals.Count());
                 return mealPlanDto;
             }
 
@@ -63,11 +65,13 @@ namespace Backend.Services.Impl
             }
 
             mealPlanDto.Meals = meals;
+            _logger.LogInformation("Exiting GenerateMealPlanAsync: userId={UserId}, totalMeals={TotalMeals}", userId, meals.Count);
             return mealPlanDto;
         }
 
         private async Task<CreateUpdateMealPlanRequestDto> GenerateManually(int meals, int userId)
         {
+            _logger.LogInformation("Entering GenerateManually: userId={UserId}, meals={Meals}", userId, meals);
             // a recipe can only be chosen if the pantry has enough of all its ingredients
             // when a recipe is chosen, subtract its ingredient rquirements from the pantry
             // don't pick the same dominant ingredient repeatedly
@@ -104,7 +108,10 @@ namespace Backend.Services.Impl
 
                 // we ran out of recipes that have ingredients, so cut out
                 if (recipes.Count == 0)
+                {
+                    _logger.LogWarning("GenerateManually: No more recipes available for userId={UserId}", userId);
                     break;
+                }
 
                 // choose the highest scored recipe
                 var highestScore = score.MaxBy(e => e.Value);
@@ -133,6 +140,7 @@ namespace Backend.Services.Impl
                 Meals = selectedRecipes.Select(r => new CreateUpdateMealPlanEntryRequestDto { RecipeId = r.Id })
             };
 
+            _logger.LogInformation("Exiting GenerateManually: userId={UserId}, selectedRecipes={SelectedRecipes}", userId, selectedRecipes.Count);
             return generatedMealPlan;
         }
 

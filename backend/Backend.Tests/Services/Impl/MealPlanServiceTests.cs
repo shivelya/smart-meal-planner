@@ -376,7 +376,7 @@ namespace Backend.Tests.Services.Impl
          [Fact]
         public async Task CookMeal_Throws_WhenMealPlanIdInvalid()
         {
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMeal(999, 1, 1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMealAsync(999, 1, 1));
         }
 
         [Fact]
@@ -385,7 +385,7 @@ namespace Backend.Tests.Services.Impl
             var mealPlan = new MealPlan { Id = 1, UserId = 2 };
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMeal(1, 1, 1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMealAsync(1, 1, 1));
         }
 
         [Fact]
@@ -394,7 +394,7 @@ namespace Backend.Tests.Services.Impl
             var mealPlan = new MealPlan { Id = 1, UserId = 1 };
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMeal(1, 999, 1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMealAsync(1, 999, 1));
         }
 
         [Fact]
@@ -405,7 +405,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.MealPlanEntries.Add(mealPlanEntry);
             plannerContext.SaveChanges();
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMeal(1, 2, 1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMealAsync(1, 2, 1));
         }
 
         [Fact]
@@ -434,7 +434,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.MealPlanEntries.Add(mealPlanEntry);
             plannerContext.SaveChanges();
 
-            var result = await _service.CookMeal(1, 2, 1);
+            var result = await _service.CookMealAsync(1, 2, 1);
 
             Assert.Equal(1, result.TotalCount);
             Assert.Single(result.Items);
@@ -466,7 +466,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.MealPlanEntries.Add(mealPlanEntry);
             plannerContext.SaveChanges();
-            var result = await _service.CookMeal(1, 2, 1);
+            var result = await _service.CookMealAsync(1, 2, 1);
             Assert.Equal(0, result.TotalCount);
             Assert.Empty(result.Items);
         }
