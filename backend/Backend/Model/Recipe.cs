@@ -10,7 +10,7 @@ namespace Backend.Model
         public string? ImageURL { get; set; }
 
         public User User { get; set; } = null!;
-        public ICollection<RecipeIngredient> Ingredients { get; set; } = new List<RecipeIngredient>();
-        public ICollection<MealPlanEntry> Meals { get; set; } = new List<MealPlanEntry>();
+        public ICollection<RecipeIngredient> Ingredients { get; set; } = [];
+        public ICollection<MealPlanEntry> Meals { get; set; } = [];
     }
 }
