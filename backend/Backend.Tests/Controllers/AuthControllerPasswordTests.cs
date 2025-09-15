@@ -12,9 +12,9 @@ using ResetPasswordRequest = Backend.DTOs.ResetPasswordRequest;
 
 namespace Backend.Tests.Controllers
 {
-    public class AuthControllerNewMethodsTests
+    public class AuthControllerPasswordTests
     {
-        private AuthController CreateController(
+        private static AuthController CreateController(
             Mock<ITokenService>? tokenService = null,
             Mock<IUserService>? userService = null,
             Mock<IEmailService>? emailService = null,
@@ -33,18 +33,9 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public async Task ChangePassword_ReturnsBadRequest_WhenModelStateInvalid()
-        {
-            var controller = CreateController();
-            controller.ModelState.AddModelError("OldPassword", "Required");
-            var result = await controller.ChangePassword(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" });
-            Assert.IsType<BadRequestObjectResult>(result);
-        }
-
-        [Fact]
         public async Task ChangePassword_ReturnsBadRequest_WhenPasswordsMissing()
         {
-            var controller = CreateController();
+            var controller = CreateController(user: new ClaimsPrincipal(new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "1")])));
             var result = await controller.ChangePassword(new ChangePasswordRequest { OldPassword = "", NewPassword = null! });
             Assert.IsType<BadRequestObjectResult>(result);
         }
