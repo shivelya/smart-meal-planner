@@ -146,6 +146,7 @@
 ---
 
 ## Story: Token Management
+
 ***As a*** registered user
 ***I want*** to not have to log in every time I visit the site
 ***so that*** my time isn't wasted on unndeeded tasks.
@@ -170,3 +171,36 @@
   "accessToken": "new-access-token"
 }
 ```
+
+---
+
+## Story: Synced User
+
+***As a*** user with a live-in partner whom I meal plan with
+***I want*** to keep our pantry and meal plans in sync
+***so that*** both of us can know the status of food and meals at any time.
+
+**Acceptance Criteria**
+| Task | Backend | Frontend |
+|------|---------|----------|
+| I can send an invite via email to someone I'd like to be my partner. | ⬜ | ⬜ |
+| That user can click the link on said email and accept the invitation. | ⬜ | ⬜ |
+| That user will be prompted to make an acount if they don't already have one. | ⬜ | ⬜ |
+| When adding new pantry items, recipes, meal plans, etc., they'll belong to the currently logged in user. | ⬜ | ⬜ |
+| All pantry items, recipes, and meal plans will be visible to both users. | ⬜ | ⬜ |
+| Either user can decide to no longer be partnered up, at which point they no longer have access to each others data. | ⬜ | ⬜ |
+
+**API**
+ - `POST /api/auth/request-sync`
+
+ **Response (200)**
+
+ **API**
+ - `POST /api/auth/sync-account`
+
+ **Response (200)**
+
+ **API**
+  - `GET /api/auth/unsync`
+
+  **Response (200)**
