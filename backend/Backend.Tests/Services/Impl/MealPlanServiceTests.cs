@@ -385,7 +385,7 @@ namespace Backend.Tests.Services.Impl
             var mealPlan = new MealPlan { Id = 1, UserId = 2 };
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
-            await Assert.ThrowsAsync<ValidationException>(() => _service.CookMeal(1, 1, 1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMeal(1, 1, 1));
         }
 
         [Fact]
@@ -405,14 +405,14 @@ namespace Backend.Tests.Services.Impl
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.MealPlanEntries.Add(mealPlanEntry);
             plannerContext.SaveChanges();
-            await Assert.ThrowsAsync<ValidationException>(() => _service.CookMeal(1, 2, 1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMeal(1, 2, 1));
         }
 
         [Fact]
         public async Task CookMeal_ReturnsUsedPantryItems()
         {
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
-            var food = new Food { Id = 1, Name = "Egg", CategoryId = 1 };
+            var food = new Food { Id = 1, Name = "Egg", CategoryId = 1, Category = new Category { Id = 1, Name = "Dairy" } };
             var pantryItem = new PantryItem { Id = 1, UserId = 1, FoodId = 1, Food = food, Quantity = 2 };
             var recipe = new Recipe {
                 Id = 1,
@@ -433,7 +433,9 @@ namespace Backend.Tests.Services.Impl
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.MealPlanEntries.Add(mealPlanEntry);
             plannerContext.SaveChanges();
+
             var result = await _service.CookMeal(1, 2, 1);
+
             Assert.Equal(1, result.TotalCount);
             Assert.Single(result.Items);
             Assert.Equal(pantryItem.Id, result.Items.First().Id);

@@ -50,7 +50,7 @@ namespace Backend.Tests.Controllers
         public async Task GetMealPlans_ReturnsOk_WithMealPlans()
         {
             var mealPlans = new GetMealPlansResult { TotalCount = 1, MealPlans = [new MealPlanDto { Id = 1, Meals = [] }] };
-            _mockService.Setup(s => s.GetMealPlansAsync(It.IsAny<int?>(), It.IsAny<int?>())).ReturnsAsync(mealPlans);
+            _mockService.Setup(s => s.GetMealPlansAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>())).ReturnsAsync(mealPlans);
 
             var result = await _controller.GetMealPlansAsync();
 
@@ -62,7 +62,7 @@ namespace Backend.Tests.Controllers
         public async Task GetMealPlans_ReturnsOk_WithEmptyList()
         {
             var mealPlan = new GetMealPlansResult { TotalCount = 0, MealPlans = [] };
-            _mockService.Setup(s => s.GetMealPlansAsync(It.IsAny<int?>(), It.IsAny<int?>())).ReturnsAsync(mealPlan);
+            _mockService.Setup(s => s.GetMealPlansAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>())).ReturnsAsync(mealPlan);
 
             var result = await _controller.GetMealPlansAsync();
 

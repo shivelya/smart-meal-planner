@@ -12,6 +12,24 @@ namespace Backend.Services.Impl
 
         public async Task<PantryItemDto> CreatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId)
         {
+            if (_context.Users.Find(userId) == null)
+            {
+                _logger.LogWarning("UserId provided was not valid.");
+                throw new ArgumentException("UserId provided was not valid.");
+            }
+
+            if (pantryItemDto == null)
+            {
+                _logger.LogWarning("pantryItem is required");
+                throw new ArgumentException("pantryItem is required.");
+            }
+
+            if (pantryItemDto.Id != null)
+            {
+                _logger.LogWarning("PantryItemDto.Id must be null for creates.");
+                throw new ArgumentException("PantryItemDto.Id must be null for creates.");
+            }
+
             _logger.LogInformation("Creating for user {UserId} pantry item {dtoItem}", userId, pantryItemDto);
             PantryItem entity = await CreatePantryItem(pantryItemDto, userId);
             await _context.SaveChangesAsync();
@@ -54,9 +72,13 @@ namespace Backend.Services.Impl
         {
             _logger.LogInformation("Deleting {count} pantry items", ids.Count());
             var entities = _context.PantryItems.Where(p => ids.Contains(p.Id));
-            var deletedIds = entities.Select(e => e.Id).ToList();
+            var deletedIds = await entities
+                .Select(e => e.Id)
+                .ToListAsync();
+
             _context.PantryItems.RemoveRange(entities);
             int count = await _context.SaveChangesAsync();
+
             _logger.LogInformation("{count} pantry items deleted", count);
             return new DeleteRequest { Ids = deletedIds };
         }
@@ -64,7 +86,11 @@ namespace Backend.Services.Impl
         public async Task<GetPantryItemsResult> GetAllPantryItemsAsync(int? skip, int? take)
         {
             _logger.LogInformation("Getting {take} pantry items, skip {skip}", take, skip);
-            var query = _context.PantryItems.AsNoTracking().Include(i => i.Food).OrderBy(p => p.Food.Name).AsQueryable();
+            var query = _context.PantryItems
+                .AsNoTracking()
+                .Include(i => i.Food)
+                .OrderBy(p => p.Food.Name)
+                .AsQueryable();
 
             var totalCount = await query.CountAsync();
 
@@ -121,7 +147,7 @@ namespace Backend.Services.Impl
                 throw new ArgumentException("PantryItemDto.Id is required for updates.");
             }
 
-            var item = _context.PantryItems.FirstOrDefault(item => item.Id == pantryItemDto.Id && item.UserId == userId);
+            var item = await _context.PantryItems.FirstOrDefaultAsync(item => item.Id == pantryItemDto.Id && item.UserId == userId);
             if (item == null)
             {
                 _logger.LogWarning("Could not find pantry item {id} to update.", pantryItemDto.Id);
@@ -180,6 +206,12 @@ namespace Backend.Services.Impl
 
         private async Task<int> UpdatePantryItemFood(CreateUpdatePantryItemRequestDto pantryItemDto)
         {
+            if (pantryItemDto.Food == null)
+            {
+                _logger.LogWarning("Food is required.");
+                throw new ArgumentException("Food is required.");
+            }
+
             int foodId;
 
             if (pantryItemDto.Food.Mode == AddFoodMode.Existing)
@@ -230,7 +262,9 @@ namespace Backend.Services.Impl
                 UserId = userId
             };
 
-            _context.PantryItems.Add(entity);
+            await _context.PantryItems.AddAsync(entity);
+            await _context.SaveChangesAsync();
+
             return entity;
         }
 

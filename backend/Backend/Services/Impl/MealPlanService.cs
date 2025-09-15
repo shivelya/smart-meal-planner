@@ -120,7 +120,8 @@ namespace Backend.Services.Impl
             _context.MealPlanEntries.RemoveRange(toRemove);
 
             // Verify all recipe ids from the dto exist
-            if (await _context.Recipes.Where(r => r.UserId == userId && dtoIds.Contains(r.Id)).CountAsync() != dtoIds.Count)
+            var recipeDtoIds = mealsList.Where(m => m.RecipeId != null).Select(m => m.RecipeId!.Value).ToHashSet();
+            if (await _context.Recipes.Where(r => r.UserId == userId && recipeDtoIds.Contains(r.Id)).CountAsync() != recipeDtoIds.Count)
                 throw new ValidationException("Attempting to update meal plan with non-existent recipe.");
 
             foreach (var mealDto in mealsList)
