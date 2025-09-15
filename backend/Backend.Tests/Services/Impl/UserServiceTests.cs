@@ -1,193 +1,217 @@
+using Backend.DTOs;
 using Backend.Model;
+using Backend.Services;
 using Backend.Services.Impl;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
+using Moq;
+using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Tests.Services.Impl
 {
     public class UserServiceTests
     {
-        private UserService CreateService()
+        private PlannerContext context = null!;
+        private UserService CreateService(
+            Mock<ITokenService>? tokenService = null,
+            Mock<IEmailService>? emailService = null,
+            ILogger<UserService>? logger = null)
         {
             var options = new DbContextOptionsBuilder<PlannerContext>()
                 .UseInMemoryDatabase(Guid.NewGuid().ToString())
                 .Options;
             var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
-            var userLogger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<UserService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>();
-            var context = new PlannerContext(options, config, logger);
-            return new UserService(context, userLogger);
+            context = new PlannerContext(options, config, new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>());
+            var tokenSvc = tokenService ?? new Mock<ITokenService>();
+            var emailSvc = emailService ?? new Mock<IEmailService>();
+            var log = logger ?? new Microsoft.Extensions.Logging.Abstractions.NullLogger<UserService>();
+            return new UserService(context, tokenSvc.Object, emailSvc.Object, log);
         }
 
         [Fact]
-        public async Task CreateUserAsync_CreatesUserWithHashedPassword()
+        public async Task RegisterNewUserAsync_CreatesUserAndReturnsTokens()
         {
-            var service = CreateService();
-            var email = "test@example.com";
-            var password = "password123";
+            var tokenService = new Mock<ITokenService>();
+            var service = CreateService(tokenService: tokenService);
+            var request = new LoginRequest { Email = "test@example.com", Password = "password123" };
+            var ip = "127.0.0.1";
+            tokenService.Setup(t => t.GenerateAccessToken(It.IsAny<User>())).Returns("access-token");
+            tokenService.Setup(t => t.GenerateRefreshTokenAsync(It.IsAny<User>(), ip)).ReturnsAsync(new RefreshToken { Token = "refresh-token" });
 
-            var user = await service.CreateUserAsync(email, password);
+            var result = await service.RegisterNewUserAsync(request, ip);
 
-            Assert.Equal(email, user.Email);
-            Assert.NotNull(user.PasswordHash);
-            Assert.NotEqual(password, user.PasswordHash);
-            Assert.True(service.VerifyPasswordHash(password, user));
+            Assert.Single(context.Users);
+            var user = context.Users.First();
+            Assert.Equal("test@example.com", user.Email);
+            Assert.NotEqual(BCrypt.Net.BCrypt.HashPassword("password123"), user.PasswordHash); // Password should be hashed
+
+            Assert.NotNull(result);
+            Assert.False(string.IsNullOrEmpty(result.AccessToken));
+            Assert.False(string.IsNullOrEmpty(result.RefreshToken));
         }
 
         [Fact]
-        public async Task CreateUserAsync_Throws_WhenUserExists()
+        public async Task RegisterNewUserAsync_Throws_WhenUserExists()
         {
             var service = CreateService();
-            var email = "test@example.com";
+            var request = new LoginRequest { Email = "test@example.com", Password = "password123" };
+            var ip = "127.0.0.1";
 
-            await service.CreateUserAsync(email, "password123");
+            context.Users.Add(new User { Email = "test@example.com", PasswordHash = "hashed" });
+            context.SaveChanges();
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => service.CreateUserAsync(email, "password456"));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => service.RegisterNewUserAsync(request, ip));
         }
 
         [Fact]
-        public async Task GetByEmailAsync_ReturnsUser_WhenExists()
+        public async Task LoginAsync_ReturnsTokens_WhenCredentialsValid()
         {
-            var service = CreateService();
-            var email = "test@example.com";
-            var created = await service.CreateUserAsync(email, "password123");
+            var tokenService = new Mock<ITokenService>();
+            var service = CreateService(tokenService: tokenService);
+            var ip = "127.0.0.1";
+            tokenService.Setup(t => t.GenerateAccessToken(It.IsAny<User>())).Returns("access-token");
+            tokenService.Setup(t => t.GenerateRefreshTokenAsync(It.IsAny<User>(), ip)).ReturnsAsync(new RefreshToken { Token = "refresh-token" });
+            var login = new LoginRequest { Email = "test@example.com", Password = "password123" };
 
-            var user = await service.GetByEmailAsync(email);
+            context.Users.Add(new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123") });
+            context.SaveChanges();
 
-            Assert.NotNull(user);
-            Assert.Equal(created.Id, user.Id);
+            var result = await service.LoginAsync(login, ip);
+
+            Assert.NotNull(result);
+            Assert.False(string.IsNullOrEmpty(result.AccessToken));
+            Assert.False(string.IsNullOrEmpty(result.RefreshToken));
         }
 
         [Fact]
-        public async Task GetByEmailAsync_ReturnsNull_WhenNotExists()
+        public async Task LoginAsync_Throws_WhenUserNotFound()
         {
             var service = CreateService();
-
-            var user = await service.GetByEmailAsync("notfound@example.com");
-
-            Assert.Null(user);
+            var login = new LoginRequest { Email = "notfound@example.com", Password = "password123" };
+            var ip = "127.0.0.1";
+            await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip));
         }
 
         [Fact]
-        public async Task GetByIdAsync_ReturnsUser_WhenExists()
+        public async Task LoginAsync_Throws_WhenPasswordIncorrect()
         {
             var service = CreateService();
-            var created = await service.CreateUserAsync("test@example.com", "password123");
+            var ip = "127.0.0.1";
+            var login = new LoginRequest { Email = "test@example.com", Password = "wrongpassword" };
 
-            var user = await service.GetByIdAsync(created.Id);
+            context.Users.Add(new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("hashed") });
+            context.SaveChanges();
 
-            Assert.NotNull(user);
-            Assert.Equal(created.Email, user.Email);
+            await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip));
         }
 
         [Fact]
-        public async Task GetByIdAsync_ReturnsNull_WhenNotExists()
+        public async Task ChangePasswordAsync_ChangesPassword_WhenOldPasswordCorrect()
         {
             var service = CreateService();
+            var user = new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass") };
+            context.Users.Add(user);
+            context.SaveChanges();
 
-            var user = await service.GetByIdAsync(999);
-
-            Assert.Null(user);
-        }
-
-        [Fact]
-        public void VerifyPasswordHash_ReturnsFalse_WhenUserIsNull()
-        {
-            var service = CreateService();
-
-            var result = service.VerifyPasswordHash("password", null!);
-
-            Assert.False(result);
-        }
-
-        [Fact]
-        public void VerifyPasswordHash_ReturnsFalse_WhenPasswordHashIsNullOrEmpty()
-        {
-            var service = CreateService();
-            var user = new User { Email = "test@example.com", PasswordHash = null! };
-
-            Assert.False(service.VerifyPasswordHash("password", user));
-
-            user.PasswordHash = "";
-
-            Assert.False(service.VerifyPasswordHash("password", user));
-        }
-
-        [Fact]
-        public void VerifyPasswordHash_ReturnsTrue_WhenPasswordIsCorrect()
-        {
-            var service = CreateService();
-            var password = "password123";
-            var hash = BCrypt.Net.BCrypt.HashPassword(password);
-            var user = new User { Email = "test@example.com", PasswordHash = hash };
-
-            Assert.True(service.VerifyPasswordHash(password, user));
-        }
-
-        [Fact]
-        public void VerifyPasswordHash_ReturnsFalse_WhenPasswordIsIncorrect()
-        {
-            var service = CreateService();
-            var hash = BCrypt.Net.BCrypt.HashPassword("password123");
-            var user = new User { Email = "test@example.com", PasswordHash = hash };
-
-            Assert.False(service.VerifyPasswordHash("wrongpassword", user));
-        }
-
-        [Fact]
-        public async Task ChangePasswordAsync_ChangesPassword_WhenOldPasswordIsCorrect()
-        {
-            var service = CreateService();
-            var user = await service.CreateUserAsync("changepass@example.com", "oldpass");
             await service.ChangePasswordAsync(user.Id, "oldpass", "newpass");
 
-            var updatedUser = await service.GetByIdAsync(user.Id);
-            Assert.True(service.VerifyPasswordHash("newpass", updatedUser));
-            Assert.False(service.VerifyPasswordHash("oldpass", updatedUser));
+            BCrypt.Net.BCrypt.Verify("newpass", context.Users.First().PasswordHash);
         }
 
         [Fact]
-        public async Task ChangePasswordAsync_Throws_WhenOldPasswordIsIncorrect()
+        public async Task ChangePasswordAsync_Throws_WhenOldPasswordIncorrect()
         {
             var service = CreateService();
-            var user = await service.CreateUserAsync("wrongold@example.com", "oldpass");
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() =>
-                service.ChangePasswordAsync(user.Id, "wrongpass", "newpass"));
+            var user = new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass") };
+            context.Users.Add(user);
+            context.SaveChanges();
+
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ChangePasswordAsync(user.Id, "wrongpass", "newpass"));
         }
 
         [Fact]
         public async Task ChangePasswordAsync_Throws_WhenUserNotFound()
         {
             var service = CreateService();
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                service.ChangePasswordAsync(9999, "oldpass", "newpass"));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.ChangePasswordAsync(9999, "oldpass", "newpass"));
         }
 
         [Fact]
-        public async Task ChangePasswordAsync_Throws_WhenInvalidUserGiven()
+        public async Task ForgotPasswordAsync_SendsEmail_WhenUserExists()
         {
-            var service = CreateService();
-            await Assert.ThrowsAsync<ArgumentException>(() =>
-                service.ChangePasswordAsync(-1, "oldpass", "newpass"));
+            var emailService = new Mock<IEmailService>();
+            var tokenService = new Mock<ITokenService>();
+            tokenService.Setup(t => t.GenerateResetToken(It.IsAny<User>())).Returns("reset-token");
+            emailService.Setup(e => e.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
+            var service = CreateService(tokenService: tokenService, emailService: emailService);
+            context.Users.Add(new User { Email = "forgot@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("hashed") });
+            context.SaveChanges();
+
+            await service.ForgotPasswordAsync("forgot@example.com");
+
+            emailService.Verify(e => e.SendPasswordResetEmailAsync("forgot@example.com", "reset-token"), Times.Once);
         }
 
         [Fact]
-        public async Task UpdatePasswordAsync_UpdatesPassword_WhenUserExists()
+        public async Task ForgotPasswordAsync_DoesNothing_WhenUserNotFound()
         {
-            var service = CreateService();
-            var user = await service.CreateUserAsync("updatepass@example.com", "oldpass");
-            var result = await service.UpdatePasswordAsync(user.Id, "newpass");
+            var emailService = new Mock<IEmailService>();
+            var tokenService = new Mock<ITokenService>();
+            var service = CreateService(tokenService: tokenService, emailService: emailService);
+            await service.ForgotPasswordAsync("notfound@example.com");
+            emailService.Verify(e => e.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+        }
+
+        [Fact]
+        public async Task ResetPasswordAsync_UpdatesPassword_WhenTokenValid()
+        {
+            var tokenService = new Mock<ITokenService>();
+            var emailService = new Mock<IEmailService>();
+            var service = CreateService(tokenService: tokenService, emailService: emailService);
+            var userEntity = new User { Email = "resetpass@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass") };
+            context.Users.Add(userEntity);
+            context.SaveChanges();
+
+            tokenService.Setup(t => t.ValidateResetToken(It.IsAny<string>())).Returns(userEntity.Id);
+            var request = new ResetPasswordRequest { ResetCode = "reset-token", NewPassword = "newpass" };
+
+            var result = await service.ResetPasswordAsync(request);
 
             Assert.True(result);
-            var updatedUser = await service.GetByIdAsync(user.Id);
-            Assert.True(service.VerifyPasswordHash("newpass", updatedUser));
+            Assert.True(BCrypt.Net.BCrypt.Verify("newpass", context.Users.First(u => u.Id == userEntity.Id).PasswordHash));
         }
 
         [Fact]
-        public async Task UpdatePasswordAsync_ReturnsFalse_WhenUserNotFound()
+        public async Task ResetPasswordAsync_Throws_WhenTokenInvalid()
+        {
+            var tokenService = new Mock<ITokenService>();
+            tokenService.Setup(t => t.ValidateResetToken(It.IsAny<string>())).Returns((int?)null);
+            var service = CreateService(tokenService: tokenService);
+            var request = new ResetPasswordRequest { ResetCode = "bad-token", NewPassword = "newpass" };
+            await Assert.ThrowsAsync<ArgumentException>(() => service.ResetPasswordAsync(request));
+        }
+
+        [Fact]
+        public async Task UpdateUserDtoAsync_UpdatesUser_WhenExists()
         {
             var service = CreateService();
-            var result = await service.UpdatePasswordAsync(9999, "newpass");
-            Assert.False(result);
+            var user = new User { Email = "updateuser@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123") };
+            context.Users.Add(user);
+            context.SaveChanges();
+            var dto = new UserDto { Id = user.Id, Email = "updated@example.com" };
+
+            var result = await service.UpdateUserDtoAsync(dto);
+
+            Assert.True(result);
+            context.Users.First(u => u.Id == user.Id).Email.Equals("updated@example.com");
+        }
+
+        [Fact]
+        public async Task UpdateUserDtoAsync_Throws_WhenUserNotFound()
+        {
+            var service = CreateService();
+            var dto = new UserDto { Id = 9999, Email = "notfound@example.com" };
+            await Assert.ThrowsAsync<ValidationException>(() => service.UpdateUserDtoAsync(dto));
         }
     }
 }

@@ -5,119 +5,45 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Services.Impl
 {
-    public class UserService(PlannerContext context, ILogger<UserService> logger) : IUserService
+    public class UserService(PlannerContext context, ITokenService tokenService, IEmailService emailService, ILogger<UserService> logger) : IUserService
     {
         private readonly PlannerContext _context = context;
+        private readonly ITokenService _tokenService = tokenService;
+        private readonly IEmailService _emailService = emailService;
         private readonly ILogger<UserService> _logger = logger;
 
-        /// <summary>
-        /// Creates a new user with the specified email and password.
-        /// </summary>
-        /// <param name="email">The user's email address.</param>
-        /// <param name="password">The user's password.</param>
-        /// <returns>The created user.</returns>
-        public async Task<User> CreateUserAsync(string email, string password)
+        public async Task<TokenResponse> RegisterNewUserAsync(LoginRequest request, string ip)
         {
-            _logger.LogInformation("Entering CreateUserAsync: email={Email}", email);
+            _logger.LogInformation("Entering CreateUserAsync: email={Email}", request.Email);
+
             // Check if user already exists
-            if (await GetByEmailAsync(email) != null)
+            if (await GetByEmailAsync(request.Email) != null)
             {
-                _logger.LogInformation("CreateUserAsync: Attempt to create a user that already exists: {Email}", email);
+                _logger.LogInformation("CreateUserAsync: Attempt to create a user that already exists: {Email}", request.Email);
                 throw new InvalidOperationException("User already exists.");
             }
 
             // Hash password
-            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(password);
-            _logger.LogDebug("CreateUserAsync: Password hashed for user: {Email}; hash: {Hash}", email, hashedPassword);
+            string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
+            _logger.LogDebug("CreateUserAsync: Password hashed for user: {Email}; hash: {Hash}", request.Email, hashedPassword);
 
             var user = new User
             {
-                Email = email,
+                Email = request.Email,
                 PasswordHash = hashedPassword
             };
 
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
 
+            var result = await GenerateTokensAsync(user, ip);
+
             _logger.LogInformation("CreateUserAsync: User created successfully: {User}", user);
-            _logger.LogInformation("Exiting CreateUserAsync: email={Email}, userId={UserId}", email, user.Id);
-            return user;
-        }
+            _logger.LogInformation("Exiting CreateUserAsync: email={Email}, userId={UserId}", request.Email, user.Id);
 
-        /// <summary>
-        /// Retrieves a user by their email address.
-        /// </summary>
-        /// <param name="email">The user's email address.</param>
-        /// <returns>The user if found, otherwise null.</returns>
-        public async Task<User> GetByEmailAsync(string email)
-        {
-            _logger.LogInformation("Entering GetByEmailAsync: email={Email}", email);
-            var user = await _context.Users
-                .AsNoTracking()
-                .FirstOrDefaultAsync(u => u.Email == email) ?? null!;
-
-            if (user == null)
-            {
-                _logger.LogInformation("GetByEmailAsync: User not found with email: {Email}", email);
-                _logger.LogInformation("Exiting GetByEmailAsync: email={Email}", email);
-                return null!;
-            }
-
-            _logger.LogInformation("GetByEmailAsync: User found with email: {Email}", email);
-            _logger.LogInformation("Exiting GetByEmailAsync: email={Email}, userId={UserId}", email, user.Id);
-            return user;
-        }
-
-        /// <summary>
-        /// Retrieves a user by their unique ID.
-        /// </summary>
-        /// <param name="id">The user's unique identifier.</param>
-        /// <returns>The user if found, otherwise null.</returns>
-        public async Task<User> GetByIdAsync(int id)
-        {
-            _logger.LogInformation("Entering GetByIdAsync: userId={UserId}", id);
-            var user = await _context.Users.FindAsync(id);
-            if (user == null)
-            {
-                _logger.LogInformation("GetByIdAsync: User not found with ID: {Id}", id);
-                _logger.LogInformation("Exiting GetByIdAsync: userId={UserId}", id);
-                return null!;
-            }
-
-            _logger.LogInformation("GetByIdAsync: User found with ID: {Id}", id);
-            _logger.LogInformation("Exiting GetByIdAsync: userId={UserId}", id);
-            return user;
-        }
-
-        /// <summary>
-        /// Verifies the password hash for the specified user.
-        /// </summary>
-        /// <param name="password">The password to verify.</param>
-        /// <param name="user">The user whose password hash to verify.</param>
-        /// <returns>True if the password matches, otherwise false.</returns>
-        public bool VerifyPasswordHash(string password, User user)
-        {
-            _logger.LogInformation("Entering VerifyPasswordHash: userId={UserId}", user?.Id);
-            // Verify the password against the stored hash
-            if (user == null || string.IsNullOrEmpty(user.PasswordHash))
-            {
-                _logger.LogWarning("VerifyPasswordHash: User or password hash is null or empty.");
-                _logger.LogInformation("Exiting VerifyPasswordHash: userId={UserId}", user?.Id);
-                return false;
-            }
-
-            var result = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
-            _logger.LogInformation("Exiting VerifyPasswordHash: userId={UserId}, result={Result}", user.Id, result);
             return result;
         }
 
-        /// <summary>
-        /// Changes the password for the specified user.
-        /// </summary>
-        /// <param name="userId">The user's unique identifier.</param>
-        /// <param name="oldPassword">The user's current password.</param>
-        /// <param name="newPassword">The user's new password.</param>
-        /// <returns>A task representing the asynchronous operation.</returns>
         public async Task ChangePasswordAsync(int userId, string oldPassword, string newPassword)
         {
             _logger.LogInformation("Entering ChangePasswordAsync: userId={UserId}", userId);
@@ -138,23 +64,25 @@ namespace Backend.Services.Impl
             string newHashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword);
             user.PasswordHash = newHashedPassword;
 
-            _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
             _logger.LogInformation("ChangePasswordAsync: Password changed successfully for user ID: {UserId}", userId);
             _logger.LogInformation("Exiting ChangePasswordAsync: userId={UserId}", userId);
         }
 
-        /// <summary>
-        /// Updates the password for the specified user.
-        /// </summary>
-        /// <param name="userId">The user's unique identifier.</param>
-        /// <param name="newPassword">The new password to set.</param>
-        /// <returns>True if the update was successful, otherwise false.</returns>
-        public async Task<bool> UpdatePasswordAsync(int userId, string newPassword)
+        public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
         {
+            var userId = _tokenService.ValidateResetToken(request.ResetCode);
             _logger.LogInformation("Entering UpdatePasswordAsync: userId={UserId}", userId);
-            var user = await GetByIdAsync(userId);
+            if (userId == null)
+            {
+                _logger.LogWarning("Reset password failed: Invalid or expired token.");
+                _logger.LogDebug("Reset token: {Token}", request.ResetCode);
+                _logger.LogInformation("Exiting ResetPassword: token={Token}", request.ResetCode);
+                throw new ArgumentException("Invalid or expired token");
+            }
+
+            var user = await GetByIdAsync(userId.Value);
             if (user == null)
             {
                 _logger.LogWarning("UpdatePasswordAsync: User not found with ID: {UserId}", userId);
@@ -162,7 +90,7 @@ namespace Backend.Services.Impl
                 return false;
             }
 
-            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(newPassword);
+            user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             _context.Users.Update(user);
             await _context.SaveChangesAsync();
 
@@ -171,11 +99,6 @@ namespace Backend.Services.Impl
             return true;
         }
 
-        /// <summary>
-        /// Updates the user DTO information.
-        /// </summary>
-        /// <param name="userDto">The user DTO to update.</param>
-        /// <returns>The updated user DTO.</returns>
         public async Task<bool> UpdateUserDtoAsync(UserDto userDto)
         {
             _logger.LogInformation("Entering UpdateUserDtoAsync: userId={UserId}", userDto.Id);
@@ -191,6 +114,195 @@ namespace Backend.Services.Impl
             _logger.LogInformation("UpdateUserDtoAsync: User updated for userId={UserId}", userDto.Id);
             _logger.LogInformation("Exiting UpdateUserDtoAsync: userId={UserId}, result={Result}", userDto.Id, result);
             return result;
+        }
+
+        public async Task<TokenResponse> RefreshTokensAsync(string refreshToken, string ip)
+        {
+            _logger.LogInformation("Entering RefreshAsync with refreshToken: {RefreshToken}", refreshToken);
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                _logger.LogWarning("RefreshAsync: Refresh token is null or empty.");
+                throw new ValidationException("Refresh token is required.");
+            }
+
+            var oldRefreshToken = await _tokenService.FindRefreshTokenAsync(refreshToken);
+
+            // if the refresh token is not found or is expired/revoked, return Unauthorized
+            // this is a security measure to prevent token reuse
+            if (oldRefreshToken == null || oldRefreshToken.Expires < DateTime.UtcNow || oldRefreshToken.IsRevoked)
+            {
+                if (oldRefreshToken != null && oldRefreshToken.Expires < DateTime.UtcNow && !oldRefreshToken.IsRevoked)
+                    await _tokenService.RevokeRefreshTokenAsync(oldRefreshToken);
+
+                _logger.LogWarning("Invalid or expired refresh token provided: {RefreshToken}", refreshToken);
+                throw new ValidationException("Invalid refresh token.");
+            }
+
+            var user = await GetByIdAsync(oldRefreshToken.UserId);
+            if (user == null)
+            {
+                _logger.LogWarning("User not found for refresh token: {RefreshToken}", refreshToken);
+                throw new ValidationException("Invalid user.");
+            }
+
+            // Mark the old refresh token as revoked
+            await _tokenService.RevokeRefreshTokenAsync(oldRefreshToken);
+            _logger.LogDebug("Revoking old refresh token: {RefreshToken}", refreshToken);
+
+            // Generate new tokens
+            var result = await GenerateTokensAsync(user, ip);
+            _logger.LogInformation("Generated new tokens for userId={UserId} using refresh token.", user.Id);
+            _logger.LogDebug("New AccessToken: {AccessToken}, New RefreshToken: {RefreshToken}", result.AccessToken, result.RefreshToken);
+            _logger.LogInformation("Exiting RefreshAsync: userId={UserId}", user.Id);
+            return result;
+        }
+
+        public async Task LogoutAsync(string refreshToken)
+        {
+            _logger.LogInformation("Entering Logout with refreshToken: {RefreshToken}", refreshToken);
+            if (string.IsNullOrWhiteSpace(refreshToken))
+            {
+                _logger.LogWarning("Logout: Refresh token is null or empty.");
+                throw new ValidationException("Refresh token is required.");
+            }
+
+            var refreshTokenObj = await _tokenService.FindRefreshTokenAsync(refreshToken);
+
+            // If the refresh token is not found, we can still return OK
+            // This is to ensure that the client can safely call logout without worrying about the token's existence
+            // This is a common practice to avoid leaking information about token validity
+            if (refreshTokenObj == null)
+            {
+                _logger.LogInformation("Logout: Refresh token not found, nothing to revoke: {RefreshToken}", refreshToken);
+                _logger.LogInformation("Exiting Logout: refreshToken={RefreshToken}", refreshToken);
+                return;
+            }
+
+            await _tokenService.RevokeRefreshTokenAsync(refreshTokenObj);
+            _logger.LogInformation("Exiting Logout: refreshToken={RefreshToken}", refreshToken);
+        }
+
+        public async Task ForgotPasswordAsync(string email)
+        {
+            _logger.LogInformation("Entering ForgotPassword: email={Email}", email);
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                _logger.LogWarning("ForgotPassword: Email is null or empty.");
+                throw new ValidationException("Email is required.");
+            }
+
+            var user = await GetByEmailAsync(email);
+            if (user == null)
+            {
+                _logger.LogInformation("Forgot password request for non-existing email: {Email}", email);
+                _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
+
+                // don’t reveal if email exists
+                return;
+            }
+
+            var token = _tokenService.GenerateResetToken(user);
+            if (string.IsNullOrEmpty(token))
+            {
+                _logger.LogError("Failed to generate reset token for user with email {Email}.", email);
+                _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
+                throw new ValidationException("Failed to generate reset token.");
+            }
+
+            _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", email, token);
+            await _emailService.SendPasswordResetEmailAsync(user.Email, token);
+
+            _logger.LogInformation("Password reset email sent to {Email}.", email);
+            _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
+        }
+
+        public async Task<TokenResponse> LoginAsync(LoginRequest request, string ip)
+        {
+            _logger.LogInformation("Entering Login: email={Email}", request.Email);
+
+            var user = await GetByEmailAsync(request.Email);
+            if (user == null)
+            {
+                _logger.LogWarning("Login failed: User with email {Email} not found.", request.Email);
+                _logger.LogInformation("Exiting Login: email={Email}", request.Email);
+                throw new ArgumentException("Invalid email or password.");
+            }
+
+            if (!VerifyPasswordHash(request.Password, user))
+            {
+                _logger.LogWarning("Login failed: Invalid password for user with email {Email}.", request.Email);
+                _logger.LogInformation("Exiting Login: email={Email}", request.Email);
+                throw new ArgumentException("Invalid email or password.");
+            }
+
+            var result = await GenerateTokensAsync(user, ip);
+            _logger.LogInformation("User logged in successfully with email {Email}.", request.Email);
+            _logger.LogInformation("Exiting Login: email={Email}", request.Email);
+            return result;
+        }
+
+        private async Task<User> GetByEmailAsync(string email)
+        {
+            var user = await _context.Users
+                .AsNoTracking()
+                .FirstOrDefaultAsync(u => u.Email == email);
+
+            if (user == null)
+            {
+                _logger.LogInformation("GetByEmailAsync: User not found with email: {Email}", email);
+                return null!;
+            }
+
+            return user;
+        }
+
+        private async Task<User> GetByIdAsync(int id)
+        {
+            var user = await _context.Users.FindAsync(id);
+            if (user == null)
+            {
+                _logger.LogInformation("GetByIdAsync: User not found with ID: {Id}", id);
+                return null!;
+            }
+
+            _logger.LogInformation("GetByIdAsync: User found with ID: {Id}", id);
+            return user;
+        }
+
+        private bool VerifyPasswordHash(string password, User user)
+        {
+            // Verify the password against the stored hash
+            if (user == null || string.IsNullOrEmpty(user.PasswordHash))
+            {
+                _logger.LogWarning("VerifyPasswordHash: User or password hash is null or empty.");
+                _logger.LogInformation("Exiting VerifyPasswordHash: userId={UserId}", user?.Id);
+                return false;
+            }
+
+            var result = BCrypt.Net.BCrypt.Verify(password, user.PasswordHash);
+            return result;
+        }
+
+        private async Task<TokenResponse> GenerateTokensAsync(User user, string ip)
+        {
+            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user, ip);
+            var accessToken = _tokenService.GenerateAccessToken(user);
+
+            if (accessToken == null || refreshToken == null)
+            {
+                _logger.LogError("Failed to generate access token or refresh token for user with email {Email}.", user.Email);
+                _logger.LogDebug("AccessToken: {AccessToken}, RefreshToken: {RefreshToken}", accessToken, refreshToken);
+                throw new ValidationException("Failed to generate access token or refresh token for user");
+            }
+
+            _logger.LogDebug("Generated access token and refresh token for user with email {Email}.", user.Email);
+            _logger.LogDebug("AccessToken: {AccessToken}, RefreshToken: {RefreshToken}", accessToken, refreshToken.Token);
+
+            return new TokenResponse
+            {
+                AccessToken = accessToken,
+                RefreshToken = refreshToken.Token!
+            };
         }
     }
 }

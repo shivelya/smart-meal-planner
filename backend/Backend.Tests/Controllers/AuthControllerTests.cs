@@ -1,561 +1,392 @@
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
 using Moq;
 using Backend.Controllers;
 using Backend.Model;
 using Backend.Services;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Http;
 using Backend.DTOs;
-using LoginRequest = Backend.DTOs.LoginRequest;
+using Microsoft.AspNetCore.Identity.Data;
+using System.Security.Claims;
 
 namespace Backend.Tests.Controllers
 {
     public class AuthControllerTests
     {
-        [Fact]
-        public async Task UpdateUserAsync_ReturnsBadRequest_WhenRequestIsNull()
+        private readonly int userId;
+        private static AuthController GetController(Mock<IUserService>? userService = null)
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var emailService = new Mock<IEmailService>();
+            userService ??= new Mock<IUserService>();
             var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.UpdateUserAsync(null!);
+            var controller = new AuthController(userService.Object, logger);
+            var rand = new Random();
+            var userId = rand.Next(1, 1000);
+            var user = new ClaimsPrincipal(new ClaimsIdentity(
+            [
+                new Claim(ClaimTypes.NameIdentifier, userId.ToString())
+            ], "mock"));
+            controller.ControllerContext = new ControllerContext
+            {
+                HttpContext = new DefaultHttpContext { User = user }
+            };
+            return controller;
+        }
+
+        // ChangePasswordAsync
+        [Fact]
+        public async Task ChangePasswordAsync_ReturnsBadRequest_WhenRequestIsNull()
+        {
+            var controller = GetController();
+            var result = await controller.ChangePasswordAsync(null!);
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Request object is required.", badRequest.Value);
         }
 
         [Fact]
-        public async Task UpdateUserAsync_ReturnsBadRequest_WhenUpdateFails()
+        public async Task ChangePasswordAsync_ReturnsBadRequest_WhenOldPasswordMissing()
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            userService.Setup(s => s.UpdateUserDtoAsync(It.IsAny<UserDto>())).ReturnsAsync(false);
-            var emailService = new Mock<IEmailService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var dto = new UserDto { Id = 1, Email = "test@example.com" };
-            var result = await controller.UpdateUserAsync(dto);
+            var controller = GetController();
+            var result = await controller.ChangePasswordAsync(new ChangePasswordRequest { OldPassword = null!, NewPassword = "new" });
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Unable to update user.", badRequest.Value);
+            Assert.Equal("Old password is required.", badRequest.Value);
         }
 
         [Fact]
-        public async Task UpdateUserAsync_ReturnsServerError_WhenExceptionThrown()
+        public async Task ChangePasswordAsync_ReturnsBadRequest_WhenNewPasswordMissing()
         {
-            var tokenService = new Mock<ITokenService>();
+            var controller = GetController();
+            var result = await controller.ChangePasswordAsync(new ChangePasswordRequest { OldPassword = "old", NewPassword = null! });
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("New password is required.", badRequest.Value);
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_ReturnsUnauthorized_WhenUnauthorizedAccessException()
+        {
             var userService = new Mock<IUserService>();
-            userService.Setup(s => s.UpdateUserDtoAsync(It.IsAny<UserDto>())).ThrowsAsync(new Exception("fail"));
-            var emailService = new Mock<IEmailService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var dto = new UserDto { Id = 1, Email = "test@example.com" };
-            var result = await controller.UpdateUserAsync(dto);
+            userService.Setup(s => s.ChangePasswordAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>())).ThrowsAsync(new UnauthorizedAccessException());
+            var controller = GetController(userService);
+            // Simulate user id in claims
+            controller.ControllerContext.HttpContext.User = new System.Security.Claims.ClaimsPrincipal(
+                new System.Security.Claims.ClaimsIdentity(new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "1") }));
+            var result = await controller.ChangePasswordAsync(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" });
+            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
+            Assert.Equal("Old password is incorrect.", unauthorized.Value);
+        }
+
+        [Fact]
+        public async Task ChangePasswordAsync_ReturnsServerError_WhenException()
+        {
+            var userService = new Mock<IUserService>();
+            userService.Setup(s => s.ChangePasswordAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
+            var controller = GetController(userService);
+            controller.ControllerContext.HttpContext.User = new System.Security.Claims.ClaimsPrincipal(
+                new System.Security.Claims.ClaimsIdentity(new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "1") }));
+            var result = await controller.ChangePasswordAsync(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" });
             var status = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, status.StatusCode);
-            Assert.Equal("fail", status.Value);
         }
 
         [Fact]
-        public async Task UpdateUserAsync_ReturnsOk_WhenUpdateSucceeds()
+        public async Task ChangePasswordAsync_ReturnsOk_WhenSuccess()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            userService.Setup(s => s.UpdateUserDtoAsync(It.IsAny<UserDto>())).ReturnsAsync(true);
-            var emailService = new Mock<IEmailService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var dto = new UserDto { Id = 1, Email = "test@example.com" };
-            var result = await controller.UpdateUserAsync(dto);
-            Assert.IsType<OkResult>(result);
+            userService.Setup(s => s.ChangePasswordAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask);
+            var controller = GetController(userService);
+            controller.ControllerContext.HttpContext.User = new System.Security.Claims.ClaimsPrincipal(
+                new System.Security.Claims.ClaimsIdentity(new[] { new System.Security.Claims.Claim(System.Security.Claims.ClaimTypes.NameIdentifier, "1") }));
+            var result = await controller.ChangePasswordAsync(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" });
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("Password updated successfully", ok.Value);
         }
+
+        // ForgotPassword
         [Fact]
-        public async Task Refresh_ReturnsBadRequest_WhenRefreshTokenIMissing()
+        public async Task ForgotPassword_ReturnsOk_WhenRequestIsNull()
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.RefreshAsync(null!);
-
-            Assert.IsType<BadRequestObjectResult>(result.Result);
+            var controller = GetController();
+            var result = await controller.ForgotPassword(null!);
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("If that email exists, a reset link has been sent.", ok.Value);
         }
 
         [Fact]
-        public async Task Refresh_ReturnsBadRequest_WhenModelIsInvalid()
+        public async Task ForgotPassword_ReturnsOk_WhenEmailMissing()
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var emailService = new Mock<IEmailService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();
-
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            controller.ModelState.AddModelError("RefreshToken", "Required");
-            var result = await controller.RefreshAsync(null!);
-
-            Assert.IsType<BadRequestObjectResult>(result.Result);
+            var controller = GetController();
+            var result = await controller.ForgotPassword(new ForgotPasswordRequest { Email = null! });
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("If that email exists, a reset link has been sent.", ok.Value);
         }
 
         [Fact]
-        public async Task Refresh_ReturnsUnauthorized_WhenTokenInvalid()
+        public async Task ForgotPassword_ReturnsOk_WhenSuccess()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.RefreshAsync("badtoken");
-
-            Assert.IsType<UnauthorizedObjectResult>(result.Result);
+            userService.Setup(s => s.ForgotPasswordAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            var controller = GetController(userService);
+            var result = await controller.ForgotPassword(new ForgotPasswordRequest { Email = "a" });
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("If that email exists, a reset link has been sent.", ok.Value);
         }
 
         [Fact]
-        public async Task Refresh_ReturnsUnauthorized_WhenTokenRevoked()
+        public async Task ForgotPassword_ReturnsServerError_WhenException()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var revokedToken = new RefreshToken { IsRevoked = true };
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(revokedToken);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
+            userService.Setup(s => s.ForgotPasswordAsync(It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
+            var controller = GetController(userService);
+            var result = await controller.ForgotPassword(new ForgotPasswordRequest { Email = "a" });
+            var status = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, status.StatusCode);
+        }
 
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.RefreshAsync("badtoken");
-
-            Assert.IsType<UnauthorizedObjectResult>(result.Result);
+        // ResetPassword
+        [Fact]
+        public async Task ResetPassword_ReturnsBadRequest_WhenRequestIsNull()
+        {
+            var controller = GetController();
+            var result = await controller.ResetPassword(null!);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Request object is required.", badRequest.Value);
         }
 
         [Fact]
-        public async Task Refresh_ReturnsUnauthorized_WhenTokenExpired()
+        public async Task ResetPassword_ReturnsBadRequest_WhenTokenMissing()
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var revokedToken = new RefreshToken { Expires = DateTime.UtcNow.AddMinutes(-1), IsRevoked = false };
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(revokedToken);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.RefreshAsync("badtoken");
-
-            Assert.IsType<UnauthorizedObjectResult>(result.Result);
+            var controller = GetController();
+            var result = await controller.ResetPassword(new Backend.DTOs.ResetPasswordRequest { ResetCode = null!, NewPassword = "new" });
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Invalid or expired token", badRequest.Value);
         }
 
         [Fact]
-        public async Task Refresh_ReturnsUnauthorized_WhenUserNotFound()
+        public async Task ResetPassword_ReturnsServerError_WhenServiceThrows()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
-            userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync((User)null!);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.RefreshAsync("token");
-
-            Assert.IsType<UnauthorizedObjectResult>(result.Result);
-        }
-
-        [Fact]
-        public async Task Refresh_ReturnsInternalServerError_WhenAccessTokenThrows()
-        {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            var user = new User { Id = 123, Email = "test@test.com" };
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
-            userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
-            tokenService.Setup(s => s.GenerateAccessToken(user)).Throws(new Exception("Token generation failed"));
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.RefreshAsync("token");
-
-            var status = Assert.IsType<ObjectResult>(result.Result);
+            userService.Setup(s => s.ResetPasswordAsync(It.IsAny<Backend.DTOs.ResetPasswordRequest>())).ThrowsAsync(new Exception("fail"));
+            var controller = GetController(userService);
+            var result = await controller.ResetPassword(new Backend.DTOs.ResetPasswordRequest { ResetCode = "token", NewPassword = "new" });
+            var status = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, status.StatusCode);
         }
 
         [Fact]
-        public async Task Refresh_ReturnsInternalServerError_WhenRefreshTokenThrows()
+        public async Task ResetPassword_ReturnsServerError_WhenResetFails()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            var user = new User { Id = 123, Email = "test@test.com" };
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
-            userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
-            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, "ip")).Throws(new Exception("Token generation failed"));
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.RefreshAsync("token");
-
-            var status = Assert.IsType<ObjectResult>(result.Result);
+            userService.Setup(s => s.ResetPasswordAsync(It.IsAny<Backend.DTOs.ResetPasswordRequest>())).ReturnsAsync(false);
+            var controller = GetController(userService);
+            var result = await controller.ResetPassword(new Backend.DTOs.ResetPasswordRequest { ResetCode = "token", NewPassword = "new" });
+            var status = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, status.StatusCode);
         }
 
         [Fact]
-        public async Task Refresh_ReturnsInternalServerError_WhenAccessTokenCannotBeGenerated()
+        public async Task ResetPassword_ReturnsOk_WhenSuccess()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            var user = new User { Id = 123, Email = "test@test.com" };
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
-            userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
-            tokenService.Setup(s => s.GenerateAccessToken(user)).Returns((string)null!);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.RefreshAsync("token");
-
-            var status = Assert.IsType<ObjectResult>(result.Result);
-            Assert.Equal(500, status.StatusCode);
+            userService.Setup(s => s.ResetPasswordAsync(It.IsAny<Backend.DTOs.ResetPasswordRequest>())).ReturnsAsync(true);
+            var controller = GetController(userService);
+            var result = await controller.ResetPassword(new Backend.DTOs.ResetPasswordRequest { ResetCode = "token", NewPassword = "new" });
+            var ok = Assert.IsType<OkObjectResult>(result);
+            Assert.Equal("Password has been reset successfully.", ok.Value);
         }
 
+        // RegisterAsync
         [Fact]
-        public async Task Refresh_ReturnsInternalServerError_WhenRefreshTokenCannotBeGenerated()
+        public async Task RegisterAsync_ReturnsBadRequest_WhenRequestIsNull()
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            var user = new User { Id = 123, Email = "test@test.com" };
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
-            userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
-            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, "ip")).ReturnsAsync((RefreshToken)null!);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.RefreshAsync("token");
-
-            var status = Assert.IsType<ObjectResult>(result.Result);
-            Assert.Equal(500, status.StatusCode);
-        }
-
-        [Fact]
-        public async Task Refresh_ReturnsOk_WithNewTokens_WhenValid()
-        {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var user = new User { Id = 123, Email = "test@example.com" };
-            var refreshToken = new RefreshToken { UserId = 123, Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
-            userService.Setup(s => s.GetByIdAsync(refreshToken.UserId)).ReturnsAsync(user);
-            var accesstoken = "access-token";
-            tokenService.Setup(s => s.GenerateAccessToken(user)).Returns(accesstoken);
-            var refreshTokenStr = "refresh-token";
-            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, It.IsAny<string>())).ReturnsAsync(
-                new RefreshToken { Token = refreshTokenStr });
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            controller.ControllerContext = new ControllerContext
-            {
-                HttpContext = new DefaultHttpContext()
-            };
-            var result = await controller.RefreshAsync("token");
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            TokenResponse? value = okResult.Value as TokenResponse;
-            Assert.Equal(accesstoken, value?.AccessToken);
-            Assert.Equal(refreshTokenStr, value?.RefreshToken);
-            
-            var dict = okResult.Value as IDictionary<string, object?> ??
-                okResult.Value?.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(okResult.Value));
-            Assert.True(dict?.ContainsKey("AccessToken"));
-            Assert.True(dict?.ContainsKey("RefreshToken"));
-            Assert.Equal(2, dict?.Count); // Only AccessToken and RefreshToken
-        }
-
-        [Fact]
-        public async Task Register_ReturnsBadRequest_WhenEmailIsMissing()
-        {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new LoginRequest { Email = null!, Password = "pass" });
-
-            Assert.IsType<BadRequestObjectResult>(result.Result);
-        }
-
-        [Fact]
-        public async Task Register_ReturnsBadRequest_WhenPasswordIsMissing()
-        {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = null! });
-
-            Assert.IsType<BadRequestObjectResult>(result.Result);
-        }
-
-        [Fact]
-        public async Task Register_ReturnsBadRequest_WhenModelIsInvalid()
-        {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            controller.ModelState.AddModelError("RefreshToken", "Required");
-            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
-
-            Assert.IsType<BadRequestObjectResult>(result.Result);
-        }
-
-        [Fact]
-        public async Task Register_ReturnsBadRequest_WhenUserExists()
-        {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync(new User());
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
-
+            var controller = GetController();
+            var result = await controller.RegisterAsync(null!);
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("User already exists.", badRequest.Value);
+            Assert.Equal("Request object is required.", badRequest.Value);
         }
 
         [Fact]
-        public async Task Register_ReturnsServerError_WhenUserCreationFails()
+        public async Task RegisterAsync_ReturnsBadRequest_WhenEmailMissing()
         {
-            var tokenService = new Mock<ITokenService>();
+            var controller = GetController();
+            var result = await controller.RegisterAsync(new Backend.DTOs.LoginRequest { Email = null!, Password = "b" });
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task RegisterAsync_ReturnsBadRequest_WhenPasswordMissing()
+        {
+            var controller = GetController();
+            var result = await controller.RegisterAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = null! });
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task RegisterAsync_ReturnsServerError_WhenServiceThrows()
+        {
             var userService = new Mock<IUserService>();
-            userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
-            userService.Setup(s => s.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync((User)null!);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
-
+            userService.Setup(s => s.RegisterNewUserAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
+            var controller = GetController(userService);
+            var result = await controller.RegisterAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" });
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
         [Fact]
-        public async Task Register_ReturnsServerError_WhenGeneratingTokensFails()
+        public async Task RegisterAsync_ReturnsServerError_WhenNullReturned()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
-            userService.Setup(s => s.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(
-                new User { Id = 1, Email = "test@test.com" });
-            tokenService.Setup(s => s.GenerateAccessToken(It.IsAny<User>())).Throws(new Exception("Token generation failed"));
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
-
+            userService.Setup(s => s.RegisterNewUserAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>())).ReturnsAsync((TokenResponse)null!);
+            var controller = GetController(userService);
+            var result = await controller.RegisterAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" });
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
         [Fact]
-        public async Task Register_ReturnsOk_WhenUserCreatedAndTokensGenerated()
+        public async Task RegisterAsync_ReturnsOk_WhenSuccess()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var user = new User { Id = 1, Email = "test@example.com" };
-            userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
-            userService.Setup(s => s.CreateUserAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(user);
-            var accessTokenStr = "access-token";
-            var refreshTokenStr = "refresh-token";
-            tokenService.Setup(s => s.GenerateAccessToken(user)).Returns(accessTokenStr);
-            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, It.IsAny<string>())).ReturnsAsync(
-                new RefreshToken { Token = refreshTokenStr });
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
-            var result = await controller.Register(new LoginRequest { Email = "test@example.com", Password = "pass" });
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            var value = (TokenResponse?)okResult.Value;
-            Assert.NotNull(value);
-            Assert.Equal(accessTokenStr, value.AccessToken);
-            Assert.Equal(refreshTokenStr, value.RefreshToken);
-            
-            var dict = okResult.Value as IDictionary<string, object?> ??
-                okResult.Value?.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(okResult.Value));
-            Assert.True(dict?.ContainsKey("AccessToken"));
-            Assert.True(dict?.ContainsKey("RefreshToken"));
-            Assert.Equal(2, dict?.Count); // Only AccessToken and RefreshToken
+            var tokens = new TokenResponse { AccessToken = "access", RefreshToken = "refresh" };
+            userService.Setup(s => s.RegisterNewUserAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>())).ReturnsAsync(tokens);
+            var controller = GetController(userService);
+            var result = await controller.RegisterAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" });
+            var ok = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsType<TokenResponse>(ok.Value);
+            Assert.Equal("access", value.AccessToken);
+            Assert.Equal("refresh", value.RefreshToken);
+        }
+        // LoginAsync
+        [Fact]
+        public async Task LoginAsync_ReturnsBadRequest_WhenRequestIsNull()
+        {
+            var controller = GetController();
+            var result = await controller.LoginAsync(null!);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("Request object is required.", badRequest.Value);
         }
 
         [Fact]
-        public async Task Login_ReturnsBadRequest_WhenEmailIsMissing()
+        public async Task LoginAsync_ReturnsBadRequest_WhenEmailMissing()
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Login(new LoginRequest { Email = null!, Password = "pass" });
+            var controller = GetController();
+            var result = await controller.LoginAsync(new Backend.DTOs.LoginRequest { Email = null!, Password = "b" });
             Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
-        public async Task Login_ReturnsBadRequest_WhenPasswordIsMissing()
+        public async Task LoginAsync_ReturnsBadRequest_WhenPasswordMissing()
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = null! });
+            var controller = GetController();
+            var result = await controller.LoginAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = null! });
             Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
-        public async Task Login_ReturnsBadRequest_WhenModelStateIsInvalid()
+        public async Task LoginAsync_ReturnsServerError_WhenServiceThrows()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            controller.ModelState.AddModelError("Email", "Required");
-            var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "pass" });
-            Assert.IsType<BadRequestObjectResult>(result.Result);
+            userService.Setup(s => s.LoginAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
+            var controller = GetController(userService);
+            var result = await controller.LoginAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" });
+            var status = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, status.StatusCode);
         }
 
         [Fact]
-        public async Task Login_ReturnsUnauthorized_WhenUserNotFound()
+        public async Task LoginAsync_ReturnsUnauthorized_WhenNullReturned()
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();;
-            userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync((User)null!);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "pass" });
-
+            var userService = new Mock<IUserService>();
+            userService.Setup(s => s.LoginAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>())).ReturnsAsync((TokenResponse)null!);
+            var controller = GetController(userService);
+            var result = await controller.LoginAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" });
             var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result.Result);
             Assert.Equal("Invalid email or password.", unauthorized.Value);
         }
 
         [Fact]
-        public async Task Login_ReturnsUnauthorized_WhenPasswordInvalid()
+        public async Task LoginAsync_ReturnsOk_WhenSuccess()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var user = new User { Id = 1, Email = "test@example.com" };
-            userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
-            userService.Setup(s => s.VerifyPasswordHash(It.IsAny<string>(), user)).Returns(false);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
+            var tokens = new TokenResponse { AccessToken = "access", RefreshToken = "refresh" };
+            userService.Setup(s => s.LoginAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>())).ReturnsAsync(tokens);
+            var controller = GetController(userService);
+            var result = await controller.LoginAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" });
+            var ok = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsType<TokenResponse>(ok.Value);
+            Assert.Equal("access", value.AccessToken);
+            Assert.Equal("refresh", value.RefreshToken);
+        }
 
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "wrong" });
-
-            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result.Result);
-            Assert.Equal("Invalid email or password.", unauthorized.Value);
+        // RefreshAsync
+        [Fact]
+        public async Task RefreshAsync_ReturnsBadRequest_WhenTokenMissing()
+        {
+            var controller = GetController();
+            var result = await controller.RefreshAsync(null!);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+            Assert.Equal("Refresh token is required.", badRequest.Value);
         }
 
         [Fact]
-        public async Task Login_ReturnsServerError_WhenGeneratingTokensFails()
+        public async Task RefreshAsync_ReturnsServerError_WhenServiceThrows()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var user = new User { Id = 1, Email = "test@example.com" };
-            userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
-            userService.Setup(s => s.VerifyPasswordHash(It.IsAny<string>(), user)).Returns(true);
-            tokenService.Setup(s => s.GenerateAccessToken(user)).Throws(new Exception("Token generation failed"));
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "right" });
-
-            var unauthorized = Assert.IsType<ObjectResult>(result.Result);
-            Assert.Equal(500, unauthorized.StatusCode);
+            userService.Setup(s => s.RefreshTokensAsync(It.IsAny<string>(), It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
+            var controller = GetController(userService);
+            var result = await controller.RefreshAsync("token");
+            var status = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, status.StatusCode);
         }
 
         [Fact]
-        public async Task Login_ReturnsOk_WhenValidCredentials()
+        public async Task RefreshAsync_ReturnsOk_WhenSuccess()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var user = new User { Id = 1, Email = "test@example.com" };
-            userService.Setup(s => s.GetByEmailAsync(It.IsAny<string>())).ReturnsAsync(user);
-            userService.Setup(s => s.VerifyPasswordHash(It.IsAny<string>(), user)).Returns(true);
-            var accessTokenStr = "access-token";
-            var refreshTokenStr = "refresh-token";
-            tokenService.Setup(s => s.GenerateAccessToken(user)).Returns(accessTokenStr);
-            tokenService.Setup(s => s.GenerateRefreshTokenAsync(user, It.IsAny<string>())).ReturnsAsync(
-                new RefreshToken { Token = refreshTokenStr });
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
+            var tokens = new TokenResponse { AccessToken = "access", RefreshToken = "refresh" };
+            userService.Setup(s => s.RefreshTokensAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(tokens);
+            var controller = GetController(userService);
+            var result = await controller.RefreshAsync("token");
+            var ok = Assert.IsType<OkObjectResult>(result.Result);
+            var value = Assert.IsType<TokenResponse>(ok.Value);
+            Assert.Equal("access", value.AccessToken);
+            Assert.Equal("refresh", value.RefreshToken);
+        }
 
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
-            var result = await controller.Login(new LoginRequest { Email = "test@example.com", Password = "pass" });
-
-            var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            TokenResponse? value = okResult.Value as TokenResponse;
-            Assert.Equal(accessTokenStr, value?.AccessToken);
-            Assert.Equal(refreshTokenStr, value?.RefreshToken);
-
-            var dict = okResult.Value as IDictionary<string, object?> ??
-                okResult.Value?.GetType().GetProperties().ToDictionary(p => p.Name, p => p.GetValue(okResult.Value));
-            Assert.True(dict?.ContainsKey("AccessToken"));
-            Assert.True(dict?.ContainsKey("RefreshToken"));
-            Assert.Equal(2, dict?.Count); // Only AccessToken and RefreshToken
+        // LogoutAsync
+        [Fact]
+        public async Task LogoutAsync_ReturnsBadRequest_WhenRequestIsNull()
+        {
+            var controller = GetController();
+            var result = await controller.LogoutAsync(null!);
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Request object is required.", badRequest.Value);
         }
 
         [Fact]
-        public async Task Logout_ReturnsOk_WhenTokenNotFound()
+        public async Task LogoutAsync_ReturnsBadRequest_WhenTokenMissing()
         {
-            var tokenService = new Mock<ITokenService>();
-            var userService = new Mock<IUserService>();
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
-
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Logout(new LogoutRequest { RefreshToken = "badtoken" });
-
-            Assert.IsType<OkResult>(result);
+            var controller = GetController();
+            var result = await controller.LogoutAsync(new LogoutRequest { RefreshToken = null! });
+            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.Equal("Refresh token is required.", badRequest.Value);
         }
 
         [Fact]
-        public async Task Logout_RevokesTokenAndReturnsOk()
+        public async Task LogoutAsync_ReturnsServerError_WhenServiceThrows()
         {
-            var tokenService = new Mock<ITokenService>();
             var userService = new Mock<IUserService>();
-            var refreshToken = new RefreshToken { Token = "token" };
-            tokenService.Setup(s => s.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(refreshToken);
-            tokenService.Setup(s => s.RevokeRefreshTokenAsync(refreshToken)).Returns(Task.CompletedTask);
-            var logger = new Microsoft.Extensions.Logging.Abstractions.NullLogger<AuthController>();;
+            userService.Setup(s => s.LogoutAsync(It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
+            var controller = GetController(userService);
+            var result = await controller.LogoutAsync(new LogoutRequest { RefreshToken = "token" });
+            var status = Assert.IsType<ObjectResult>(result);
+            Assert.Equal(500, status.StatusCode);
+        }
 
-            var emailService = new Mock<IEmailService>();
-            var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
-            var result = await controller.Logout(new LogoutRequest { RefreshToken = "token" });
-
+        [Fact]
+        public async Task LogoutAsync_ReturnsOk_WhenSuccess()
+        {
+            var userService = new Mock<IUserService>();
+            userService.Setup(s => s.LogoutAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            var controller = GetController(userService);
+            var result = await controller.LogoutAsync(new LogoutRequest { RefreshToken = "token" });
             Assert.IsType<OkResult>(result);
         }
     }

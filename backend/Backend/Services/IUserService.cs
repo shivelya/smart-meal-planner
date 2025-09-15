@@ -1,43 +1,41 @@
 using Backend.DTOs;
-using Backend.Model;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Backend.Services
 {
     public interface IUserService
     {
         /// <summary>
-        /// Retrieves a user by their email address.
-        /// </summary>
-        /// <param name="email">The user's email address.</param>
-        /// <returns>The user if found, otherwise null.</returns>
-        Task<User> GetByEmailAsync(string email);
-        /// <summary>
-        /// Retrieves a user by their unique ID.
-        /// </summary>
-        /// <param name="id">The user's unique identifier.</param>
-        /// <returns>The user if found, otherwise null.</returns>
-        Task<User> GetByIdAsync(int id);
-        /// <summary>
         /// Creates a new user with the specified email and password.
         /// </summary>
-        /// <param name="email">The user's email address.</param>
-        /// <param name="password">The user's password.</param>
-        /// <returns>The created user.</returns>
-        Task<User> CreateUserAsync(string email, string password);
+        /// <param name="request">The login request. Includes an email and password.</param>
+        /// <param name="ip">The ip of the current request.</param>
+        /// <returns>Access and refresh tokens for the new user.</returns>
+        Task<TokenResponse> RegisterNewUserAsync(LoginRequest request, string ip);
         /// <summary>
-        /// Updates the user DTO information.
+        /// Logs in a user with the specified email and password.
+        /// </summary>
+        /// <param name="request">The login request including the email and password.</param>
+        /// <param name="ip">The ip of the current requeset.</param>
+        /// <returns>Generated access and refresh tokens for th user.</returns>
+        Task<TokenResponse> LoginAsync(LoginRequest request, string ip);
+        /// <summary>
+        /// Logs out the user by revoking the provided refresh token.
+        /// </summary>
+        /// <param name="refreshToken">Current refresh token for user to be revoked.</param>
+        Task LogoutAsync(string refreshToken);
+        /// <summary>
+        /// Refreshes the authentication and refresh tokens using the provided refresh token.
+        /// </summary>
+        /// <param name="refreshToken">Long lasting token used to keep access open for user.</param>
+        /// <param name="ip">The IP address of the current request.</param>
+        /// <returns>Token response containing new access and refresh token.</returns>
+        Task<TokenResponse> RefreshTokensAsync(string refreshToken, string ip);
+        /// <summary>
+        /// Updates the user DTO information. Email and any future user details can be updated.
         /// </summary>
         /// <param name="userDto">The user DTO to update.</param>
         /// <returns>True on success.</returns>
         Task<bool> UpdateUserDtoAsync(UserDto userDto);
-        /// <summary>
-        /// Verifies the password hash for the specified user.
-        /// </summary>
-        /// <param name="password">The password to verify.</param>
-        /// <param name="user">The user whose password hash to verify.</param>
-        /// <returns>True if the password matches, otherwise false.</returns>
-        bool VerifyPasswordHash(string password, User user);
         /// <summary>
         /// Changes the password for the specified user.
         /// </summary>
@@ -47,11 +45,15 @@ namespace Backend.Services
         /// <returns>A task representing the asynchronous operation.</returns>
         Task ChangePasswordAsync(int userId, string oldPassword, string newPassword);
         /// <summary>
-        /// Updates the password for the specified user.
+        /// Initiates the forgot password process for the specified email. Sends a reset email if the user exists.
         /// </summary>
-        /// <param name="userId">The user's unique identifier.</param>
-        /// <param name="newPassword">The new password to set.</param>
+        /// <param name="email">The email given by the user for resetting their forgotten password.</param>
+        Task ForgotPasswordAsync(string email);
+        /// <summary>
+        /// Updates the password for the specified user when they have forgotten their and cannot authenticate.
+        /// </summary>
+        /// <param name="request">The request to update the password including the reset code and the new password.</param>
         /// <returns>True if the update was successful, otherwise false.</returns>
-        Task<bool> UpdatePasswordAsync(int userId, string newPassword);
+        Task<bool> ResetPasswordAsync(ResetPasswordRequest request);
     }
 }
