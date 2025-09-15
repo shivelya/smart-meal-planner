@@ -12,7 +12,6 @@ namespace Backend.Tests.Controllers
 {
     public class AuthControllerTests
     {
-        private readonly int userId;
         private static AuthController GetController(Mock<IUserService>? userService = null)
         {
             userService ??= new Mock<IUserService>();
