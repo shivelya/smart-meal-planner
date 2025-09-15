@@ -34,6 +34,16 @@ namespace Backend.Tests.Controllers
             var created = Assert.IsType<CreatedAtActionResult>(result.Result);
             Assert.Equal(resultDto, created.Value);
         }
+            [Fact]
+            public async Task Create_Returns500_WhenServiceReturnsNull()
+            {
+                var dto = new Mock<CreateUpdateRecipeDtoRequest>().Object;
+                _serviceMock.Setup(s => s.CreateAsync(dto, 1)).ReturnsAsync((RecipeDto)null!);
+                var result = await _controller.CreateAsync(dto);
+                var status = Assert.IsType<ObjectResult>(result.Result);
+                Assert.Equal(500, status.StatusCode);
+                Assert.Equal("Service returned null created recipe.", status.Value);
+            }
 
         [Fact]
         public async Task Create_Returns500_OnException()
@@ -96,6 +106,17 @@ namespace Backend.Tests.Controllers
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
+            [Fact]
+            public async Task GetByIds_Returns500_WhenServiceReturnsNull()
+            {
+                var ids = new[] { 1, 2 };
+                var recipesRequest = new GetRecipesRequest { Ids = ids };
+                _serviceMock.Setup(s => s.GetByIdsAsync(ids, 1)).ReturnsAsync((GetRecipesResult)null!);
+                var result = await _controller.GetByIdsAsync(recipesRequest);
+                var status = Assert.IsType<ObjectResult>(result.Result);
+                Assert.Equal(500, status.StatusCode);
+                Assert.Equal("Service returned null recipes.", status.Value);
+            }
 
         [Fact]
         public async Task Search_ReturnsOk_WhenSuccess()
@@ -117,6 +138,15 @@ namespace Backend.Tests.Controllers
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
+            [Fact]
+            public async Task Search_Returns500_WhenServiceReturnsNull()
+            {
+                _serviceMock.Setup(s => s.SearchAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<int>(), It.IsAny<int>())).ReturnsAsync((GetRecipesResult)null!);
+                var result = await _controller.SearchAsync("Pizza", null, 0, 10);
+                var status = Assert.IsType<ObjectResult>(result.Result);
+                Assert.Equal(500, status.StatusCode);
+                Assert.Equal("Service returned null search results.", status.Value);
+            }
 
         [Fact]
         public async Task Update_ReturnsOk_WhenSuccess()
@@ -244,6 +274,15 @@ namespace Backend.Tests.Controllers
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
+            [Fact]
+            public void CookRecipe_Returns500_WhenServiceReturnsNull()
+            {
+                _serviceMock.Setup(s => s.CookRecipe(1, It.IsAny<int>())).Returns((GetPantryItemsResult)null!);
+                var result = _controller.CookRecipe(1);
+                var status = Assert.IsType<ObjectResult>(result.Result);
+                Assert.Equal(500, status.StatusCode);
+                Assert.Equal("Service returned null pantry items.", status.Value);
+            }
 
         [Fact]
         public void CookRecipe_ReturnsPantryItems_OnSuccess()

@@ -36,25 +36,35 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PantryItemDto>> AddItemAsync(CreateUpdatePantryItemRequestDto dto)
         {
+            const string method = nameof(AddItemAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. dto={Dto}", method, nameof(PantryItemController), dto);
             if (dto == null)
             {
-                _logger.LogWarning("PantryItemDto dto is required");
+                _logger.LogWarning("{Method}: PantryItemDto dto is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. dto=null", method);
                 return BadRequest("PantryItemDto dto is required.");
             }
 
             var userId = GetUserId();
-            _logger.LogInformation("Adding pantry item for user {UserId}: {@Dto}", userId, dto);
             try
             {
                 var result = await _service.CreatePantryItemAsync(dto, userId);
+                if (result == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null pantry item.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null pantry item.");
+                }
 
-                _logger.LogInformation("Pantry item added for user {UserId}: {@Result}", userId, result);
+                _logger.LogInformation("{Method}: Pantry item added for user {UserId}. Id={Id}", method, userId, result.Id);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return CreatedAtAction(nameof(GetItemAsync), result);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error adding pantry item.");
-                return StatusCode(500, ex);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -70,25 +80,35 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetPantryItemsResult>> AddItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> dtos)
         {
+            const string method = nameof(AddItemsAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. dtos={Dtos}", method, nameof(PantryItemController), dtos);
             if (dtos == null || !dtos.Any())
             {
-                _logger.LogWarning("A collection of PantryItemDto dtos is required.");
+                _logger.LogWarning("{Method}: A collection of PantryItemDto dtos is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. dtos=null or empty", method);
                 return BadRequest("A collection of PantryItemDto dtos is required.");
             }
 
             var userId = GetUserId();
-            _logger.LogInformation("Adding multiple pantry items for user {UserId}: {@Dtos}", userId, dtos);
             try
             {
                 var result = await _service.CreatePantryItemsAsync(dtos, userId);
-                _logger.LogInformation("Pantry items added for user {UserId}: {@Result}", userId, result);
+                if (result == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null pantry items.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null pantry items.");
+                }
 
+                _logger.LogInformation("{Method}: Pantry items added for user {UserId}. TotalCount={Count}", method, userId, result.TotalCount);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return CreatedAtAction(nameof(GetItemAsync), result);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error adding pantry items");
-                return StatusCode(500, ex);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -103,29 +123,34 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PantryItemDto>> GetItemAsync(int id)
         {
+            const string method = nameof(GetItemAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(PantryItemController), id);
             if (id <= 0)
             {
-                _logger.LogWarning("A valid pantry item ID is required.");
+                _logger.LogWarning("{Method}: A valid pantry item ID is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. id={Id}", method, id);
                 return BadRequest("A valid pantry item ID is required.");
-            } 
+            }
 
-            _logger.LogInformation("Retrieving pantry item with ID {Id}", id);
             try
             {
                 var item = await _service.GetPantryItemByIdAsync(id);
                 if (item is null)
                 {
-                    _logger.LogWarning("Pantry item with ID {Id} not found", id);
+                    _logger.LogWarning("{Method}: Pantry item with ID {Id} not found.", method, id);
+                    _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
                     return NotFound();
                 }
 
-                _logger.LogInformation("Pantry item retrieved: {@Item}", item);
+                _logger.LogInformation("{Method}: Pantry item retrieved. id={Id}", method, item.Id);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(item);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error retrieving pantry item.");
-                return StatusCode(500, ex);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -140,18 +165,27 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetPantryItemsResult>> GetItemsAsync([FromQuery, BindRequired] int skip = 0, [FromQuery, BindRequired] int take = 10)
         {
-            _logger.LogInformation("Retrieving pantry items: page {Size}, size {Take}", skip, take);
+            const string method = nameof(GetItemsAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. skip={Skip}, take={Take}", method, nameof(PantryItemController), skip, take);
             try
             {
                 var result = await _service.GetAllPantryItemsAsync(skip, take);
-                _logger.LogInformation("Retrieved {TotalCount} pantry items", result.TotalCount);
+                if (result == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null pantry items.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null pantry items.");
+                }
 
+                _logger.LogInformation("{Method}: Retrieved {TotalCount} pantry items.", method, result.TotalCount);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error retrieving pantry items.");
-                return StatusCode(500, ex);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -166,23 +200,27 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteItemAsync(int id)
         {
-            _logger.LogInformation("Deleting pantry item with ID {Id}", id);
+            const string method = nameof(DeleteItemAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(PantryItemController), id);
             try
             {
                 var deleted = await _service.DeletePantryItemAsync(id);
                 if (deleted)
                 {
-                    _logger.LogInformation("Pantry item with ID {Id} deleted", id);
+                    _logger.LogInformation("{Method}: Pantry item with ID {Id} deleted.", method, id);
+                    _logger.LogInformation("{Method}: Exiting successfully.", method);
                     return NoContent();
                 }
 
-                _logger.LogWarning("Pantry item with ID {Id} not found for deletion", id);
+                _logger.LogWarning("{Method}: Pantry item with ID {Id} not found for deletion.", method, id);
+                _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
                 return NotFound();
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error while deleting pantry item.");
-                return StatusCode(500, ex);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -197,29 +235,34 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<DeleteRequest>> DeleteItemsAsync([FromBody, BindRequired] DeleteRequest request)
         {
+            const string method = nameof(DeleteItemsAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(PantryItemController), request);
             if (request == null)
             {
-                _logger.LogWarning("Delete request object is required.");
+                _logger.LogWarning("{Method}: Delete request object is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("Delete request object is required.");
             }
 
-            _logger.LogInformation("Deleting multiple pantry items: {@Ids}", request.Ids);
             try
             {
                 var deleted = await _service.DeletePantryItemsAsync(request.Ids);
                 if (deleted.Ids.Any())
                 {
-                    _logger.LogInformation("Deleted {Count} pantry items", deleted.Ids.Count());
+                    _logger.LogInformation("{Method}: Deleted {Count} pantry items.", method, deleted.Ids.Count());
+                    _logger.LogInformation("{Method}: Exiting successfully.", method);
                     return StatusCode(204, deleted);
                 }
 
-                _logger.LogWarning("No pantry items deleted for IDs: {Ids}", request.Ids);
+                _logger.LogWarning("{Method}: No pantry items deleted for IDs: {Ids}", method, request.Ids);
+                _logger.LogInformation("{Method}: Exiting with NotFound. ids={Ids}", method, request.Ids);
                 return NotFound();
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error deleting pantry items.");
-                return StatusCode(500, ex);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -236,9 +279,12 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetPantryItemsResult>> SearchAsync([FromQuery, BindRequired] string query, int? take = null, int? skip = null)
         {
+            const string method = nameof(SearchAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, take={Take}, skip={Skip}", method, nameof(PantryItemController), query, take, skip);
             if (string.IsNullOrEmpty(query))
             {
-                _logger.LogWarning("A search term is required.");
+                _logger.LogWarning("{Method}: A search term is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. query=null or empty", method);
                 return BadRequest("A search term is required.");
             }
 
@@ -246,12 +292,22 @@ namespace Backend.Controllers
             try
             {
                 var results = await _service.Search(query, userId, take, skip);
+                if (results == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null search results.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null search results.");
+                }
+
+                _logger.LogInformation("{Method}: Search completed successfully. TotalCount={Count}", method, results.TotalCount);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(results);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error while search for pantry item.)");
-                return StatusCode(500, ex);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -267,27 +323,42 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<PantryItemDto>> UpdateAsync(string id, [FromBody, BindRequired] CreateUpdatePantryItemRequestDto pantryItem)
         {
+            const string method = nameof(UpdateAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, pantryItem={PantryItem}", method, nameof(PantryItemController), id, pantryItem);
             if (string.IsNullOrEmpty(id))
             {
-                _logger.LogWarning("id is required.");
+                _logger.LogWarning("{Method}: id is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. id=null or empty", method);
                 return BadRequest("id is required.");
             }
 
             if (pantryItem == null)
             {
-                _logger.LogWarning("PantryItemDto pantryItem is required");
+                _logger.LogWarning("{Method}: PantryItemDto pantryItem is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. pantryItem=null", method);
                 return BadRequest("PantryItemDto pantryItem is required.");
             }
 
             var userId = GetUserId();
             try
             {
-                return Ok(await _service.UpdatePantryItemAsync(pantryItem, userId));
+                var updated = await _service.UpdatePantryItemAsync(pantryItem, userId);
+                if (updated == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null updated pantry item.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null updated pantry item.");
+                }
+
+                _logger.LogInformation("{Method}: Pantry item updated successfully. id={Id}", method, updated.Id);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
+                return Ok(updated);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex, "Error while updating pantry item.");
-                return StatusCode(500, ex);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
+                return StatusCode(500, ex.Message);
             }
         }
 

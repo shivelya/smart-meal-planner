@@ -33,16 +33,26 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RecipeDto>> CreateAsync([FromBody, BindRequired] CreateUpdateRecipeDtoRequest request)
         {
+            const string method = nameof(CreateAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
             try
             {
-                _logger.LogInformation("Creating recipe for user {UserId}: {@Req}", GetUserId(), request);
-                var created = await _recipeService.CreateAsync(request, GetUserId());
-                _logger.LogInformation("Recipe created with ID {Id}", created.Id);
+                var userId = GetUserId();
+                var created = await _recipeService.CreateAsync(request, userId);
+                if (created == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null created recipe.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null created recipe.");
+                }
+                _logger.LogInformation("{Method}: Recipe created with ID {Id}", method, created.Id);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return CreatedAtAction(nameof(GetByIdAsync), new { id = created.Id }, created);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Create");
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -58,21 +68,26 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RecipeDto>> GetByIdAsync(int id)
         {
+            const string method = nameof(GetByIdAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
             try
             {
-                _logger.LogInformation("Retrieving recipe with ID {Id} for user {UserId}", id, GetUserId());
-                var r = await _recipeService.GetByIdAsync(id, GetUserId());
+                var userId = GetUserId();
+                var r = await _recipeService.GetByIdAsync(id, userId);
                 if (r is null)
                 {
-                    _logger.LogWarning("Recipe with ID {Id} not found", id);
+                    _logger.LogWarning("{Method}: Recipe with ID {Id} not found.", method, id);
+                    _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
                     return NotFound();
                 }
-                _logger.LogInformation("Recipe retrieved: {@Recipe}", r);
+                _logger.LogInformation("{Method}: Recipe retrieved. id={Id}", method, r.Id);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(r);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in GetById");
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -87,28 +102,40 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetRecipesResult>> GetByIdsAsync([FromBody, BindRequired] GetRecipesRequest request)
         {
+            const string method = nameof(GetByIdsAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
             if (request == null)
             {
-                _logger.LogWarning("Request object is required.");
+                _logger.LogWarning("{Method}: Request object is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("request object is required.");
             }
 
             if (request.Ids == null)
             {
-                _logger.LogWarning("Ids are required.");
+                _logger.LogWarning("{Method}: Ids are required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. ids=null", method);
                 return BadRequest("List of ids is required.");
             }
 
             try
             {
-                _logger.LogInformation("Retrieving recipes with IDs {@Ids} for user {UserId}", request.Ids, GetUserId());
-                var r = await _recipeService.GetByIdsAsync(request.Ids, GetUserId());
-                _logger.LogInformation("Retrieved {Count} recipes", r.TotalCount);
+                var userId = GetUserId();
+                var r = await _recipeService.GetByIdsAsync(request.Ids, userId);
+                if (r == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null recipes.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null recipes.");
+                }
+                _logger.LogInformation("{Method}: Retrieved {Count} recipes.", method, r.TotalCount);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(r);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in GetByIds");
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -126,22 +153,33 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetRecipesResult>> SearchAsync([FromQuery] string? title = null, [FromQuery] string? ingredient = null, [FromQuery] int? skip = null, [FromQuery] int? take = null)
         {
+            const string method = nameof(SearchAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. title={Title}, ingredient={Ingredient}, skip={Skip}, take={Take}", method, nameof(RecipeController), title, ingredient, skip, take);
             if (title == null && ingredient == null)
             {
-                _logger.LogWarning("At least one of title or ingredient must be provided for search.");
+                _logger.LogWarning("{Method}: At least one of title or ingredient must be provided for search.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. title=null, ingredient=null", method);
                 return BadRequest("At least one of title or ingredient must be provided for search.");
             }
 
             try
             {
-                _logger.LogInformation("Searching recipes for user {UserId}: title={Title}, ingredient={Ingredient}, skip={Skip}, take={Take}", GetUserId(), title, ingredient, skip, take);
-                var r = await _recipeService.SearchAsync(GetUserId(), title, ingredient, skip, take);
-                _logger.LogInformation("Search returned {Count} recipes", r.TotalCount);
+                var userId = GetUserId();
+                var r = await _recipeService.SearchAsync(userId, title, ingredient, skip, take);
+                if (r == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null search results.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null search results.");
+                }
+                _logger.LogInformation("{Method}: Search returned {Count} recipes.", method, r.TotalCount);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(r);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Search");
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -159,28 +197,33 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RecipeDto>> UpdateAsync(int id, [FromBody, BindRequired] CreateUpdateRecipeDtoRequest request)
         {
+            const string method = nameof(UpdateAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, request={Request}", method, nameof(RecipeController), id, request);
             if (request == null)
             {
-                _logger.LogWarning("Request object is required.");
+                _logger.LogWarning("{Method}: Request object is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("Request object is required.");
             }
 
             try
             {
-                _logger.LogInformation("Updating recipe with ID {Id} for user {UserId}: {@Req}", id, GetUserId(), request);
-                var updated = await _recipeService.UpdateAsync(id, request, GetUserId());
+                var userId = GetUserId();
+                var updated = await _recipeService.UpdateAsync(id, request, userId);
                 if (updated is null)
                 {
-                    _logger.LogWarning("Recipe with ID {Id} not found for update", id);
+                    _logger.LogWarning("{Method}: Recipe with ID {Id} not found for update.", method, id);
+                    _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
                     return NotFound();
                 }
-
-                _logger.LogInformation("Recipe updated: {@Recipe}", updated);
+                _logger.LogInformation("{Method}: Recipe updated. id={Id}", method, updated.Id);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(updated);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Update");
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -196,21 +239,26 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult> DeleteAsync(int id)
         {
+            const string method = nameof(DeleteAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
             try
             {
-                _logger.LogInformation("Deleting recipe with ID {Id} for user {UserId}", id, GetUserId());
-                var ok = await _recipeService.DeleteAsync(id, GetUserId());
+                var userId = GetUserId();
+                var ok = await _recipeService.DeleteAsync(id, userId);
                 if (ok)
                 {
-                    _logger.LogInformation("Recipe with ID {Id} deleted", id);
+                    _logger.LogInformation("{Method}: Recipe with ID {Id} deleted.", method, id);
+                    _logger.LogInformation("{Method}: Exiting successfully.", method);
                     return NoContent();
                 }
-                _logger.LogWarning("Recipe with ID {Id} not found for deletion", id);
+                _logger.LogWarning("{Method}: Recipe with ID {Id} not found for deletion.", method, id);
+                _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
                 return NotFound();
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in Delete");
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -229,32 +277,39 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ExtractedRecipe>> ExtractRecipeAsync([FromBody, BindRequired] ExtractRequest request)
         {
+            const string method = nameof(ExtractRecipeAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
             if (request == null)
             {
-                _logger.LogWarning("Request object is required.");
+                _logger.LogWarning("{Method}: Request object is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("Request object is required.");
             }
 
             if (request.Source == null)
             {
-                _logger.LogWarning("Source URL is required.");
+                _logger.LogWarning("{Method}: Source URL is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. source=null", method);
                 return BadRequest("Source URL is required.");
             }
 
             try
             {
-                _logger.LogInformation("Extracting recipe from source URL: {Source}", request.Source);
+                _logger.LogInformation("{Method}: Extracting recipe from source URL: {Source}", method, request.Source);
                 var draft = await _extractor.ExtractRecipeAsync(request.Source);
-
                 if (draft == null)
-                    _logger.LogWarning("No recipe could be extracted from the provided URL: {Source}", request.Source);
-
-                _logger.LogInformation("Recipe extracted from source");
+                {
+                    _logger.LogWarning("{Method}: No recipe could be extracted from the provided URL: {Source}", method, request.Source);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                }
+                _logger.LogInformation("{Method}: Recipe extracted from source.", method);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(draft);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in ExtractRecipe");
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -274,20 +329,33 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public ActionResult<GetPantryItemsResult> CookRecipe(int id)
         {
+            const string method = nameof(CookRecipe);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
             if (id <= 0)
             {
-                _logger.LogWarning("Id must be positive.");
+                _logger.LogWarning("{Method}: Id must be positive.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. id={Id}", method, id);
                 return BadRequest("Id must be positive.");
             }
 
             var userId = GetUserId();
             try
             {
-                return Ok(_recipeService.CookRecipe(id, userId));
+                var result = _recipeService.CookRecipe(id, userId);
+                if (result == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null pantry items.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null pantry items.");
+                }
+                _logger.LogInformation("{Method}: CookRecipe completed successfully. TotalCount={Count}", method, result.TotalCount);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
+                return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex.Message);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }

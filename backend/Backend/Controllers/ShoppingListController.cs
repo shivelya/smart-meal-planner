@@ -23,15 +23,20 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetShoppingListResult>> GetShoppingListAsync()
         {
+            const string method = nameof(GetShoppingListAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(ShoppingListController));
             try
             {
                 var userId = GetUserId();
+                _logger.LogInformation("{Method}: Getting shopping list for userId={UserId}", method, userId);
                 var result = await _service.GetShoppingListAsync(userId);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex.Message);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -47,21 +52,27 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ShoppingListItemDto>> UpdateShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request)
         {
+            const string method = nameof(UpdateShoppingListItemAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(ShoppingListController), request);
             if (request == null)
             {
-                _logger.LogWarning("request object is requried.");
+                _logger.LogWarning("{Method}: request object is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("request object is required.");
             }
 
             try
             {
                 var userId = GetUserId();
+                _logger.LogInformation("{Method}: Updating shopping list item for userId={UserId}", method, userId);
                 var result = await _service.UpdateShoppingListItemAsync(request, userId);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex.Message);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -77,21 +88,27 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ShoppingListItemDto>> AddShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request)
         {
+            const string method = nameof(AddShoppingListItemAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(ShoppingListController), request);
             if (request == null)
             {
-                _logger.LogWarning("request object is requried.");
+                _logger.LogWarning("{Method}: request object is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("request object is required.");
             }
 
             try
             {
                 var userId = GetUserId();
+                _logger.LogInformation("{Method}: Adding shopping list item for userId={UserId}", method, userId);
                 var result = await _service.AddShoppingListItemAsync(request, userId);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(result);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex.Message);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -108,25 +125,38 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ShoppingListItemDto>> DeleteShoppingListItemAsync(int id)
         {
+            const string method = nameof(DeleteShoppingListItemAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(ShoppingListController), id);
             if (id <= 0)
             {
-                _logger.LogWarning("Valid id is requried.");
+                _logger.LogWarning("{Method}: Valid id is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. id={Id}", method, id);
                 return BadRequest("Valid id is required.");
             }
 
             try
             {
                 var userId = GetUserId();
+                _logger.LogInformation("{Method}: Deleting shopping list item for userId={UserId}, id={Id}", method, userId, id);
                 var ok = await _service.DeleteShoppingListItemAsync(id, userId);
 
                 if (ok)
+                {
+                    _logger.LogInformation("{Method}: Item deleted. id={Id}", method, id);
+                    _logger.LogInformation("{Method}: Exiting successfully.", method);
                     return NoContent();
+                }
                 else
+                {
+                    _logger.LogWarning("{Method}: Item not found. id={Id}", method, id);
+                    _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
                     return NotFound();
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex.Message);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -143,28 +173,34 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetShoppingListResult>> GenerateAsync(GenerateShoppingListRequestDto request)
         {
+            const string method = nameof(GenerateAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(ShoppingListController), request);
             if (request == null)
             {
-                _logger.LogWarning("request object is requried.");
+                _logger.LogWarning("{Method}: request object is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("request object is required.");
             }
 
             if (request.MealPlanId <= 0)
             {
-                _logger.LogWarning("Valid meal plan id is required.");
+                _logger.LogWarning("{Method}: Valid meal plan id is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. mealPlanId={MealPlanId}", method, request.MealPlanId);
                 return BadRequest("Valid meal plan id is required.");
             }
 
             try
             {
                 var userId = GetUserId();
+                _logger.LogInformation("{Method}: Generating shopping list for userId={UserId}, mealPlanId={MealPlanId}, restart={Restart}", method, userId, request.MealPlanId, request.Restart);
                 await _service.GenerateAsync(request, userId);
-
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok();
             }
             catch (Exception ex)
             {
-                _logger.LogWarning(ex.Message);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, ex.Message);
             }
         }

@@ -25,14 +25,26 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetCategoriesResult>> GetCategories()
         {
+            const string method = nameof(GetCategories);
+            _logger.LogInformation("{Method}: Entering {Controller}. No input parameters.", method, nameof(CategoriesController));
             try
             {
                 var categories = await _service.GetAllAsync();
-                _logger.LogInformation("Retrieved {Count} categories", categories.TotalCount);
+                if (categories == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null categories.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null categories.");
+                }
+
+                _logger.LogInformation("{Method}: Retrieved {Count} categories. Categories: {Categories}", method, categories.TotalCount, string.Join(",", categories.Items.Select(c => c.Name)));
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(categories);
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, "Could not retrieve categories: " + ex.Message);
             }
         }
