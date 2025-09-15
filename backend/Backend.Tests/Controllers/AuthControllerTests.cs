@@ -21,7 +21,7 @@ namespace Backend.Tests.Controllers
             var controller = new AuthController(tokenService.Object, userService.Object, emailService.Object, logger);
             var result = await controller.UpdateUserAsync(null!);
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Required is required.", badRequest.Value);
+            Assert.Equal("Request object is required.", badRequest.Value);
         }
 
         [Fact]
