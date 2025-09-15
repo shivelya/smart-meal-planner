@@ -132,12 +132,14 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Generates a shopping list based on a given meal plan
+        /// Generates a shopping list based on a given meal plan. If "restart" is true, any existing shopping list items will be cleared first.
+        /// This DOES save the shopping list to the database. It does not return the shopping list, just a 200 status if successful.
         /// </summary>
         /// <param name="request">Includes a meal plan id and whether or not to restart the list.</param>
-        /// <remarks>Returns a list of foods to shop for.</remarks>
+        /// <remarks>Ok on success. Use GET api/shoppingList/ to retrieve the list.</remarks>
         [HttpPost("generate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetShoppingListResult>> GenerateAsync(GenerateShoppingListRequestDto request)
         {

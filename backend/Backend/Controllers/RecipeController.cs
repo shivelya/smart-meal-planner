@@ -216,7 +216,11 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Attempts to extract a recipe from a URL.
+        /// Attempts to extract a recipe from a URL. The returned recipe is a draft that the user can then modify and save.
+        /// Recipes is pulled from the URL using OpenGraph, schema.org, and microdata standards. If no recipe can be found,
+        /// OK is still returned and the user can still save the URL if they wish. If the URL is invalid or there is an
+        /// error during extraction, a 500 error is returned. The recipe is not saved to the database until the user
+        /// verifies and saves it.
         /// </summary>
         /// <param name="request">The URL to source the recipe from.</param>
         /// <remarks>returns a recipe object for the user to verify. Does not insert recipe into the database. OK on success.</remarks>
@@ -243,10 +247,7 @@ namespace Backend.Controllers
                 var draft = await _extractor.ExtractRecipeAsync(request.Source);
 
                 if (draft == null)
-                {
                     _logger.LogWarning("No recipe could be extracted from the provided URL: {Source}", request.Source);
-                    return BadRequest("No recipe could be extracted from the provided URL.");
-                }
 
                 _logger.LogInformation("Recipe extracted from source");
                 return Ok(draft);
@@ -259,7 +260,11 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Returns all pantry items used while cooking this recipe.
+        /// Returns all pantry items used while cooking this recipe. These can be deleted by the user if they wish.
+        /// Quantity is not adjusted automatically, as the user may have multiple of the same item in their pantry.
+        /// This tool is not sophisticated to determine quantity based on unit types, so the user must manually
+        /// adjust quantities or delete items as they see fit. If the recipe has already been marked as cooked,
+        /// this is a no-op and will simply return the pantry items again.
         /// </summary>
         /// <param name="id">The id of the recipe that is being cooked.</param>
         /// <remarks>returns a list of pantry items to possibly be deleted by the user now that the recipe has been made.</remarks>
