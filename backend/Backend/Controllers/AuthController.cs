@@ -39,17 +39,33 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TokenResponse>> Register(DTOs.LoginRequest request)
         {
-            _logger.LogDebug("Request: {Request}", request);
-            if (request.Email == null || request.Password == null)
+            const string method = nameof(Register);
+            _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
+            if (request == null)
             {
-                _logger.LogWarning("Registration failed: Email or password is null.");
-                return BadRequest("Email and password are required.");
+                _logger.LogWarning("{Method}: Request object is null.", method);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request?.Email);
+                return BadRequest("Request object is required.");
+            }
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                _logger.LogWarning("{Method}: Email is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request.Email);
+                return BadRequest("Email is required.");
+            }
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                _logger.LogWarning("{Method}: Password is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request.Email);
+                return BadRequest("Password is required.");
             }
 
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Registration failed: Model state is invalid.");
-                _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                _logger.LogWarning("{Method}: Model state is invalid.", method);
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                    _logger.LogDebug("{Method}: ModelState error: {Error}", method, error.ErrorMessage);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request.Email);
                 return BadRequest(ModelState);
             }
 
@@ -57,6 +73,7 @@ namespace Backend.Controllers
             if (await _userService.GetByEmailAsync(request.Email) != null)
             {
                 _logger.LogWarning("Registration failed: User with email {Email} already exists.", request.Email);
+                _logger.LogInformation("Exiting Register: email={Email}", request.Email);
                 return BadRequest("User already exists.");
             }
 
@@ -68,28 +85,30 @@ namespace Backend.Controllers
                 {
                     _logger.LogError("Registration failed: User creation returned null.");
                     _logger.LogDebug("Failed to create user with email {Email}.", request.Email);
+                    _logger.LogInformation("Exiting Register: email={Email}", request.Email);
                     return StatusCode(500, "Failed to create user.");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError("Registration failed: Exception thrown: {ex}", ex);
+                _logger.LogInformation("Exiting Register: email={Email}", request.Email);
                 return StatusCode(500, ex.Message);
             }
 
             try
             {
                 var result = await GenerateTokens(user);
-
                 _logger.LogInformation("User registered successfully with email {Email}.", request.Email);
                 _logger.LogDebug("Generated tokens for user with email {Email}.", request.Email);
-
+                _logger.LogInformation("Exiting Register: email={Email}", request.Email);
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError("Registration completed but token generation failed: {Error}", ex);
                 _logger.LogDebug("Failed to generate tokens for user with email {Email}.", request.Email);
+                _logger.LogInformation("Exiting Register: email={Email}", request.Email);
                 return StatusCode(500, "Registration completed successfully but failed to generate tokens: " + ex.Message);
             }
         }
@@ -106,17 +125,33 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TokenResponse>> Login(DTOs.LoginRequest request)
         {
-            _logger.LogDebug("Login request: {Request}", request);
-            if (request.Email == null || request.Password == null)
+            const string method = nameof(Login);
+            _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
+            if (request == null)
             {
-                _logger.LogWarning("Login failed: Email or password is null.");
-                return BadRequest("Email and password are required.");
+                _logger.LogWarning("{Method}: Request object is null.", method);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request?.Email);
+                return BadRequest("Request object is required.");
+            }
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                _logger.LogWarning("{Method}: Email is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request.Email);
+                return BadRequest("Email is required.");
+            }
+            if (string.IsNullOrWhiteSpace(request.Password))
+            {
+                _logger.LogWarning("{Method}: Password is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request.Email);
+                return BadRequest("Password is required.");
             }
 
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Login failed: Model state is invalid.");
-                _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
+                _logger.LogWarning("{Method}: Model state is invalid.", method);
+                foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                    _logger.LogDebug("{Method}: ModelState error: {Error}", method, error.ErrorMessage);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request.Email);
                 return BadRequest(ModelState);
             }
 
@@ -127,12 +162,14 @@ namespace Backend.Controllers
                 if (user == null)
                 {
                     _logger.LogWarning("Login failed: User with email {Email} not found.", request.Email);
+                    _logger.LogInformation("Exiting Login: email={Email}", request.Email);
                     return Unauthorized("Invalid email or password.");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError("Login failed: Exception thrown: {ex}", ex);
+                _logger.LogInformation("Exiting Login: email={Email}", request.Email);
                 return StatusCode(500, ex.Message);
             }
 
@@ -141,27 +178,29 @@ namespace Backend.Controllers
                 if (!_userService.VerifyPasswordHash(request.Password, user))
                 {
                     _logger.LogWarning("Login failed: Invalid password for user with email {Email}.", request.Email);
+                    _logger.LogInformation("Exiting Login: email={Email}", request.Email);
                     return Unauthorized("Invalid email or password.");
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError("Login failed verifying password: Exception thrown: {ex}", ex);
+                _logger.LogInformation("Exiting Login: email={Email}", request.Email);
                 return StatusCode(500, ex.Message);
             }
 
             try
             {
                 var result = await GenerateTokens(user);
-
                 _logger.LogInformation("User logged in successfully with email {Email}.", request.Email);
-
+                _logger.LogInformation("Exiting Login: email={Email}", request.Email);
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError("Login failed: {Error}", ex.Message);
                 _logger.LogDebug("Failed to generate tokens for user with email {Email}.", request.Email);
+                _logger.LogInformation("Exiting Login: email={Email}", request.Email);
                 return StatusCode(500, "Failed to generate tokens: " + ex.Message);
             }
         }
@@ -179,9 +218,12 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TokenResponse>> RefreshAsync([FromBody] string refreshToken)
         {
-            if (string.IsNullOrEmpty(refreshToken))
+            const string method = nameof(RefreshAsync);
+            _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, refreshToken);
+            if (string.IsNullOrWhiteSpace(refreshToken))
             {
-                _logger.LogWarning("Null refresh token provided.");
+                _logger.LogWarning("{Method}: Refresh token is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. refreshToken={RefreshToken}", method, refreshToken);
                 return BadRequest("Refresh token is required.");
             }
 
@@ -216,13 +258,14 @@ namespace Backend.Controllers
                 var result = await GenerateTokens(user);
 
                 _logger.LogInformation("Tokens refreshed successfully for user with email {Email}.", user.Email);
-
+                _logger.LogInformation("Exiting RefreshAsync: refreshToken={RefreshToken}", refreshToken);
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError("Failed to generate new tokens: {Error}", ex.Message);
                 _logger.LogDebug("Failed to generate new tokens for user with email {Email}.", user?.Email);
+                _logger.LogInformation("Exiting RefreshAsync: refreshToken={RefreshToken}", refreshToken);
                 return StatusCode(500, "Failed to generate tokens: " + ex.Message);
             }
         }
@@ -238,21 +281,24 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> Logout([FromBody] LogoutRequest request)
         {
+            const string method = nameof(Logout);
+            _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request?.RefreshToken);
             if (request == null)
             {
-                _logger.LogWarning("Logout failed: Null refresh token provided.");
-                return BadRequest("Refresh token is required.");
+                _logger.LogWarning("{Method}: Request object is null.", method);
+                _logger.LogInformation("{Method}: Exiting. refreshToken={RefreshToken}", method, request?.RefreshToken);
+                return BadRequest("Request object is required.");
             }
-
-            if (string.IsNullOrEmpty(request.RefreshToken))
+            if (string.IsNullOrWhiteSpace(request.RefreshToken))
             {
-                _logger.LogWarning("Logout failed: Null refresh token provided.");
+                _logger.LogWarning("{Method}: Refresh token is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. refreshToken={RefreshToken}", method, request.RefreshToken);
                 return BadRequest("Refresh token is required.");
             }
 
             if (!ModelState.IsValid)
             {
-                _logger.LogWarning("Logout failed: Model state is invalid.");
+                _logger.LogWarning("{Method} failed: Model state is invalid.", method);
                 _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
                 _logger.LogDebug("Refresh token: {RefreshToken}", request);
                 return BadRequest(ModelState);
@@ -269,10 +315,12 @@ namespace Backend.Controllers
                     return Ok();
 
                 await _tokenService.RevokeRefreshTokenAsync(refreshTokenObj);
+                _logger.LogInformation("Exiting Logout: refreshToken={RefreshToken}", request.RefreshToken);
                 return Ok();
             }
             catch (Exception ex)
             {
+                _logger.LogInformation("Exiting Logout: refreshToken={RefreshToken}", request?.RefreshToken);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -289,22 +337,39 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateUserAsync(UserDto request)
         {
+            const string method = nameof(UpdateUserAsync);
+            _logger.LogInformation("{Method}: Entering. userId={UserId}", method, request?.Id);
             if (request == null)
             {
-                _logger.LogInformation("Request is required");
-                return BadRequest("Required is required.");
+                _logger.LogWarning("{Method}: Request object is null.", method);
+                _logger.LogInformation("{Method}: Exiting. userId={UserId}", method, request?.Id);
+                return BadRequest("Request object is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                _logger.LogWarning("{Method}: Email is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. userId={UserId}", method, request.Id);
+                return BadRequest("Email is required.");
             }
 
             try
             {
                 if (await _userService.UpdateUserDtoAsync(request))
+                {
+                    _logger.LogInformation("Exiting UpdateUserAsync: userId={UserId}", request.Id);
                     return Ok();
+                }
                 else
+                {
+                    _logger.LogInformation("Exiting UpdateUserAsync: userId={UserId}", request.Id);
                     return BadRequest("Unable to update user.");
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogInformation(ex.Message);
+                _logger.LogInformation("Exiting UpdateUserAsync: userId={UserId}", request.Id);
                 return StatusCode(500, ex.Message);
             }
         }
@@ -322,20 +387,29 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ChangePassword(ChangePasswordRequest request)
         {
-            if (!ModelState.IsValid)
-            {
-                _logger.LogWarning("Change password failed: Model state is invalid.");
-                _logger.LogDebug("ModelState errors: {Errors}", ModelState.Values.SelectMany(v => v.Errors).Select(e => e.ErrorMessage));
-                return BadRequest(ModelState);
-            }
-
-            if (string.IsNullOrEmpty(request.OldPassword) || string.IsNullOrEmpty(request.NewPassword))
-            {
-                _logger.LogWarning("Change password failed: Old password or new password is null or empty.");
-                return BadRequest("Old password and new password are required.");
-            }
-
+            const string method = nameof(ChangePassword);
             var userId = GetUserId();
+            _logger.LogInformation("{Method}: Entering. userId={UserId}", method, userId);
+            if (request == null)
+            {
+                _logger.LogWarning("{Method}: Request object is null.", method);
+                _logger.LogInformation("{Method}: Exiting. userId={UserId}", method, userId);
+                return BadRequest("Request object is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.OldPassword))
+            {
+                _logger.LogWarning("{Method}: Old password is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. userId={UserId}", method, userId);
+                return BadRequest("Old password is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.NewPassword))
+            {
+                _logger.LogWarning("{Method}: New password is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. userId={UserId}", method, userId);
+                return BadRequest("New password is required.");
+            }
 
             try
             {
@@ -344,16 +418,18 @@ namespace Backend.Controllers
             catch (UnauthorizedAccessException ex)
             {
                 _logger.LogWarning(ex, "Change password unauthorized for user ID {UserId}: {Message}", userId, ex.Message);
+                _logger.LogInformation("{Method}: Exiting. userId={UserId}", method, userId);
                 return Unauthorized("Old password is incorrect.");
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Change password failed for user ID {UserId}: {Message}", userId, ex.Message);
+                _logger.LogInformation("{Method}: Exiting. userId={UserId}", method, userId);
                 return StatusCode(500, "An error occurred while changing the password. " + ex.Message);
             }
 
             _logger.LogInformation("Password changed successfully for user ID {UserId}.", userId);
-
+            _logger.LogInformation("{Method}: Exiting. userId={UserId}", method, userId);
             return Ok("Password updated successfully");
         }
 
@@ -367,10 +443,27 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
         {
+            const string method = nameof(ForgotPassword);
+            _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
+            if (request == null)
+            {
+                _logger.LogWarning("{Method}: Request object is null.", method);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request?.Email);
+                return Ok("If that email exists, a reset link has been sent.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.Email))
+            {
+                _logger.LogWarning("{Method}: Email is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. email={Email}", method, request.Email);
+                return Ok("If that email exists, a reset link has been sent.");
+            }
+
             var user = await _userService.GetByEmailAsync(request.Email);
             if (user == null)
             {
                 _logger.LogInformation("Forgot password request for non-existing email: {Email}", request.Email);
+                _logger.LogInformation("Exiting ForgotPassword: email={Email}", request.Email);
                 return Ok("If that email exists, a reset link has been sent."); // don’t reveal if email exists
             }
 
@@ -380,17 +473,18 @@ namespace Backend.Controllers
                 if (string.IsNullOrEmpty(token))
                 {
                     _logger.LogError("Failed to generate reset token for user with email {Email}.", request.Email);
+                    _logger.LogInformation("Exiting ForgotPassword: email={Email}", request.Email);
                     return StatusCode(500, "Failed to generate reset token.");
                 }
-
                 _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", request.Email, token);
-
                 await _emailService.SendPasswordResetEmailAsync(user.Email, token);
                 _logger.LogInformation("Reset password email sent to {Email}.", user.Email);
+                _logger.LogInformation("Exiting ForgotPassword: email={Email}", request.Email);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Failed to send reset password email to {Email}: {Message}", user.Email, ex.Message);
+                _logger.LogInformation("Exiting ForgotPassword: email={Email}", request.Email);
                 return StatusCode(500, "Failed to send reset email.");
             }
 
@@ -408,11 +502,28 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ResetPassword(DTOs.ResetPasswordRequest request)
         {
+            const string method = nameof(ResetPassword);
+            _logger.LogInformation("{Method}: Entering. token={Token}", method, request?.ResetCode);
+            if (request == null)
+            {
+                _logger.LogWarning("{Method}: Request object is null.", method);
+                _logger.LogInformation("{Method}: Exiting. token={Token}", method, request?.ResetCode);
+                return BadRequest("Request object is required.");
+            }
+
+            if (string.IsNullOrWhiteSpace(request.ResetCode))
+            {
+                _logger.LogWarning("{Method}: Reset token is null or empty.", method);
+                _logger.LogInformation("{Method}: Exiting. token={Token}", method, request.ResetCode);
+                return BadRequest("Invalid or expired token");
+            }
+
             var userId = _tokenService.ValidateResetToken(request.ResetCode);
             if (userId == null)
             {
                 _logger.LogWarning("Reset password failed: Invalid or expired token.");
                 _logger.LogDebug("Reset token: {Token}", request.ResetCode);
+                _logger.LogInformation("Exiting ResetPassword: token={Token}", request.ResetCode);
                 return BadRequest("Invalid or expired token");
             }
 
@@ -423,15 +534,17 @@ namespace Backend.Controllers
                 {
                     _logger.LogError("Failed to reset password for user ID {UserId}.", userId);
                     _logger.LogDebug("Reset token: {Token}", request.ResetCode);
+                    _logger.LogInformation("Exiting ResetPassword: token={Token}", request.ResetCode);
                     return StatusCode(500, "Could not reset password");
                 }
-
                 _logger.LogInformation("Password reset successfully for user ID {UserId}.", userId);
+                _logger.LogInformation("Exiting ResetPassword: token={Token}", request.ResetCode);
                 return Ok("Password has been reset successfully.");
             }
             catch (Exception ex)
             {
                 _logger.LogWarning("Failed to reset password for user, exception thrown. {ex}", ex.Message);
+                _logger.LogInformation("Exiting ResetPassword: token={Token}", request?.ResetCode);
                 return StatusCode(500, "Could not reset password: {0}" + ex.Message);
             }
         }

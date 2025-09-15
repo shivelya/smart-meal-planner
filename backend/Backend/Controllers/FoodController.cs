@@ -27,23 +27,33 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetFoodsResult>> SearchFoodsAsync([FromQuery, BindRequired] string query, int? skip = null, int? take = null)
         {
+            const string method = nameof(SearchFoodsAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, skip={Skip}, take={Take}", method, nameof(FoodController), query, skip, take);
             if (string.IsNullOrWhiteSpace(query))
             {
-                _logger.LogWarning("Search term is required.");
+                _logger.LogWarning("{Method}: Search term is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. query={Query}", method, query);
                 return BadRequest("Search term is required.");
             }
 
             try
             {
                 var foods = await _service.SearchFoodsAsync(query, skip, take);
+                if (foods == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null foods.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null foods.");
+                }
 
-                _logger.LogInformation("search on {search} completed with {count} results", query, foods.TotalCount);
-
+                _logger.LogInformation("{Method}: Search on '{Query}' completed with {Count} results. Foods: {Foods}", method, query, foods.TotalCount, string.Join(",", foods.Items.Select(f => f.Name)));
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(foods);
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Could not search for foods: {ex}", ex.Message);
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, "Could not search for foods: " + ex.Message);
             }
         }

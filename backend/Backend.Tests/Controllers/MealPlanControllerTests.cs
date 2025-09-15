@@ -59,6 +59,16 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
+        public async Task GetMealPlans_Returns500_WhenServiceReturnsNull()
+        {
+            _mockService.Setup(s => s.GetMealPlansAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>())).ReturnsAsync((GetMealPlansResult)null!);
+            var result = await _controller.GetMealPlansAsync();
+            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, objResult.StatusCode);
+            Assert.Equal("Service returned null meal plans.", objResult.Value);
+        }
+
+        [Fact]
         public async Task GetMealPlans_ReturnsOk_WithEmptyList()
         {
             var mealPlan = new GetMealPlansResult { TotalCount = 0, MealPlans = [] };
@@ -85,6 +95,18 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
+        public async Task CreateMealPlan_Returns500_WhenServiceReturnsNull()
+        {
+            var date = DateTime.Now;
+            var mealPlan = new CreateUpdateMealPlanRequestDto { Meals = [new CreateUpdateMealPlanEntryRequestDto { Id = 1 }], StartDate = date };
+            _mockService.Setup(s => s.AddMealPlanAsync(It.IsAny<int>(), mealPlan)).ReturnsAsync((MealPlanDto)null!);
+            var result = await _controller.AddMealPlanAsync(mealPlan);
+            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, objResult.StatusCode);
+            Assert.Equal("Service returned null meal plan.", objResult.Value);
+        }
+
+        [Fact]
         public async Task CreateMealPlan_ReturnsBadRequest_WhenNull()
         {
             var result = await _controller.AddMealPlanAsync(null!);
@@ -102,6 +124,17 @@ namespace Backend.Tests.Controllers
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(resultMealPlan, okResult.Value);
+        }
+
+        [Fact]
+        public async Task UpdateMealPlan_Returns500_WhenServiceReturnsNull()
+        {
+            var mealPlan = new CreateUpdateMealPlanRequestDto { Meals = [], Id = 1 };
+            _mockService.Setup(s => s.UpdateMealPlanAsync(1, It.IsAny<int>(), mealPlan)).ReturnsAsync((MealPlanDto)null!);
+            var result = await _controller.UpdateMealPlanAsync(1, mealPlan);
+            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, objResult.StatusCode);
+            Assert.Equal("Service returned null meal plan.", objResult.Value);
         }
 
         [Fact]
@@ -159,6 +192,22 @@ namespace Backend.Tests.Controllers
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(generatedPlan, okResult.Value);
+        }
+
+        [Fact]
+        public async Task GenerateMealPlanAsync_Returns500_WhenServiceReturnsNull()
+        {
+            var request = new GenerateMealPlanRequestDto
+            {
+                Days = 5,
+                StartDate = DateTime.Today,
+                UseExternal = false
+            };
+            _mockService.Setup(s => s.GenerateMealPlanAsync(request, It.IsAny<int>())).ReturnsAsync((CreateUpdateMealPlanRequestDto)null!);
+            var result = await _controller.GenerateMealPlanAsync(request);
+            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, objResult.StatusCode);
+            Assert.Equal("Service returned null generated meal plan.", objResult.Value);
         }
 
         [Fact]
@@ -238,6 +287,16 @@ namespace Backend.Tests.Controllers
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(pantryResult, okResult.Value);
+        }
+
+        [Fact]
+        public async Task CookMeal_Returns500_WhenServiceReturnsNull()
+        {
+            _mockService.Setup(s => s.CookMealAsync(1, 2, userId)).ReturnsAsync((GetPantryItemsResult)null!);
+            var result = await _controller.CookMealAsync(1, 2);
+            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            Assert.Equal(500, objResult.StatusCode);
+            Assert.Equal("Service returned null pantry items.", objResult.Value);
         }
 
         [Fact]
