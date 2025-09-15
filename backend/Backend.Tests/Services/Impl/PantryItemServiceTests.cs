@@ -28,11 +28,75 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
+        public async Task CreatePantryItemAsync_Throws_WhenDtoIsNull()
+        {
+            var userId = 42;
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePantryItemAsync(null!, userId));
+        }
+
+        [Fact]
+        public async Task CreatePantryItemAsync_Throws_WhenIdIsNotNull()
+        {
+            var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
+            plannerContext.Users.Add(new User { Id = 42, Email = "a@b.com", PasswordHash = "pw" });
+            plannerContext.SaveChanges();
+            var dto = new CreateUpdatePantryItemRequestDto { Id = 123, Food = food, Quantity = 1, Unit = "kg" };
+            var userId = 42;
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePantryItemAsync(dto, userId));
+        }
+
+        [Fact]
+        public async Task CreatePantryItemAsync_Throws_WhenQuantityIsNegative()
+        {
+            // Arrange
+            var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
+            var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = -5, Unit = "kg" };
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
+            plannerContext.SaveChanges();
+            var userId = 42;
+
+            // Act & Assert
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePantryItemAsync(dto, userId));
+        }
+
+        [Fact]
+        public async Task CreatePantryItemAsync_Throws_WhenFoodIsNull()
+        {
+            var dto = new CreateUpdatePantryItemRequestDto { Food = null!, Quantity = 1, Unit = "kg" };
+            var userId = 42;
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePantryItemAsync(dto, userId));
+        }
+
+        [Fact]
+        public async Task CreatePantryItemAsync_Throws_WhenFoodIdDoesNotExist()
+        {
+            var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 999 };
+            var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = 1, Unit = "kg" };
+            var userId = 42;
+            plannerContext.Users.Add(new User { Id = userId, Email = "a@b.com", PasswordHash = "pw" });
+            plannerContext.SaveChanges();
+            await Assert.ThrowsAsync<ValidationException>(() => _service.CreatePantryItemAsync(dto, userId));
+        }
+
+        [Fact]
+        public async Task CreatePantryItemAsync_Throws_WhenUserDoesNotExist()
+        {
+            var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
+            var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = 1, Unit = "kg" };
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
+            plannerContext.SaveChanges();
+            var userId = 999;
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePantryItemAsync(dto, userId));
+        }
+
+        [Fact]
         public async Task CreatePantryItemAsync_CreatesItem_ReturnsDto()
         {
             // Arrange
             var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
             var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = 2, Unit = "kg" };
+            plannerContext.Users.Add(new User { Id = 42, Email = "a@b.com", PasswordHash = "pw" });
             plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
             plannerContext.SaveChanges();
             var userId = 42;
@@ -45,6 +109,15 @@ namespace Backend.Tests.Services.Impl
             Assert.Equal(food.Id, result.Food.Id);
             Assert.Equal(dto.Quantity, result.Quantity);
             Assert.Equal(dto.Unit, result.Unit);
+            Assert.True(result.Id > 0);
+
+            // Verify entity in database
+            var entity = plannerContext.PantryItems.Include(p => p.Food).FirstOrDefault(p => p.Id == result.Id);
+            Assert.NotNull(entity);
+            Assert.Equal(userId, entity!.UserId);
+            Assert.Equal(food.Id, entity.FoodId);
+            Assert.Equal(dto.Quantity, entity.Quantity);
+            Assert.Equal(dto.Unit, entity.Unit);
         }
 
         [Fact]
@@ -458,20 +531,6 @@ namespace Backend.Tests.Services.Impl
             var service = CreateServiceWithData(out int userId, out var context);
 
             await Assert.ThrowsAsync<ArgumentException>(() => service.Search("test", 1, -1, null));
-        }
-
-        [Fact]
-        public async Task CreatePantryItemAsync_Throws_WhenQuantityIsNegative()
-        {
-            // Arrange
-            var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
-            var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = -5, Unit = "kg" };
-            plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
-            plannerContext.SaveChanges();
-            var userId = 42;
-
-            // Act & Assert
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePantryItemAsync(dto, userId));
         }
 
         [Fact]
