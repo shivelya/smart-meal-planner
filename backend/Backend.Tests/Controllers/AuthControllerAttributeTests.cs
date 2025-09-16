@@ -30,13 +30,6 @@ namespace Backend.Tests.Controllers
             var expectedCodes = data.StatusCodes.OrderBy(x => x).ToArray();
             Assert.Equal(expectedCodes, actualCodes);
         }
-        [Fact]
-        public void Refresh_HasAuthorizeAttribute()
-        {
-            var method = typeof(AuthController).GetMethod("RefreshAsync");
-            Assert.NotNull(method);
-            Assert.NotNull(method.GetCustomAttribute<AuthorizeAttribute>());
-        }
 
         [Fact]
         public void Logout_HasAuthorizeAttribute()

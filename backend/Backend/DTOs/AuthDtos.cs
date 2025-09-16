@@ -24,7 +24,7 @@ namespace Backend.DTOs
         public required string NewPassword { get; set; }
     }
 
-    public class LogoutRequest
+    public class RefreshRequest
     {
         public required string RefreshToken { get; set; }
     }
