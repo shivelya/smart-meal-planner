@@ -12,8 +12,8 @@ namespace Backend.Tests.Helpers
     public class ManualRecipeGeneratorTests : IDisposable
     {
         private readonly PlannerContext _context;
-        private readonly RecipeGeneratorService _generator;
-        private readonly ILogger<RecipeGeneratorService> _logger;
+        private readonly MealPlanGeneratorService _generator;
+        private readonly ILogger<MealPlanGeneratorService> _logger;
         private readonly Mock<IExternalRecipeGenerator> _externalGeneratorMock;
 
         public ManualRecipeGeneratorTests()
@@ -23,11 +23,11 @@ namespace Backend.Tests.Helpers
                 .Options;
             var config = new ConfigurationBuilder().Build();
             var loggerFactory = LoggerFactory.Create(builder => builder.AddConsole());
-            _logger = loggerFactory.CreateLogger<RecipeGeneratorService>();
+            _logger = loggerFactory.CreateLogger<MealPlanGeneratorService>();
             _context = new PlannerContext(options, config, loggerFactory.CreateLogger<PlannerContext>());
             _externalGeneratorMock = new Mock<IExternalRecipeGenerator>();
             var generators = new List<IExternalRecipeGenerator> { _externalGeneratorMock.Object };
-            _generator = new RecipeGeneratorService(_context, _logger, generators);
+            _generator = new MealPlanGeneratorService(_context, _logger, generators);
         }
 
         public void Dispose()
@@ -145,7 +145,7 @@ namespace Backend.Tests.Helpers
                     new RecipeIngredient { RecipeId = 1, FoodId = 1, Food = food, Quantity = 1 }
                 ]
             };
-            var score = typeof(RecipeGeneratorService)
+            var score = typeof(MealPlanGeneratorService)
                 .GetMethod("ScoreRecipe", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Static)!
                 .Invoke(null, [recipe, pantry]);
             Assert.Equal(2, score);

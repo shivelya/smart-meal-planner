@@ -7,11 +7,11 @@ using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Services.Impl
 {
-    public class MealPlanService(PlannerContext context, ILogger<MealPlanService> logger, IRecipeGenerator recipeGenerator) : IMealPlanService
+    public class MealPlanService(PlannerContext context, ILogger<MealPlanService> logger, IMealPlanGenerator recipeGenerator) : IMealPlanService
     {
         private readonly PlannerContext _context = context;
         private readonly ILogger<MealPlanService> _logger = logger;
-        private readonly IRecipeGenerator _recipeGeneratorService = recipeGenerator;
+        private readonly IMealPlanGenerator _recipeGeneratorService = recipeGenerator;
 
         // this might be the only place where I don't eagerly load the whole object graph
         // because meal plans can have many meals and recipes can have many ingredients
