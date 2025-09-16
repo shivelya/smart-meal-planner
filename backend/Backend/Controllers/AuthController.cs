@@ -141,36 +141,35 @@ namespace Backend.Controllers
         /// <summary>
         /// Refreshes the access and refresh tokens using a valid refresh token.
         /// </summary>
-        /// <param name="refreshToken">A refresh token string.</param>
+        /// <param name="request">A refresh token string.</param>
         /// <remarks>Returns a JSON object with new access and refresh tokens if successful.</remarks>
-        [Authorize]
         [HttpPost("refresh")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<TokenResponse>> RefreshAsync([FromBody] string refreshToken)
+        public async Task<ActionResult<TokenResponse>> RefreshAsync([FromBody] DTOs.RefreshRequest request)
         {
             const string method = nameof(RefreshAsync);
-            _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, refreshToken);
-            if (string.IsNullOrWhiteSpace(refreshToken))
+            _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request.RefreshToken);
+            if (string.IsNullOrWhiteSpace(request.RefreshToken))
             {
                 _logger.LogWarning("{Method}: Refresh token is null or empty.", method);
-                _logger.LogInformation("{Method}: Exiting. refreshToken={RefreshToken}", method, refreshToken);
+                _logger.LogInformation("{Method}: Exiting. refreshToken={RefreshToken}", method, request.RefreshToken);
                 return BadRequest("Refresh token is required.");
             }
 
             try
             {
-                var result = await _userService.RefreshTokensAsync(refreshToken, GetIP());
+                var result = await _userService.RefreshTokensAsync(request.RefreshToken, GetIP());
 
-                _logger.LogInformation("Exiting RefreshAsync: refreshToken={RefreshToken}", refreshToken);
+                _logger.LogInformation("Exiting RefreshAsync: refreshToken={RefreshToken}", request.RefreshToken);
                 return Ok(result);
             }
             catch (Exception ex)
             {
                 _logger.LogError("Failed to generate new tokens: {Error}", ex.Message);
-                _logger.LogInformation("Exiting RefreshAsync: refreshToken={RefreshToken}", refreshToken);
+                _logger.LogInformation("Exiting RefreshAsync: refreshToken={RefreshToken}", request.RefreshToken);
                 return StatusCode(500, "Failed to generate tokens: " + ex.Message);
             }
         }
@@ -184,7 +183,7 @@ namespace Backend.Controllers
         [HttpPost("logout")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> LogoutAsync([FromBody] LogoutRequest request)
+        public async Task<IActionResult> LogoutAsync([FromBody] DTOs.RefreshRequest request)
         {
             const string method = nameof(LogoutAsync);
             _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request?.RefreshToken);

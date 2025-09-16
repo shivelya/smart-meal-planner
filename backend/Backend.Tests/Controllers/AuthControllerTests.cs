@@ -319,7 +319,7 @@ namespace Backend.Tests.Controllers
         public async Task RefreshAsync_ReturnsBadRequest_WhenTokenMissing()
         {
             var controller = GetController();
-            var result = await controller.RefreshAsync(null!);
+            var result = await controller.RefreshAsync(new Backend.DTOs.RefreshRequest { RefreshToken = null!});
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("Refresh token is required.", badRequest.Value);
         }
@@ -330,7 +330,7 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             userService.Setup(s => s.RefreshTokensAsync(It.IsAny<string>(), It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
             var controller = GetController(userService);
-            var result = await controller.RefreshAsync("token");
+            var result = await controller.RefreshAsync(new Backend.DTOs.RefreshRequest { RefreshToken = "token" });
             var status = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
@@ -342,7 +342,7 @@ namespace Backend.Tests.Controllers
             var tokens = new TokenResponse { AccessToken = "access", RefreshToken = "refresh" };
             userService.Setup(s => s.RefreshTokensAsync(It.IsAny<string>(), It.IsAny<string>())).ReturnsAsync(tokens);
             var controller = GetController(userService);
-            var result = await controller.RefreshAsync("token");
+            var result = await controller.RefreshAsync(new Backend.DTOs.RefreshRequest { RefreshToken = "token" });
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var value = Assert.IsType<TokenResponse>(ok.Value);
             Assert.Equal("access", value.AccessToken);
@@ -363,7 +363,7 @@ namespace Backend.Tests.Controllers
         public async Task LogoutAsync_ReturnsBadRequest_WhenTokenMissing()
         {
             var controller = GetController();
-            var result = await controller.LogoutAsync(new LogoutRequest { RefreshToken = null! });
+            var result = await controller.LogoutAsync(new Backend.DTOs.RefreshRequest { RefreshToken = null! });
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
             Assert.Equal("Refresh token is required.", badRequest.Value);
         }
@@ -374,7 +374,7 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             userService.Setup(s => s.LogoutAsync(It.IsAny<string>())).ThrowsAsync(new Exception("fail"));
             var controller = GetController(userService);
-            var result = await controller.LogoutAsync(new LogoutRequest { RefreshToken = "token" });
+            var result = await controller.LogoutAsync(new Backend.DTOs.RefreshRequest { RefreshToken = "token" });
             var status = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, status.StatusCode);
         }
@@ -385,7 +385,7 @@ namespace Backend.Tests.Controllers
             var userService = new Mock<IUserService>();
             userService.Setup(s => s.LogoutAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
             var controller = GetController(userService);
-            var result = await controller.LogoutAsync(new LogoutRequest { RefreshToken = "token" });
+            var result = await controller.LogoutAsync(new Backend.DTOs.RefreshRequest { RefreshToken = "token" });
             Assert.IsType<OkResult>(result);
         }
     }
