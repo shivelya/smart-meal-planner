@@ -15,9 +15,13 @@ namespace Backend.DTOs
     {
         public required int Id { get; set; }
         public required string Name { get; set; }
+        public required int CategoryId { get; set; }
         public required CategoryDto Category { get; set; }
     }
 
+    [JsonPolymorphic(TypeDiscriminatorPropertyName = "mode")]
+    [JsonDerivedType(typeof(NewFoodReferenceDto), nameof(AddFoodMode.New))]
+    [JsonDerivedType(typeof(ExistingFoodReferenceDto), nameof(AddFoodMode.Existing))]
     public abstract class FoodReferenceDto
     {
         [Required]

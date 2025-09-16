@@ -25,20 +25,14 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetFoodsResult>> SearchFoodsAsync([FromQuery, BindRequired] string query, int? skip = null, int? take = null)
+        public async Task<ActionResult<GetFoodsResult>> SearchFoodsAsync([FromQuery] string? query, int? skip = null, int? take = 50)
         {
             const string method = nameof(SearchFoodsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, skip={Skip}, take={Take}", method, nameof(FoodController), query, skip, take);
-            if (string.IsNullOrWhiteSpace(query))
-            {
-                _logger.LogWarning("{Method}: Search term is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. query={Query}", method, query);
-                return BadRequest("Search term is required.");
-            }
 
             try
             {
-                var foods = await _service.SearchFoodsAsync(query, skip, take);
+                var foods = await _service.SearchFoodsAsync(query!, skip, take);
                 if (foods == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null foods.", method);

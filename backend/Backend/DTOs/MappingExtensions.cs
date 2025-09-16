@@ -33,6 +33,7 @@ namespace Backend.DTOs
             {
                 Id = food.Id,
                 Name = food.Name,
+                CategoryId = food.CategoryId,
                 Category = food.Category?.ToDto()!
             };
         }

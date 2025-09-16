@@ -19,19 +19,19 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public async Task SearchFoods_ReturnsBadRequest_WhenSearchIsNullOrWhitespace()
+        public async Task SearchFoods_Returns_WhenSearchIsNullOrWhitespace()
         {
+            _serviceMock.Setup(s => s.SearchFoodsAsync("", It.IsAny<int?>(), It.IsAny<int?>())).ReturnsAsync(new GetFoodsResult { Items = [], TotalCount = 0 });
             var result = await _controller.SearchFoodsAsync("");
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Search term is required.", badRequest.Value);
+            Assert.IsType<OkObjectResult>(result.Result);
         }
 
         [Fact]
         public async Task SearchFoods_ReturnsOk_WithResults()
         {
-            var foods = new List<FoodDto> { new() { Id = 1, Name = "Salt", Category = new CategoryDto { Id = 1, Name = "produce" }},
-                new() { Id = 2, Name = "Pepper", Category = new CategoryDto { Id = 1, Name = "produce" }}};
-            _serviceMock.Setup(s => s.SearchFoodsAsync("spice", null, null)).ReturnsAsync(new GetFoodsResult { TotalCount = foods.Count, Items = foods });
+            var foods = new List<FoodDto> { new() { Id = 1, Name = "Salt", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce" }},
+                new() { Id = 2, Name = "Pepper", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce" }}};
+            _serviceMock.Setup(s => s.SearchFoodsAsync("spice", null, 50)).ReturnsAsync(new GetFoodsResult { TotalCount = foods.Count, Items = foods });
 
             var result = await _controller.SearchFoodsAsync("spice");
 
@@ -43,7 +43,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task SearchFoods_ReturnsOk_WithEmptyResults()
         {
-            _serviceMock.Setup(s => s.SearchFoodsAsync("none", null, null)).ReturnsAsync(new GetFoodsResult { TotalCount = 0, Items = [] });
+            _serviceMock.Setup(s => s.SearchFoodsAsync("none", null, 50)).ReturnsAsync(new GetFoodsResult { TotalCount = 0, Items = [] });
 
             var result = await _controller.SearchFoodsAsync("none");
 
