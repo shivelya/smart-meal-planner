@@ -287,7 +287,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public void CookRecipe_ReturnsPantryItems_OnSuccess()
         {
-            var food = new FoodDto { Id = 1, Name = "yum yum sauce", Category = new CategoryDto { Id = 1, Name = "test" }};
+            var food = new FoodDto { Id = 1, Name = "yum yum sauce", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "test" }};
             var pantryItems = new GetPantryItemsResult { TotalCount = 2, Items = [
                 new PantryItemDto { Id = 1, Quantity = 1, FoodId = food.Id, Food = food },
                 new PantryItemDto { Id = 2, Quantity = 3, FoodId = food.Id, Food = food }

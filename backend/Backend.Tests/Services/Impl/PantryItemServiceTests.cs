@@ -110,6 +110,7 @@ namespace Backend.Tests.Services.Impl
             Assert.Equal(dto.Quantity, result.Quantity);
             Assert.Equal(dto.Unit, result.Unit);
             Assert.True(result.Id > 0);
+            Assert.Equal("refrigerated", result.Food.Category.Name);
 
             // Verify entity in database
             var entity = plannerContext.PantryItems.Include(p => p.Food).FirstOrDefault(p => p.Id == result.Id);

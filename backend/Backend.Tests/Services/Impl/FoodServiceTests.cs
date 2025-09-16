@@ -30,7 +30,7 @@ namespace Backend.Tests.Services.Impl
         public async Task SearchsFoods_ReturnsMatchingFoods()
         {
             _context.Foods.Add(new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Id = 1, Name = "Spices" } });
-            _context.Foods.Add(new Food { Id = 2, Name = "Pepper", CategoryId = 1, Category = new Category { Id = 3, Name = "Spices" } });
+            _context.Foods.Add(new Food { Id = 2, Name = "Pepper", CategoryId = 3, Category = new Category { Id = 3, Name = "Spices" } });
             _context.Foods.Add(new Food { Id = 3, Name = "Sugar", CategoryId = 2, Category = new Category { Id = 2, Name = "Sweeteners" } });
             await _context.SaveChangesAsync();
 
@@ -38,6 +38,11 @@ namespace Backend.Tests.Services.Impl
             Assert.Contains(result.Items, i => i.Name == "Salt");
             Assert.Contains(result.Items, i => i.Name == "Sugar");
             Assert.DoesNotContain(result.Items, i => i.Name == "Pepper");
+
+            Assert.Equal(2, result.TotalCount);
+            Assert.Equal(2, result.Items.Count());
+            Assert.Equal("Spices", result.Items.First(i => i.Name == "Salt").Category.Name);
+            Assert.Equal("Sweeteners", result.Items.First(i => i.Name == "Sugar").Category.Name);
         }
 
         [Fact]

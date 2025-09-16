@@ -13,14 +13,13 @@ namespace Backend.Services.Impl
             _logger.LogInformation("Entering SearchFoodsAsync: search={Search}, skip={Skip}, take={Take}", search, skip, take);
             try
             {
-                if (string.IsNullOrWhiteSpace(search))
-                {
-                    _logger.LogWarning("SearchFoodsAsync: search string is null or empty");
-                    throw new ArgumentException("search string is required");
-                }
                 var foodsQuery = _context.Foods
                     .AsNoTracking()
-                    .Where(i => i.Name.Contains(search, StringComparison.InvariantCultureIgnoreCase));
+                    .Include(f => f.Category)
+                    .AsQueryable();
+
+                if (!string.IsNullOrWhiteSpace(search))
+                    foodsQuery = foodsQuery.Where(i => i.Name.Contains(search, StringComparison.InvariantCultureIgnoreCase));
 
                 var count = await foodsQuery.CountAsync();
 

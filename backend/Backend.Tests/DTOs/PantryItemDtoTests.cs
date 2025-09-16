@@ -7,7 +7,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void CanSetAndGetProperties()
         {
-            var ing = new FoodDto { Id = 1, Name = "banana", Category = new CategoryDto { Id = 1, Name = "produce "} };
+            var ing = new FoodDto { Id = 1, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce "} };
             var dto = new PantryItemDto { Id = 3, FoodId = ing.Id, Food = ing, Quantity = 5.5m, Unit = "kg" };
             Assert.Equal(3, dto.Id);
             Assert.Equal(ing, dto.Food);
@@ -18,7 +18,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void CreatePantryItemDto_PropertyTest()
         {
-            var dto = new PantryItemDto { Id = 7, Quantity = 2.5m, Unit = "g", FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", Category = new CategoryDto { Id = 1, Name = "produce"}} };
+            var dto = new PantryItemDto { Id = 7, Quantity = 2.5m, Unit = "g", FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce"}} };
             Assert.Equal(7, dto.Id);
             Assert.Equal(2.5m, dto.Quantity);
             Assert.Equal("g", dto.Unit);
@@ -33,7 +33,7 @@ namespace Backend.Tests.DTOs
                 Quantity = 1.1m,
                 Unit = "oz",
                 FoodId = 1,
-                Food = new FoodDto { Id = 1, Category = new CategoryDto { Id = 1, Name = "produce"}, Name = "Salt"  }
+                Food = new FoodDto { Id = 1, CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce"}, Name = "Salt"  }
             };
             Assert.Equal(8, dto.Id);
             Assert.Equal(1.1m, dto.Quantity);
@@ -50,7 +50,7 @@ namespace Backend.Tests.DTOs
                 Quantity = 3.3m,
                 Unit = "lb",
                 FoodId = 5,
-                Food = new FoodDto { Id = 5, Name = "banana", Category = new CategoryDto { Id = 1, Name = "produce"} }
+                Food = new FoodDto { Id = 5, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce"} }
             };
             Assert.Equal(9, dto.Id);
             Assert.Equal(3.3m, dto.Quantity);
@@ -61,7 +61,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void GetPantryItemsResult_PropertyTest()
         {
-            var items = new List<PantryItemDto> { new PantryItemDto { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 1, Unit = "g" } };
+            var items = new List<PantryItemDto> { new PantryItemDto { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 1, Unit = "g" } };
             var dto = new GetPantryItemsResult { TotalCount = 1, Items = items };
             Assert.Equal(1, dto.TotalCount);
             Assert.Equal(items, dto.Items);

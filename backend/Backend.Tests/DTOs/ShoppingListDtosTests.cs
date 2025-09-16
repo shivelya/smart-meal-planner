@@ -34,7 +34,7 @@ namespace Backend.Tests.DTOs
         [Fact]
         public void CanSetAndGetProperties()
         {
-            var foodDto = new FoodDto { Id = 5, Name = "Apple", Category = new CategoryDto { Id = 1, Name = "Fruits" } };
+            var foodDto = new FoodDto { Id = 5, Name = "Apple", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "Fruits" } };
             var dto = new ShoppingListItemDto {
                 Id = 10,
                 FoodId = 5,
