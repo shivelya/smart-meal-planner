@@ -1,38 +1,46 @@
 # Meal Planner App
 
-A full-stack meal planning application built with **Angular** (frontend) and **ASP.NET Core** (backend). This project demonstrates a professional setup including CI/CD, automated documentation, testing, and deployment.
+A full-stack meal planning application built with **Angular** (frontend), **EF Core**, and **ASP.NET Core** (backend). This project demonstrates a professional setup including CI/CD, automated documentation, testing, and deployment.
+
+## Current Progress
+[User Stories](https://github.com/shivelya/smart-meal-planner/blob/main/docs/user-stories.md)
 
 ## Features
-- Pantry management: add, edit, and remove ingredients  (planned)
-- Generate meal plans based on pantry contents (planned)
-- Recipe search and favorites (planned)
-- Create shopping lists automatically (planned)
-- Save favorite recipes and import/search recipes online (planned)
+- Pantry management: add, edit, and remove ingredients
+- Generate meal plans based on pantry contents
+- Recipe search and favorites
+- Create shopping lists automatically
+- Save favorite recipes and import recipes online
+- Integrate with Spoonacular for recipe searches and polished ingredient data (planned)
+- Sync with another user (like a live-in partner) to keep pantry and meal plans in sync (planned)
+- Add items to the pantry via pictures of food item (planned)
+- Have an understanding of various types of units for proper quantity comparisons (planned)
 
 ## Tech Stack
 - **Frontend**: Angular, SCSS
 - **Backend**: ASP.NET Core Web API
 - **Database**: PostgreSQL
-- **Recipe API**: TheMealDB
+- **Recipe API**: Spoonacular
 - **Testing**:
   - Frontend unit tests and e2e tests (Karma & Playwright)
-  - Backend unit tests with XUnit (and Moq for mocking)
+  - Backend unit tests with (XUnit and Moq)
 - **Documentation**:
   - Compodoc for the frontend
   - OpenAPI for the API docs
-  - DocFX for the backend docs
 - **Deployment & CI/CD**: GitHub Actions + Azure Web Apps + Static Web Apps
 
-## Documentation
+## Live Artifacts
 - [Frontend Docs](https://salmon-pond-0787b270f.1.azurestaticapps.net/frontend) (generated with Compodoc)
-- [Backend Docs](https://salmon-pond-0787b270f.1.azurestaticapps.net/backend) (generated with DocFX)
-- [API Docs](https://salmon-pond-0787b270f.1.azurestaticapps.net/api) (generated with OpenAPI)
+- [API Docs](https://smart-meal-planner-backend-ceazgjcaehfghdf7.canadacentral-01.azurewebsites.net/swagger/index.html) (generated with OpenAPI)
+- [Backend Unit Test Code Coverage](https://salmon-pond-0787b270f.1.azurestaticapps.net/coveragereport/index.htm)
+- [Frontend Live Site (planned)](https://lemon-tree-0078d2d0f.1.azurestaticapps.net/)
+- [User Stories](https://github.com/shivelya/smart-meal-planner/blob/main/docs/user-stories.md)
 
 ## Project Structure
 ```console
 /frontend # Angular app & unit and e2e tests
 /backend # ASP.NET Core Web API & unit tests
-/docs # temporary folder for merged docs (deployed automatically)
+/docs # Diagrams and User Stories
 ```
 
 ## CI/CD
@@ -41,6 +49,13 @@ A full-stack meal planning application built with **Angular** (frontend) and **A
 - Ensures that changes are fully tested and documented before deployment
 
 ## Getting Started
+
+### Prerequisites
+ - .NET SDK
+ - Node.js (and npm)
+ - PostgreSQL
+
+### Installation
 1. Clone the repository:
 ```bash
 git clone https://github.com/shivelya/smart-meal-planner.git
@@ -53,16 +68,35 @@ npm install
 ng build
 ```
 
-3. Build and run the backend:
+3. Install dependencies and build the backend:
 ```bash
 cd backend
 dotnet restore
 dotnet tool restore
 dotnet build
+```
+
+4. Configure user-secrets?
+
+5. Run migrations
+```bash
+cd backend
+dotnet ef database update
+```
+
+6. Run the backend
+```bash
+cd backend
 dotnet run (I like dotnet run | ForEach-Object { $_ | jq . } to help keep my terminal messages readable)
 ```
 
-4. Run tests:
+7. Run the frontend
+```bash
+cd frontend
+ng start
+```
+
+### Run tests
 ```bash
 # Frontend unit (Karma)
 ng test
@@ -72,6 +106,5 @@ npx playwright test
 dotnet test Backend.Tests
 ```
 
-## Notes
-- Documentation is automatically generated and deployed via CI/CD; no need to commit generated docs.
-- Follows best practices for modern full-stack development, including clean repo structure, automated tests, and professional CI/CD pipelines.
+### API Endpoints
+Fully defined here: [API Docs](https://smart-meal-planner-backend-ceazgjcaehfghdf7.canadacentral-01.azurewebsites.net/swagger/index.html) (generated with OpenAPI)
