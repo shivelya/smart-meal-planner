@@ -16,7 +16,7 @@ namespace Backend.Tests.Services.Impl
     {
         private readonly PlannerContext plannerContext;
         private readonly Mock<ILogger<MealPlanService>> _mockLogger;
-        private readonly Mock<IRecipeGenerator> _mockRecipeGenerator;
+        private readonly Mock<IMealPlanGenerator> _mockRecipeGenerator;
         private readonly MealPlanService _service;
 
         public MealPlanServiceTests()
@@ -28,7 +28,7 @@ namespace Backend.Tests.Services.Impl
             var config = new ConfigurationBuilder().AddInMemoryCollection(configDict).Build();
             plannerContext = new PlannerContext(options, config, logger.Object);
             _mockLogger = new Mock<ILogger<MealPlanService>>();
-            _mockRecipeGenerator = new Mock<IRecipeGenerator>();
+            _mockRecipeGenerator = new Mock<IMealPlanGenerator>();
             _service = new MealPlanService(plannerContext, _mockLogger.Object, _mockRecipeGenerator.Object);
         }
 

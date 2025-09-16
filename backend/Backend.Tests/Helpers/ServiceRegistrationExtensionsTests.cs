@@ -38,7 +38,7 @@ namespace Backend.Tests.Helpers
             Assert.NotNull(provider.GetService<IFoodService>());
             Assert.NotNull(provider.GetService<IRecipeExtractor>());
             Assert.NotNull(provider.GetService<ISmtpClient>());
-            Assert.NotNull(provider.GetService<IRecipeGenerator>());
+            Assert.NotNull(provider.GetService<IMealPlanGenerator>());
             Assert.NotNull(provider.GetService<ManualRecipeExtractor>());
         }
 

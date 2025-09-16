@@ -5,10 +5,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace Backend.Services.Impl
 {
-    public class RecipeGeneratorService(PlannerContext context, ILogger<RecipeGeneratorService> logger, IEnumerable<IExternalRecipeGenerator> generators) : IRecipeGenerator
+    public class MealPlanGeneratorService(PlannerContext context, ILogger<MealPlanGeneratorService> logger, IEnumerable<IExternalRecipeGenerator> generators) : IMealPlanGenerator
     {
         private readonly PlannerContext _context = context;
-        private readonly ILogger<RecipeGeneratorService> _logger = logger;
+        private readonly ILogger<MealPlanGeneratorService> _logger = logger;
         private readonly IEnumerable<IExternalRecipeGenerator> _generators = generators;
 
         public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(int mealCount, int userId, bool useExternal)
