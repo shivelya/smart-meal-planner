@@ -47,9 +47,15 @@ namespace Backend.Services.Impl
             PantryItem entity = await CreatePantryItem(pantryItemDto, userId);
             await _context.SaveChangesAsync();
 
+            var result = await _context.PantryItems
+                .AsNoTracking()
+                .Include(p => p.Food)
+                .ThenInclude(f => f.Category)
+                .FirstOrDefaultAsync(p => p.Id == entity.Id);
+
             _logger.LogInformation("CreatePantryItemAsync: Pantry item created for userId={UserId}, itemId={ItemId}", userId, entity.Id);
             _logger.LogInformation("Exiting CreatePantryItemAsync: userId={UserId}, itemId={ItemId}", userId, entity.Id);
-            return entity.ToDto();
+            return result?.ToDto()!;
         }
 
         public async Task<GetPantryItemsResult> CreatePantryItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> pantryItemDtos, int userId)
