@@ -85,8 +85,20 @@ namespace Backend.Helpers
             return services;
         }
 
-        public static IServiceCollection ConfigureSwagger(this IServiceCollection services)
+        public static IServiceCollection ConfigureSwagger(this IServiceCollection services, IConfiguration config)
         {
+            var title = config["Swagger:Title"];
+            var version = config["Swagger:Version"];
+            var description = config["Swagger:Description"];
+            var name = config["Swagger:Contact:Name"];
+            var email = config["Swagger:Contact:Email"];
+            var url = config["Swagger:Contact:Url"];
+            var license = config["Swagger:License:Name"];
+            var licUrl = config["Swagger:License:Url"];
+            if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(version) || string.IsNullOrEmpty(description) || string.IsNullOrEmpty(name) ||
+                string.IsNullOrEmpty(email) || string.IsNullOrEmpty(url) || string.IsNullOrEmpty(license) || string.IsNullOrEmpty(licUrl) )
+                throw new InvalidOperationException("Swagger configuration not set up correctly in config file.");
+
             services.AddSwaggerGen(c =>
             {
                 var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -103,6 +115,24 @@ namespace Backend.Helpers
 
                 // Force Swagger to generate schemas for these subtypes
                 c.DocumentFilter<EnsureSubTypesDocumentFilter>();
+
+                c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+                {
+                    Title = title,
+                    Version = version,
+                    Description = description,
+                    Contact = new Microsoft.OpenApi.Models.OpenApiContact
+                    {
+                        Name = name,
+                        Email = email,
+                        Url = new Uri(url)
+                    },
+                    License = new Microsoft.OpenApi.Models.OpenApiLicense
+                    {
+                        Name = license,
+                        Url = new Uri(licUrl)
+                    }
+                });
             });
 
             return services;
