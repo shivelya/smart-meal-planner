@@ -6,7 +6,7 @@ builder.ConfigureLogging();
 
 builder.Services.AddDatabase(builder.Configuration)
     .AddJwtAuth(builder.Configuration)
-    .ConfigureSwagger()
+    .ConfigureSwagger(builder.Configuration)
     .AddEndpointsApiExplorer()
     .AddAppServices()
     .AddControllers();
