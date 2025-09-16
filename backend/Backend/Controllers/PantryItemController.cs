@@ -58,7 +58,7 @@ namespace Backend.Controllers
 
                 _logger.LogInformation("{Method}: Pantry item added for user {UserId}. Id={Id}", method, userId, result.Id);
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return CreatedAtAction(nameof(GetItemAsync), result);
+                return Created("", result);
             }
             catch (Exception ex)
             {
@@ -163,7 +163,7 @@ namespace Backend.Controllers
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> GetItemsAsync([FromQuery, BindRequired] int skip = 0, [FromQuery, BindRequired] int take = 10)
+        public async Task<ActionResult<GetPantryItemsResult>> GetItemsAsync([FromQuery] int skip = 0, [FromQuery] int take = 50)
         {
             const string method = nameof(GetItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. skip={Skip}, take={Take}", method, nameof(PantryItemController), skip, take);
