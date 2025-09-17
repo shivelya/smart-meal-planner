@@ -8,7 +8,7 @@ namespace Backend.Services.Impl
         private readonly PlannerContext _context = context;
         private readonly ILogger<FoodService> _logger = logger;
 
-        public async Task<GetFoodsResult> SearchFoodsAsync(string search, int? skip, int? take)
+        public async Task<GetFoodsResult> SearchFoodsAsync(string search, int? skip, int? take, CancellationToken ct)
         {
             _logger.LogInformation("Entering SearchFoodsAsync: search={Search}, skip={Skip}, take={Take}", search, skip, take);
             try
@@ -21,7 +21,7 @@ namespace Backend.Services.Impl
                 if (!string.IsNullOrWhiteSpace(search))
                     foodsQuery = foodsQuery.Where(i => i.Name.Contains(search, StringComparison.InvariantCultureIgnoreCase));
 
-                var count = await foodsQuery.CountAsync();
+                var count = await foodsQuery.CountAsync(ct);
 
                 if (skip != null)
                 {
@@ -43,7 +43,7 @@ namespace Backend.Services.Impl
                     foodsQuery = foodsQuery.Take(take.Value);
                 }
 
-                var foods = await foodsQuery.OrderBy(i => i.Name).ToListAsync();
+                var foods = await foodsQuery.OrderBy(i => i.Name).ToListAsync(ct);
                 _logger.LogInformation("SearchFoodsAsync: Found {Count} foods", foods.Count);
                 return new GetFoodsResult { TotalCount = count, Items = foods.Select(i => i.ToDto()) };
             }

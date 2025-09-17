@@ -10,17 +10,17 @@ namespace Backend.Services.Impl
         private readonly PlannerContext _context = context;
         private readonly ILogger<RecipeService> _logger = logger;
 
-        public async Task<RecipeDto> CreateAsync(CreateUpdateRecipeDtoRequest request, int userId)
+        public async Task<RecipeDto> CreateAsync(CreateUpdateRecipeDtoRequest recipeDto, int userId, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering CreateAsync: userId={UserId}", userId);
-            _logger.LogInformation("Creating recipe for user {UserId}: {@Request}", userId, request);
-            if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Instructions) || request.Ingredients == null || request.Ingredients.Count == 0)
+            _logger.LogInformation("Creating recipe for user {UserId}: {@RecipeDto}", userId, recipeDto);
+            if (string.IsNullOrWhiteSpace(recipeDto.Title) || string.IsNullOrWhiteSpace(recipeDto.Instructions) || recipeDto.Ingredients == null || recipeDto.Ingredients.Count == 0)
             {
                 _logger.LogWarning("CreateAsync: Title, instructions, and at least one ingredient are required to create recipe.");
                 throw new ValidationException("Title, instructions, and at least one ingredient are required to create recipe.");
             }
 
-            if (await _context.Users.FindAsync(userId) == null)
+            if (await _context.Users.FindAsync([userId], ct) == null)
             {
                 _logger.LogWarning("CreateAsync: User ID {UserId} does not exist.", userId);
                 throw new ValidationException("User ID does not exist.");
@@ -29,24 +29,24 @@ namespace Backend.Services.Impl
             Recipe recipe = new()
             {
                 UserId = userId,
-                Title = request.Title,
-                Instructions = request.Instructions,
-                Source = request.Source,
-                Ingredients = await CreateIngredients(request.Ingredients)
+                Title = recipeDto.Title,
+                Instructions = recipeDto.Instructions,
+                Source = recipeDto.Source,
+                Ingredients = await CreateIngredients(recipeDto.Ingredients)
             };
 
-            await _context.Recipes.AddAsync(recipe);
-            await _context.SaveChangesAsync();
+            await _context.Recipes.AddAsync(recipe, ct);
+            await _context.SaveChangesAsync(ct);
             _logger.LogInformation("CreateAsync: Recipe created with ID {Id}", recipe.Id);
             _logger.LogInformation("Exiting CreateAsync: userId={UserId}, recipeId={RecipeId}", userId, recipe.Id);
             return recipe.ToDto();
         }
 
-        public async Task<bool> DeleteAsync(int id, int userId)
+        public async Task<bool> DeleteAsync(int id, int userId, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering DeleteAsync: userId={UserId}, recipeId={RecipeId}", userId, id);
             _logger.LogInformation("Deleting recipe with ID {Id} for user {UserId}", id, userId);
-            var recipe = await _context.Recipes.FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);
+            var recipe = await _context.Recipes.FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId, ct);
             if (recipe is null)
             {
                 _logger.LogWarning("DeleteAsync: No such ingredient found for recipe ID {Id}", id);
@@ -54,13 +54,13 @@ namespace Backend.Services.Impl
             }
 
             _context.Recipes.Remove(recipe);
-            int num = await _context.SaveChangesAsync();
+            int num = await _context.SaveChangesAsync(ct);
             _logger.LogInformation("DeleteAsync: Recipe with ID {Id} deleted", id);
             _logger.LogInformation("Exiting DeleteAsync: userId={UserId}, recipeId={RecipeId}", userId, id);
             return num > 0;
         }
 
-        public async Task<RecipeDto?> GetByIdAsync(int id, int userId)
+        public async Task<RecipeDto?> GetByIdAsync(int id, int userId, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering GetByIdAsync: userId={UserId}, recipeId={RecipeId}", userId, id);
             _logger.LogInformation("Retrieving recipe with ID {Id} for user {UserId}", id, userId);
@@ -69,7 +69,7 @@ namespace Backend.Services.Impl
                 .Include(r => r.Ingredients)
                 .ThenInclude(i => i.Food)
                 .ThenInclude(f => f.Category)
-                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId);
+                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId, ct);
 
             if (entity is null)
             {
@@ -82,7 +82,7 @@ namespace Backend.Services.Impl
             return entity.ToDto();
         }
 
-        public async Task<GetRecipesResult> GetByIdsAsync(IEnumerable<int> ids, int userId)
+        public async Task<GetRecipesResult> GetByIdsAsync(IEnumerable<int> ids, int userId, CancellationToken ct = default)
         {
             var idSet = ids.Distinct().ToList();
             _logger.LogInformation("Entering GetByIdsAsync: userId={UserId}, recipeIds={RecipeIds}", userId, idSet);
@@ -90,7 +90,7 @@ namespace Backend.Services.Impl
             if (idSet.Count == 0)
             {
                 _logger.LogWarning("GetByIdsAsync: No IDs provided for GetByIds");
-                return new GetRecipesResult { TotalCount = 0, Items = []};
+                return new GetRecipesResult { TotalCount = 0, Items = [] };
             }
 
             var entities = await _context.Recipes
@@ -99,16 +99,16 @@ namespace Backend.Services.Impl
                 .ThenInclude(i => i.Food)
                 .ThenInclude(f => f.Category)
                 .Where(r => r.UserId == userId && idSet.Contains(r.Id))
-                .ToListAsync();
+                .ToListAsync(ct);
             _logger.LogInformation("GetByIdsAsync: Retrieved {Count} recipes", entities.Count);
             _logger.LogInformation("Exiting GetByIdsAsync: userId={UserId}, recipeIds={RecipeIds}", userId, idSet);
             return new GetRecipesResult { TotalCount = entities.Count, Items = [.. entities.Select(r => r.ToDto())] };
         }
 
-        public async Task<GetRecipesResult> SearchAsync(int userId, string ? title, string ? ingredient, int? skip, int? take)
+        public async Task<GetRecipesResult> SearchAsync(int userId, string? title, string? ingredient, int? skip, int? take, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering SearchAsync: userId={UserId}, title={Title}, ingredient={Ingredient}, skip={Skip}, take={Take}", userId, title, ingredient, skip, take);
-            _logger.LogInformation("Searching recipes for user {UserId}: {Title}, {Ingredient}, {skip}, {take}", userId, title, ingredient, skip, take);
+            _logger.LogInformation("Searching recipes for user {UserId}: {Title}, {Ingredient}, {Skip}, {Take}", userId, title, ingredient, skip, take);
 
             var query = _context.Recipes
                 .AsNoTracking()
@@ -132,7 +132,7 @@ namespace Backend.Services.Impl
                 query = query.Where(r => r.Ingredients.Any(i => i.Food.Name.Contains(ing, StringComparison.CurrentCultureIgnoreCase)));
             }
 
-            var count = await query.CountAsync();
+            var count = await query.CountAsync(ct);
 
             if (skip != null)
             {
@@ -156,13 +156,13 @@ namespace Backend.Services.Impl
                 query = query.Take(take!.Value);
             }
 
-            var list = await query.ToListAsync();
+            var list = await query.ToListAsync(ct);
             _logger.LogInformation("SearchAsync: Search returned {Count} recipes", list.Count);
             _logger.LogInformation("Exiting SearchAsync: userId={UserId}, title={Title}, ingredient={Ingredient}, skip={Skip}, take={Take}", userId, title, ingredient, skip, take);
             return new GetRecipesResult { TotalCount = count, Items = [.. list.Select(r => r.ToDto())] };
         }
 
-        public async Task<RecipeDto> UpdateAsync(int id, CreateUpdateRecipeDtoRequest recipeDto, int userId)
+        public async Task<RecipeDto> UpdateAsync(int id, CreateUpdateRecipeDtoRequest recipeDto, int userId, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering UpdateAsync: userId={UserId}, recipeId={RecipeId}", userId, id);
             _logger.LogInformation("Updating recipe with ID {Id} for user {UserId}: {@RecipeDto}", id, userId, recipeDto);
@@ -170,8 +170,8 @@ namespace Backend.Services.Impl
                 .Include(r => r.Ingredients)
                 .ThenInclude(i => i.Food)
                 .ThenInclude(f => f.Category)
-                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId)
-                ?? throw new ArgumentException("Recipe with id {0} could not be found.", id.ToString());
+                .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId, ct)
+                ?? throw new ArgumentException($"Recipe with id {id.ToString(System.Globalization.CultureInfo.InvariantCulture)} could not be found.");
 
             entity.Title = recipeDto.Title;
             entity.Instructions = recipeDto.Instructions;
@@ -182,7 +182,7 @@ namespace Backend.Services.Impl
             foreach (var ing in await CreateIngredients(recipeDto.Ingredients))
                 entity.Ingredients.Add(ing);
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
             _logger.LogInformation("UpdateAsync: Recipe with ID {Id} updated", id);
             _logger.LogInformation("Exiting UpdateAsync: userId={UserId}, recipeId={RecipeId}", userId, id);
             return entity.ToDto();

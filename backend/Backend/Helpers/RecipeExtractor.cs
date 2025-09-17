@@ -20,28 +20,32 @@ namespace Backend.Helpers
 
     public interface IRecipeExtractor
     {
-        Task<ExtractedRecipe?> ExtractRecipeAsync(string url);
-        Task<ExtractedRecipe> ExtractRecipeByTextAsync(string source);
+        Task<ExtractedRecipe?> ExtractRecipeAsync(string url, CancellationToken ct = default);
+        Task<ExtractedRecipe> ExtractRecipeByTextAsync(string source, CancellationToken ct = default);
     }
 
-    public class ManualRecipeExtractor(ILogger<ManualRecipeExtractor> logger, HttpClient httpClient) : IRecipeExtractor
+    public partial class ManualRecipeExtractor(ILogger<ManualRecipeExtractor> logger, HttpClient httpClient) : IRecipeExtractor
     {
+        [GeneratedRegex(@"^(?<qty>(\d+([.,]\d+)?|\d+\s*/\s*\d+|[¼½¾⅓⅔⅛⅜⅝⅞]))?\s*
+                (?:(?<unit>[a-zA-Z]+)\s+(?<name>.*) | (?<name>.+))$", RegexOptions.IgnorePatternWhitespace)]
+        private static partial Regex IngredientRegex();
+
         private readonly ILogger<ManualRecipeExtractor> _logger = logger;
         private readonly HttpClient _httpClient = httpClient;
 
-        public Task<ExtractedRecipe> ExtractRecipeByTextAsync(string source)
+        public Task<ExtractedRecipe> ExtractRecipeByTextAsync(string source, CancellationToken ct = default)
         {
             throw new NotImplementedException();
         }
 
-        public async Task<ExtractedRecipe?> ExtractRecipeAsync(string url)
+        public async Task<ExtractedRecipe?> ExtractRecipeAsync(string url, CancellationToken ct = default)
         {
             // 1. Download the HTML
-            var html = await _httpClient.GetStringAsync(url);
+            var html = await _httpClient.GetStringAsync(url, ct);
 
             // 2. Parse with AngleSharp
             var context = BrowsingContext.New(Configuration.Default);
-            var document = await context.OpenAsync(req => req.Content(html));
+            var document = await context.OpenAsync(req => req.Content(html), ct);
 
             // 3. Find JSON-LD blocks
             var scriptElements = document
@@ -97,11 +101,7 @@ namespace Backend.Helpers
 
             // Example regex: matches "1 cup sugar" -> "1" | "cup sugar"
             // Supports fractions like "1/2" or "½" and decimals
-            var regex = new Regex(
-                @"^(?<qty>(\d+([.,]\d+)?|\d+\s*/\s*\d+|[¼½¾⅓⅔⅛⅜⅝⅞]))?\s*
-                (?:(?<unit>[a-zA-Z]+)\s+(?<name>.*) | (?<name>.+))$",
-                RegexOptions.IgnorePatternWhitespace
-            );
+            var regex = IngredientRegex();
 
             var match = regex.Match(ingredient.Trim());
             if (match.Success)

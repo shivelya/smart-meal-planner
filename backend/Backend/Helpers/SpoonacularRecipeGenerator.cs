@@ -1,3 +1,4 @@
+using System.Globalization;
 using Backend.DTOs;
 using Backend.Model;
 using Microsoft.AspNetCore.WebUtilities;
@@ -8,7 +9,7 @@ namespace Backend.Helpers
 {
     public interface IExternalRecipeGenerator
     {
-        Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlanAsync(int meals, IEnumerable<PantryItem> pantry);
+        Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlanAsync(int meals, IEnumerable<PantryItem> pantry, CancellationToken ct);
     }
 
     public class SpoonacularRecipeGenerator(ILogger<SpoonacularRecipeGenerator> logger, HttpClient httpClient, IConfiguration configuration) : IExternalRecipeGenerator
@@ -18,7 +19,7 @@ namespace Backend.Helpers
         private readonly IConfiguration _configuration = configuration;
 
         //expects the PantryItem objects to include the Food object
-        public async Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlanAsync(int meals, IEnumerable<PantryItem> pantry)
+        public async Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlanAsync(int meals, IEnumerable<PantryItem> pantry, CancellationToken ct)
         {
             // GET https://api.spoonacular.com/recipes/findByIngredients
             //ingredients=apples,+bananas
@@ -34,7 +35,7 @@ namespace Backend.Helpers
                 new Dictionary<string, string?>
                 {
                     { "includeIngredients", ingredients }, // comma-delimited ingredients that must be included
-                    { "number", meals.ToString() }, // the number to return
+                    { "number", meals.ToString(CultureInfo.InvariantCulture) }, // the number to return
                     { "sort", "max-used-ingredients" }, // sort by the best options so we get the best options
                     { "addRecipeInstructions", true.ToString() }, // we want instructions in our generated object
                     { "type", "main course" } // so we don't get things like side dishes or breakfasts
@@ -44,10 +45,10 @@ namespace Backend.Helpers
             var genList = new List<GeneratedMealPlanEntryDto>();
             try
             {
-                var response = await _httpClient.GetAsync(url);
+                var response = await _httpClient.GetAsync(url, ct);
                 response.EnsureSuccessStatusCode();
 
-                var json = await response.Content.ReadAsStringAsync();
+                var json = await response.Content.ReadAsStringAsync(ct);
                 var obj = JObject.Parse(json);
                 var recipes = (JArray)obj["results"]!;
 
@@ -55,15 +56,15 @@ namespace Backend.Helpers
                 foreach (var recipe in recipes)
                 {
                     // need to make separate call to get instructions as text, womp womp
-                    response = await _httpClient.GetAsync($"https://api.spoonacular.com/recipes/{recipe["id"]}/information");
+                    response = await _httpClient.GetAsync($"https://api.spoonacular.com/recipes/{recipe["id"]}/information", ct);
                     response.EnsureSuccessStatusCode();
-                    json = await response.Content.ReadAsStringAsync();
+                    json = await response.Content.ReadAsStringAsync(ct);
                     obj = JObject.Parse(json);
 
                     var gen = new GeneratedMealPlanEntryDto
                     {
                         Title = (string)recipe["title"]!,
-                        Source = $"Spoonacular - {((int)recipe["id"]!).ToString()}",
+                        Source = $"Spoonacular - {((int)recipe["id"]!).ToString(CultureInfo.InvariantCulture)}",
                         Instructions = (string)obj["instructions"]!
                     };
 
@@ -74,17 +75,17 @@ namespace Backend.Helpers
             }
             catch (HttpRequestException ex)
             {
-                _logger.LogWarning("Unable to successfully reach Spoonacular. {exception}", ex);
+                _logger.LogWarning(ex, "GeneratedMealPlanAsync: Unable to successfully reach Spoonacular.");
                 return [];
             }
             catch (JsonReaderException ex)
             {
-                _logger.LogWarning("Invalid JSON returned from Spoonacular. {exception}", ex);
+                _logger.LogWarning(ex, "GeneratedMealPlanAsync: Invalid JSON returned from Spoonacular.");
                 return [];
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("{exception}", ex);
+                _logger.LogWarning(ex, "GeneratedMealPlanAsync: Exception thrown");
                 return [];
             }
 

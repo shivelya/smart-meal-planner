@@ -11,16 +11,16 @@ namespace Backend.Services.Impl
         private readonly ILogger<MealPlanGeneratorService> _logger = logger;
         private readonly IEnumerable<IExternalRecipeGenerator> _generators = generators;
 
-        public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(int mealCount, int userId, bool useExternal)
+        public async Task<CreateUpdateMealPlanRequestDto> GenerateMealPlanAsync(int meals, int userId, bool useExternal, CancellationToken ct = default)
         {
-            _logger.LogInformation("Entering GenerateMealPlanAsync: userId={UserId}, mealCount={MealCount}, useExternal={UseExternal}", userId, mealCount, useExternal);
-            if (mealCount <= 0)
+            _logger.LogInformation("Entering GenerateMealPlanAsync: userId={UserId}, mealCount={MealCount}, useExternal={UseExternal}", userId, meals, useExternal);
+            if (meals <= 0)
             {
-                _logger.LogWarning("GenerateMealPlanAsync: Called with non-positive mealCount: {MealCount}", mealCount);
-                throw new ArgumentException("Meal count must be greater than zero.", nameof(mealCount));
+                _logger.LogWarning("GenerateMealPlanAsync: Called with non-positive mealCount: {MealCount}", meals);
+                throw new ArgumentException("Meal count must be greater than zero.", nameof(meals));
             }
 
-            if (!_context.Users.Any(u => u.Id == userId))
+            if (!await _context.Users.AnyAsync(u => u.Id == userId, ct))
             {
                 _logger.LogWarning("GenerateMealPlanAsync: Called with non-existent userId: {UserId}", userId);
                 throw new ArgumentException("User does not exist.", nameof(userId));
@@ -29,15 +29,12 @@ namespace Backend.Services.Impl
             // we have two modes of operation:
             // if not using external, generate meal plan manually. Then if we don't have enough meals, fall back to external generators
             // if using external, call each generator in turn until we have enough meals
-            CreateUpdateMealPlanRequestDto mealPlanDto;
-            if (!useExternal)
-                mealPlanDto = await GenerateManually(mealCount, userId);
-            else
-                mealPlanDto = new CreateUpdateMealPlanRequestDto { Meals = [] };
+            CreateUpdateMealPlanRequestDto mealPlanDto = !useExternal ? await GenerateManually(meals, userId, ct)
+                : new CreateUpdateMealPlanRequestDto { Meals = [] };
 
-            if (mealPlanDto.Meals.Count() == mealCount)
+            if (mealPlanDto.Meals.Count() == meals)
             {
-                _logger.LogInformation("Generated meal plan with {MealCount} meals for user {UserId} using manual generation.", mealCount, userId);
+                _logger.LogInformation("Generated meal plan with {MealCount} meals for user {UserId} using manual generation.", meals, userId);
                 _logger.LogInformation("Exiting GenerateMealPlanAsync: userId={UserId}, totalMeals={TotalMeals}", userId, mealPlanDto.Meals.Count());
                 return mealPlanDto;
             }
@@ -48,28 +45,28 @@ namespace Backend.Services.Impl
                 .AsNoTracking()
                 .Include(p => p.Food)
                 .Where(p => p.UserId == userId)
-                .ToListAsync();
+                .ToListAsync(ct);
 
             // copy to a list so we can add to it
-            var meals = mealPlanDto.Meals.ToList();
+            var mealsToAdd = mealPlanDto.Meals.ToList();
 
             foreach (var generator in _generators)
             {
                 // if we have enough meals, break out
-                if (meals.Count == mealCount) break;
+                if (mealsToAdd.Count == meals) break;
 
                 // call the generator
                 _logger.LogInformation("Calling external recipe generator {GeneratorName} for user {UserId}.", generator.GetType().Name, userId);
-                var mealPlanEntries = await generator.GenerateMealPlanAsync(mealCount - meals.Count, pantry);
-                meals.AddRange(mealPlanEntries);
+                var mealPlanEntries = await generator.GenerateMealPlanAsync(meals - mealsToAdd.Count, pantry, ct);
+                mealsToAdd.AddRange(mealPlanEntries);
             }
 
-            mealPlanDto.Meals = meals;
-            _logger.LogInformation("Exiting GenerateMealPlanAsync: userId={UserId}, totalMeals={TotalMeals}", userId, meals.Count);
+            mealPlanDto.Meals = mealsToAdd;
+            _logger.LogInformation("Exiting GenerateMealPlanAsync: userId={UserId}, totalMeals={TotalMeals}", userId, mealsToAdd.Count);
             return mealPlanDto;
         }
 
-        private async Task<CreateUpdateMealPlanRequestDto> GenerateManually(int meals, int userId)
+        private async Task<CreateUpdateMealPlanRequestDto> GenerateManually(int meals, int userId, CancellationToken ct)
         {
             _logger.LogInformation("Entering GenerateManually: userId={UserId}, meals={Meals}", userId, meals);
             // a recipe can only be chosen if the pantry has enough of all its ingredients
@@ -80,14 +77,14 @@ namespace Backend.Services.Impl
                 .AsNoTracking()
                 .Include(p => p.Food)
                 .Where(p => p.UserId == userId)
-                .ToListAsync();
+                .ToListAsync(ct);
 
             var recipes = await _context.Recipes
                 .AsNoTracking()
                 .Include(r => r.Ingredients)
                 .ThenInclude(i => i.Food)
                 .Where(r => r.UserId == userId)
-                .ToListAsync();
+                .ToListAsync(ct);
 
             var selectedRecipes = new List<Recipe>();
 
@@ -154,7 +151,7 @@ namespace Backend.Services.Impl
             foreach (var ing in recipe.Ingredients)
             {
                 // recipes only get points when they contain ingredients
-                var a = pantry.FirstOrDefault(p => p.Food.Name.Equals(ing.Food.Name, StringComparison.CurrentCultureIgnoreCase));
+                var a = pantry.FirstOrDefault(p => p.Food.Name.Equals(ing.Food.Name, StringComparison.OrdinalIgnoreCase));
                 if (a != null)
                 {
                     // we have this ingredient in the pantry

@@ -10,7 +10,8 @@ namespace Backend.Services
         /// <summary>
         /// Retrieves all categories.
         /// </summary>
+        /// <param name="ct">Cancellation token</param>
         /// <returns>An enumerable collection of category DTOs.</returns>
-        Task<GetCategoriesResult> GetAllAsync();
+        Task<GetCategoriesResult> GetAllAsync(CancellationToken ct);
     }
 }

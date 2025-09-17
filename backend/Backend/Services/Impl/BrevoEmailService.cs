@@ -23,7 +23,11 @@ namespace Backend.Services.Impl
         public Task AuthenticateAsync(string user, string password) => _client.AuthenticateAsync(user, password);
         public Task SendAsync(MimeMessage message) => _client.SendAsync(message);
         public Task DisconnectAsync(bool quit) => _client.DisconnectAsync(quit);
-        public void Dispose() => _client.Dispose();
+        public void Dispose()
+        {
+            GC.SuppressFinalize(this);
+            _client.Dispose();
+        }
     }
 
     public class BrevoEmailService(IConfiguration config, ILogger<BrevoEmailService> logger, ISmtpClient smtpClient) : IEmailService

@@ -20,7 +20,7 @@ namespace Backend.Helpers
             {
                 // Production: use Serilog
                 builder.Host.UseSerilog((ctx, services, lc) =>
-                    lc.ReadFrom.Configuration(ctx.Configuration) .Enrich.FromLogContext()
+                    lc.ReadFrom.Configuration(ctx.Configuration).Enrich.FromLogContext()
                 );
             }
 
@@ -77,6 +77,27 @@ namespace Backend.Helpers
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
+            app.UseCancelLogic();
+            return app;
+        }
+
+        public static WebApplication UseCancelLogic(this WebApplication app)
+        {
+            app.Use(async (context, next) =>
+            {
+                try
+                {
+                    await next();
+                }
+                catch (OperationCanceledException)
+                {
+                    if (!context.RequestAborted.IsCancellationRequested)
+                        throw; // real problem, rethrow
+
+                    context.Response.StatusCode = 499; // Client Closed Request
+                }
+            });
+
             return app;
         }
     }

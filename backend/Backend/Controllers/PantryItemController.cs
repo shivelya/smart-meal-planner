@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Services;
@@ -29,12 +30,13 @@ namespace Backend.Controllers
         /// and assumes a FoodName and CategoryId in the Food property for foods that need to be added.
         /// </summary>
         /// <param name="dto">A DTO containing pantry item details.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Return a created pantry item DTO.</remarks>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> AddItemAsync(CreateUpdatePantryItemRequestDto dto)
+        public async Task<ActionResult<PantryItemDto>> AddItemAsync(CreateUpdatePantryItemRequestDto dto, CancellationToken ct)
         {
             const string method = nameof(AddItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. dto={Dto}", method, nameof(PantryItemController), dto);
@@ -48,7 +50,7 @@ namespace Backend.Controllers
             var userId = GetUserId();
             try
             {
-                var result = await _service.CreatePantryItemAsync(dto, userId);
+                var result = await _service.CreatePantryItemAsync(dto, userId, ct);
                 if (result == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null pantry item.", method);
@@ -73,12 +75,13 @@ namespace Backend.Controllers
         /// and assumes a FoodName and CategoryId in the Food property for foods that need to be added.
         /// </summary>
         /// <param name="dtos">A collection of DTOs containing pantry item details.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Return a collection of created pantry item DTOs.</remarks>
         [HttpPost("bulk")]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> AddItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> dtos)
+        public async Task<ActionResult<GetPantryItemsResult>> AddItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> dtos, CancellationToken ct)
         {
             const string method = nameof(AddItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. dtos={Dtos}", method, nameof(PantryItemController), dtos);
@@ -92,7 +95,7 @@ namespace Backend.Controllers
             var userId = GetUserId();
             try
             {
-                var result = await _service.CreatePantryItemsAsync(dtos, userId);
+                var result = await _service.CreatePantryItemsAsync(dtos, userId, ct);
                 if (result == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null pantry items.", method);
@@ -116,12 +119,13 @@ namespace Backend.Controllers
         /// Retrieves a pantry item by its unique ID.
         /// </summary>
         /// <param name="id">The pantry item's unique identifier.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns the pantry item DTO if found, otherwise 404 Not Found.</remarks>
         [HttpGet("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> GetItemAsync(int id)
+        public async Task<ActionResult<PantryItemDto>> GetItemAsync(int id, CancellationToken ct)
         {
             const string method = nameof(GetItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(PantryItemController), id);
@@ -134,7 +138,7 @@ namespace Backend.Controllers
 
             try
             {
-                var item = await _service.GetPantryItemByIdAsync(id);
+                var item = await _service.GetPantryItemByIdAsync(id, ct);
                 if (item is null)
                 {
                     _logger.LogWarning("{Method}: Pantry item with ID {Id} not found.", method, id);
@@ -159,17 +163,18 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="skip">The page number to retrieve.</param>
         /// <param name="take">The number of items per page.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Return a GetPantryItemsResult object containing the total count and fully constituted items.</remarks>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> GetItemsAsync([FromQuery] int skip = 0, [FromQuery] int take = 50)
+        public async Task<ActionResult<GetPantryItemsResult>> GetItemsAsync([FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
         {
             const string method = nameof(GetItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. skip={Skip}, take={Take}", method, nameof(PantryItemController), skip, take);
             try
             {
-                var result = await _service.GetAllPantryItemsAsync(skip, take);
+                var result = await _service.GetAllPantryItemsAsync(skip, take, ct);
                 if (result == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null pantry items.", method);
@@ -193,18 +198,19 @@ namespace Backend.Controllers
         /// Deletes a pantry item by its unique ID.
         /// </summary>
         /// <param name="id">The pantry item's unique identifier.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks> Returns No content if deleted, otherwise 404 Not Found.</remarks>
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> DeleteItemAsync(int id)
+        public async Task<IActionResult> DeleteItemAsync(int id, CancellationToken ct)
         {
             const string method = nameof(DeleteItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(PantryItemController), id);
             try
             {
-                var deleted = await _service.DeletePantryItemAsync(id);
+                var deleted = await _service.DeletePantryItemAsync(id, ct);
                 if (deleted)
                 {
                     _logger.LogInformation("{Method}: Pantry item with ID {Id} deleted.", method, id);
@@ -228,12 +234,13 @@ namespace Backend.Controllers
         /// Deletes multiple pantry items by their IDs.
         /// </summary>
         /// <param name="request">A collection of pantry item IDs to delete.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns Ok with the ids of deleted items, otherwise 404 if none are found.</remarks>
         [HttpDelete("bulk")]
         [ProducesResponseType(typeof(DeleteRequest), StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<DeleteRequest>> DeleteItemsAsync([FromBody, BindRequired] DeleteRequest request)
+        public async Task<ActionResult<DeleteRequest>> DeleteItemsAsync([FromBody, BindRequired] DeleteRequest request, CancellationToken ct)
         {
             const string method = nameof(DeleteItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(PantryItemController), request);
@@ -246,7 +253,7 @@ namespace Backend.Controllers
 
             try
             {
-                var deleted = await _service.DeletePantryItemsAsync(request.Ids);
+                var deleted = await _service.DeletePantryItemsAsync(request.Ids, ct);
                 if (deleted.Ids.Any())
                 {
                     _logger.LogInformation("{Method}: Deleted {Count} pantry items.", method, deleted.Ids.Count());
@@ -272,12 +279,13 @@ namespace Backend.Controllers
         /// <param name="query">The search term to query on.</param>
         /// <param name="take">The number of responses to return for pagination.</param>
         /// <param name="skip">The number of responses to skip for pagination.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns the pantry items found, along with the total number of responses.</remarks>
         [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> SearchAsync([FromQuery, BindRequired] string query, int? take = null, int? skip = null)
+        public async Task<ActionResult<GetPantryItemsResult>> SearchAsync([FromQuery, BindRequired] string query, int? take = null, int? skip = null, CancellationToken ct = default)
         {
             const string method = nameof(SearchAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, take={Take}, skip={Skip}", method, nameof(PantryItemController), query, take, skip);
@@ -291,7 +299,7 @@ namespace Backend.Controllers
             var userId = GetUserId();
             try
             {
-                var results = await _service.Search(query, userId, take, skip);
+                var results = await _service.Search(query, userId, take, skip, ct);
                 if (results == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null search results.", method);
@@ -316,12 +324,13 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="id">The id of the pantryItem to update</param>
         /// <param name="pantryItem">The pantry item to update</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns the updated pantry item DTO, or 400 if an error occurs.</remarks>
         [HttpPut("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<PantryItemDto>> UpdateAsync(string id, [FromBody, BindRequired] CreateUpdatePantryItemRequestDto pantryItem)
+        public async Task<ActionResult<PantryItemDto>> UpdateAsync(string id, [FromBody, BindRequired] CreateUpdatePantryItemRequestDto pantryItem, CancellationToken ct)
         {
             const string method = nameof(UpdateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, pantryItem={PantryItem}", method, nameof(PantryItemController), id, pantryItem);
@@ -342,7 +351,7 @@ namespace Backend.Controllers
             var userId = GetUserId();
             try
             {
-                var updated = await _service.UpdatePantryItemAsync(pantryItem, userId);
+                var updated = await _service.UpdatePantryItemAsync(pantryItem, userId, ct);
                 if (updated == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null updated pantry item.", method);
@@ -364,7 +373,7 @@ namespace Backend.Controllers
 
         private int GetUserId()
         {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
         }
     }
 }
