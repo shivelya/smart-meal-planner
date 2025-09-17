@@ -50,8 +50,8 @@ namespace Backend.Helpers
             builderAction ??= connectionString =>
             {
                 // left this guy strongly typed because Intellisense was having trouble recognizing options
-                return (DbContextOptionsBuilder options) => options.UseNpgsql(connectionString);
-            }!;
+                return options => options.UseNpgsql(connectionString);
+            };
 
             services.AddDbContext<PlannerContext>(builderAction(connectionString));
 
@@ -96,7 +96,7 @@ namespace Backend.Helpers
             var license = config["Swagger:License:Name"];
             var licUrl = config["Swagger:License:Url"];
             if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(version) || string.IsNullOrEmpty(description) || string.IsNullOrEmpty(name) ||
-                string.IsNullOrEmpty(email) || string.IsNullOrEmpty(url) || string.IsNullOrEmpty(license) || string.IsNullOrEmpty(licUrl) )
+                string.IsNullOrEmpty(email) || string.IsNullOrEmpty(url) || string.IsNullOrEmpty(license) || string.IsNullOrEmpty(licUrl))
                 throw new InvalidOperationException("Swagger configuration not set up correctly in config file.");
 
             services.AddSwaggerGen(c =>
