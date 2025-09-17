@@ -195,6 +195,8 @@ namespace Backend.Services.Impl
             else
                 await RestartShoppingListAsync(userId, shoppingList);
 
+            await _context.SaveChangesAsync();
+
             // we don't return the shopping list here, the client can call GetShoppingList to get it if needed
             _logger.LogInformation("GenerateAsync: Generated shopping list for user {UserId} from meal plan {MealPlanId} (restart={Restart})", userId, request.MealPlanId, request.Restart);
             _logger.LogInformation("Exiting GenerateAsync: userId={UserId}, mealPlanId={MealPlanId}, restart={Restart}", userId, request.MealPlanId, request.Restart);
@@ -239,11 +241,13 @@ namespace Backend.Services.Impl
                         .ToDictionary(i => i.FoodId, i => i.Food)
                 ).ToDictionary(k => k.Key, v => v.Value);
             }
+
             _logger.LogInformation("BuildShoppingListAsync: Built shopping list with {Count} items for userId={UserId}", shoppingList.Count, userId);
             _logger.LogInformation("Exiting BuildShoppingListAsync: userId={UserId}, mealPlanId={MealPlanId}", userId, mealPlan?.Id);
             return shoppingList;
         }
 
+        // don't save here for transactional purposes
         private async Task AppendShoppingListAsync(int userId, Dictionary<int, Food> shoppingList)
         {
             _logger.LogInformation("Entering AppendShoppingListAsync: userId={UserId}, itemCount={ItemCount}", userId, shoppingList.Count);
@@ -265,11 +269,11 @@ namespace Backend.Services.Impl
                 FoodId = i.Key
             }));
 
-            await _context.SaveChangesAsync();
             _logger.LogInformation("AppendShoppingListAsync: Appended {Count} items for userId={UserId}", toAdd.Count, userId);
             _logger.LogInformation("Exiting AppendShoppingListAsync: userId={UserId}, itemCount={ItemCount}", userId, shoppingList.Count);
         }
 
+        // don't save here for transactional purposes
         private async Task RestartShoppingListAsync(int userId, Dictionary<int, Food> shoppingList)
         {
             _logger.LogInformation("Entering RestartShoppingListAsync: userId={UserId}, itemCount={ItemCount}", userId, shoppingList.Count);
@@ -286,7 +290,6 @@ namespace Backend.Services.Impl
                 FoodId = f.Id
             }));
 
-            await _context.SaveChangesAsync();
             _logger.LogInformation("RestartShoppingListAsync: Restarted shopping list with {Count} items for userId={UserId}", shoppingList.Count, userId);
             _logger.LogInformation("Exiting RestartShoppingListAsync: userId={UserId}, itemCount={ItemCount}", userId, shoppingList.Count);
         }

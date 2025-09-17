@@ -27,21 +27,32 @@ namespace Backend.Services.Impl
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
             _logger.LogDebug("CreateUserAsync: Password hashed for user: {Email}; hash: {Hash}", request.Email, hashedPassword);
 
-            var user = new User
+            using var transaction = await _context.Database.BeginTransactionAsync();
+
+            try
             {
-                Email = request.Email,
-                PasswordHash = hashedPassword
-            };
+                var user = new User
+                {
+                    Email = request.Email,
+                    PasswordHash = hashedPassword
+                };
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
+                _context.Users.Add(user);
+                await _context.SaveChangesAsync();
 
-            var result = await GenerateTokensAsync(user, ip);
+                var result = await GenerateTokensAsync(user, ip);
 
-            _logger.LogInformation("CreateUserAsync: User created successfully: {User}", user);
-            _logger.LogInformation("Exiting CreateUserAsync: email={Email}, userId={UserId}", request.Email, user.Id);
+                _logger.LogInformation("CreateUserAsync: User created successfully: {User}", user);
+                _logger.LogInformation("Exiting CreateUserAsync: email={Email}, userId={UserId}", request.Email, user.Id);
 
-            return result;
+                await transaction.CommitAsync();
+                return result;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task ChangePasswordAsync(int userId, string oldPassword, string newPassword)
@@ -125,36 +136,43 @@ namespace Backend.Services.Impl
                 throw new ValidationException("Refresh token is required.");
             }
 
-            var oldRefreshToken = await _tokenService.FindRefreshTokenAsync(refreshToken);
+            var transaction = await _context.Database.BeginTransactionAsync();
 
-            // if the refresh token is not found or is expired/revoked, return Unauthorized
-            // this is a security measure to prevent token reuse
-            if (oldRefreshToken == null || oldRefreshToken.Expires < DateTime.UtcNow || oldRefreshToken.IsRevoked)
+            try
             {
-                if (oldRefreshToken != null && oldRefreshToken.Expires < DateTime.UtcNow && !oldRefreshToken.IsRevoked)
-                    await _tokenService.RevokeRefreshTokenAsync(oldRefreshToken);
+                var oldRefreshToken = await _tokenService.VerifyRefreshTokenAsync(refreshToken);
 
-                _logger.LogWarning("Invalid or expired refresh token provided: {RefreshToken}", refreshToken);
-                throw new ValidationException("Invalid refresh token.");
+                if (oldRefreshToken == null)
+                {
+                    _logger.LogWarning("RefreshTokensAsync: invalid refresh token provided. token={token}", refreshToken);
+                    throw new ValidationException("Invalid refresh token provided.");
+                }
+
+                var user = await GetByIdAsync(oldRefreshToken.UserId);
+                if (user == null)
+                {
+                    _logger.LogWarning("User not found for refresh token: {RefreshToken}", refreshToken);
+                    throw new ValidationException("Invalid user.");
+                }
+
+                // Mark the old refresh token as revoked
+                await _tokenService.RevokeRefreshTokenAsync(refreshToken);
+                _logger.LogDebug("Revoking old refresh token: {RefreshToken}", refreshToken);
+
+                // Generate new tokens
+                var result = await GenerateTokensAsync(user, ip);
+                _logger.LogInformation("Generated new tokens for userId={UserId} using refresh token.", user.Id);
+                _logger.LogDebug("New AccessToken: {AccessToken}, New RefreshToken: {RefreshToken}", result.AccessToken, result.RefreshToken);
+                _logger.LogInformation("Exiting RefreshAsync: userId={UserId}", user.Id);
+
+                await transaction.CommitAsync();
+                return result;
             }
-
-            var user = await GetByIdAsync(oldRefreshToken.UserId);
-            if (user == null)
+            catch
             {
-                _logger.LogWarning("User not found for refresh token: {RefreshToken}", refreshToken);
-                throw new ValidationException("Invalid user.");
+                await transaction.RollbackAsync();
+                throw;
             }
-
-            // Mark the old refresh token as revoked
-            await _tokenService.RevokeRefreshTokenAsync(oldRefreshToken);
-            _logger.LogDebug("Revoking old refresh token: {RefreshToken}", refreshToken);
-
-            // Generate new tokens
-            var result = await GenerateTokensAsync(user, ip);
-            _logger.LogInformation("Generated new tokens for userId={UserId} using refresh token.", user.Id);
-            _logger.LogDebug("New AccessToken: {AccessToken}, New RefreshToken: {RefreshToken}", result.AccessToken, result.RefreshToken);
-            _logger.LogInformation("Exiting RefreshAsync: userId={UserId}", user.Id);
-            return result;
         }
 
         public async Task LogoutAsync(string refreshToken)
@@ -166,19 +184,10 @@ namespace Backend.Services.Impl
                 throw new ValidationException("Refresh token is required.");
             }
 
-            var refreshTokenObj = await _tokenService.FindRefreshTokenAsync(refreshToken);
-
             // If the refresh token is not found, we can still return OK
             // This is to ensure that the client can safely call logout without worrying about the token's existence
             // This is a common practice to avoid leaking information about token validity
-            if (refreshTokenObj == null)
-            {
-                _logger.LogInformation("Logout: Refresh token not found, nothing to revoke: {RefreshToken}", refreshToken);
-                _logger.LogInformation("Exiting Logout: refreshToken={RefreshToken}", refreshToken);
-                return;
-            }
-
-            await _tokenService.RevokeRefreshTokenAsync(refreshTokenObj);
+            await _tokenService.RevokeRefreshTokenAsync(refreshToken);
             _logger.LogInformation("Exiting Logout: refreshToken={RefreshToken}", refreshToken);
         }
 
@@ -201,19 +210,29 @@ namespace Backend.Services.Impl
                 return;
             }
 
-            var token = _tokenService.GenerateResetToken(user);
-            if (string.IsNullOrEmpty(token))
+            var transaction = await _context.Database.BeginTransactionAsync();
+            try
             {
-                _logger.LogError("Failed to generate reset token for user with email {Email}.", email);
+                var token = _tokenService.GenerateResetToken(user);
+                if (string.IsNullOrEmpty(token))
+                {
+                    _logger.LogError("Failed to generate reset token for user with email {Email}.", email);
+                    _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
+                    throw new ValidationException("Failed to generate reset token.");
+                }
+
+                _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", email, token);
+                await _emailService.SendPasswordResetEmailAsync(user.Email, token);
+                await transaction.CommitAsync();
+
+                _logger.LogInformation("Password reset email sent to {Email}.", email);
                 _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
-                throw new ValidationException("Failed to generate reset token.");
             }
-
-            _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", email, token);
-            await _emailService.SendPasswordResetEmailAsync(user.Email, token);
-
-            _logger.LogInformation("Password reset email sent to {Email}.", email);
-            _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<TokenResponse> LoginAsync(LoginRequest request, string ip)

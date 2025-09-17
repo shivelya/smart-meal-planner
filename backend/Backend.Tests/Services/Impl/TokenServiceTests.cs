@@ -107,7 +107,7 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task FindRefreshToken_ReturnsToken_WhenExists()
+        public async Task VerifyRefreshToken_ReturnsToken_WhenExistsAndValid()
         {
             var context = CreateInMemoryContext();
             var configValues = new Dictionary<string, string?>();
@@ -117,20 +117,52 @@ namespace Backend.Tests.Services.Impl
             context.RefreshTokens.Add(token);
             await context.SaveChangesAsync();
 
-            var found = await service.FindRefreshTokenAsync(tokenStr);
+            var found = await service.VerifyRefreshTokenAsync(tokenStr);
 
             Assert.NotNull(found);
             Assert.Equal(tokenStr, found.Token);
         }
 
         [Fact]
-        public async Task FindRefreshToken_ReturnsNull_WhenNotExists()
+        public async Task VerifyRefreshToken_ReturnsNullAndRevokesToken_WhenNotExists()
         {
             var context = CreateInMemoryContext();
             var configValues = new Dictionary<string, string?>();
             var service = CreateService(context, configValues);
 
-            var found = await service.FindRefreshTokenAsync("notfound");
+            var found = await service.VerifyRefreshTokenAsync("notfound");
+
+            Assert.Null(found);
+        }
+
+        [Fact]
+        public async Task VerifyRefreshToken_ReturnsNull_WhenRevoked()
+        {
+            var context = CreateInMemoryContext();
+            var configValues = new Dictionary<string, string?>();
+            var service = CreateService(context, configValues);
+            var tokenStr = "token123";
+            var token = new RefreshToken { Token = tokenStr, UserId = 1, Expires = DateTime.UtcNow.AddDays(1), Created = DateTime.UtcNow, IsRevoked = true };
+            context.RefreshTokens.Add(token);
+            await context.SaveChangesAsync();
+
+            var found = await service.VerifyRefreshTokenAsync(tokenStr);
+
+            Assert.Null(found);
+        }
+
+        [Fact]
+        public async Task VerifyRefreshToken_ReturnsNullAndRevokesToken_WhenExpired()
+        {
+            var context = CreateInMemoryContext();
+            var configValues = new Dictionary<string, string?>();
+            var service = CreateService(context, configValues);
+            var tokenStr = "token123";
+            var token = new RefreshToken { Token = tokenStr, UserId = 1, Expires = DateTime.UtcNow.AddDays(-1), Created = DateTime.UtcNow, IsRevoked = true };
+            context.RefreshTokens.Add(token);
+            await context.SaveChangesAsync();
+
+            var found = await service.VerifyRefreshTokenAsync(tokenStr);
 
             Assert.Null(found);
         }
@@ -153,7 +185,7 @@ namespace Backend.Tests.Services.Impl
             context.RefreshTokens.Add(token);
             await context.SaveChangesAsync();
 
-            await service.RevokeRefreshTokenAsync(token);
+            await service.RevokeRefreshTokenAsync(tokenStr);
 
             var found = await context.RefreshTokens.FindAsync(token.Id);
             Assert.NotNull(found);

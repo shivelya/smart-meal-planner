@@ -165,11 +165,37 @@ namespace Backend.Tests.Helpers
         [Fact]
         public void ConfigureSwagger_RegistersSwaggerGen()
         {
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Swagger:Title"] = "title",
+                    ["Swagger:Version"] = "v3",
+                    ["Swagger:Description"] = "descrip",
+                    ["Swagger:Contact:Name"] = "name",
+                    ["Swagger:Contact:Email"] = "email",
+                    ["Swagger:Contact:Url"] = "url",
+                    ["Swagger:License:Name"] = "name2",
+                    ["Swagger:License:Url"] = "url2"
+                })
+                .Build();
             var services = new ServiceCollection();
-            services.ConfigureSwagger();
+            services.ConfigureSwagger(config);
             var provider = services.BuildServiceProvider();
             // Just check that the service provider is built, actual SwaggerGen registration is tested in integration
             Assert.NotNull(provider);
+        }
+
+        [Fact]
+        public void ConfigureSwagger_RegistersSwaggerGen_ThrowsWhenConfigMissing()
+        {
+            var config = new ConfigurationBuilder()
+                .AddInMemoryCollection(new Dictionary<string, string?>
+                {
+                    ["Swagger:Title"] = "title"
+                })
+                .Build();
+            var services = new ServiceCollection();
+            Assert.Throws<InvalidOperationException>(() => services.ConfigureSwagger(config));
         }
     }
 }

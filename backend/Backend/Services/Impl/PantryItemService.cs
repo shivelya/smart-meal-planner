@@ -43,19 +43,31 @@ namespace Backend.Services.Impl
                 throw new ArgumentException("Food is required.");
             }
 
-            _logger.LogInformation("CreatePantryItemAsync: Creating pantry item for userId={UserId}, dto={Dto}", userId, pantryItemDto);
-            PantryItem entity = await CreatePantryItem(pantryItemDto, userId);
-            await _context.SaveChangesAsync();
+            // transaction is probably overkill, but since we re-query the context to ensure we have the Food, I want it to be able to
+            // roll back if there's an issue.
+            var transaction = await _context.Database.BeginTransactionAsync();
+            try
+            {
+                _logger.LogInformation("CreatePantryItemAsync: Creating pantry item for userId={UserId}, dto={Dto}", userId, pantryItemDto);
+                PantryItem entity = await CreatePantryItem(pantryItemDto, userId);
+                await _context.SaveChangesAsync();
 
-            var result = await _context.PantryItems
-                .AsNoTracking()
-                .Include(p => p.Food)
-                .ThenInclude(f => f.Category)
-                .FirstOrDefaultAsync(p => p.Id == entity.Id);
+                var result = await _context.PantryItems
+                    .AsNoTracking()
+                    .Include(p => p.Food)
+                    .ThenInclude(f => f.Category)
+                    .FirstOrDefaultAsync(p => p.Id == entity.Id);
 
-            _logger.LogInformation("CreatePantryItemAsync: Pantry item created for userId={UserId}, itemId={ItemId}", userId, entity.Id);
-            _logger.LogInformation("Exiting CreatePantryItemAsync: userId={UserId}, itemId={ItemId}", userId, entity.Id);
-            return result?.ToDto()!;
+                _logger.LogInformation("CreatePantryItemAsync: Pantry item created for userId={UserId}, itemId={ItemId}", userId, entity.Id);
+                _logger.LogInformation("Exiting CreatePantryItemAsync: userId={UserId}, itemId={ItemId}", userId, entity.Id);
+                await transaction.CommitAsync();
+                return result?.ToDto()!;
+            }
+            catch
+            {
+                await transaction.RollbackAsync();
+                throw;
+            }
         }
 
         public async Task<GetPantryItemsResult> CreatePantryItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> pantryItemDtos, int userId)
@@ -232,6 +244,7 @@ namespace Backend.Services.Impl
             return new GetPantryItemsResult { TotalCount = count, Items = items.Select(i => i.ToDto()) };
         }
 
+        // does not save here for transactional purposes
         private async Task<int> UpdatePantryItemFood(CreateUpdatePantryItemRequestDto pantryItemDto)
         {
             if (pantryItemDto.Food == null)
@@ -261,7 +274,7 @@ namespace Backend.Services.Impl
                     throw new ArgumentException("CategoryId is required on pantry items with new foods.");
                 }
 
-                foodId = await CreateNewFood(food1);
+                foodId = CreateNewFood(food1);
             }
             else
             {
@@ -272,6 +285,7 @@ namespace Backend.Services.Impl
             return foodId;
         }
 
+        // does not save here for transactional purposes
         private async Task<PantryItem> CreatePantryItem(CreateUpdatePantryItemRequestDto pantryItemDto, int userId)
         {
             if (pantryItemDto.Quantity < 0)
@@ -291,13 +305,13 @@ namespace Backend.Services.Impl
             };
 
             await _context.PantryItems.AddAsync(entity);
-            await _context.SaveChangesAsync();
 
             _logger.LogInformation("CreatePantryItem: Created pantry item for userId={UserId}, itemId={ItemId}", userId, entity.Id);
             return entity;
         }
 
-        private async Task<int> CreateNewFood(NewFoodReferenceDto dto)
+        // does not save here for transactional purposes
+        private int CreateNewFood(NewFoodReferenceDto dto)
         {
             var food = new Food
             {
@@ -306,7 +320,6 @@ namespace Backend.Services.Impl
             };
 
             _context.Foods.Add(food);
-            await _context.SaveChangesAsync();
             _logger.LogInformation("CreateNewFood: Created new food {FoodName} with id={FoodId}", food.Name, food.Id);
             return food.Id;
         }
