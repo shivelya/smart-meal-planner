@@ -24,3 +24,8 @@ trim_trailing_whitespace = true
 csharp_new_line_before_open_brace = all
 csharp_indent_case_contents = true
 csharp_indent_switch_labels = true
+
+# ----------------------------
+# Disable all warnings in Migrations folder
+[**/Migrations/*.cs]
+dotnet_analyzer_diagnostic.severity = none

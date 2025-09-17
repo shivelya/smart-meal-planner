@@ -24,7 +24,7 @@ namespace Backend.Tests.Controllers
         public async Task DeleteShoppingListItemAsync_ReturnsNoContent_OnSuccess()
         {
             var serviceMock = new Mock<IShoppingListService>();
-            serviceMock.Setup(s => s.DeleteShoppingListItemAsync(2, 42)).ReturnsAsync(true);
+            serviceMock.Setup(s => s.DeleteShoppingListItemAsync(2, 42, System.Threading.CancellationToken.None)).ReturnsAsync(true);
             var controller = GetController(serviceMock);
 
             var result = await controller.DeleteShoppingListItemAsync(2);
@@ -44,7 +44,7 @@ namespace Backend.Tests.Controllers
         public async Task DeleteShoppingListItemAsync_Returns500_OnException()
         {
             var serviceMock = new Mock<IShoppingListService>();
-            serviceMock.Setup(s => s.DeleteShoppingListItemAsync(2, 42)).ThrowsAsync(new Exception("fail"));
+            serviceMock.Setup(s => s.DeleteShoppingListItemAsync(2, 42, System.Threading.CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var controller = GetController(serviceMock);
 
             var result = await controller.DeleteShoppingListItemAsync(2);
@@ -58,7 +58,7 @@ namespace Backend.Tests.Controllers
         {
             var serviceMock = new Mock<IShoppingListService>();
             var expected = new ShoppingListItemDto { Id = 2, FoodId = 20, Purchased = false, Notes = "new" };
-            serviceMock.Setup(s => s.AddShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42))
+            serviceMock.Setup(s => s.AddShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42, System.Threading.CancellationToken.None))
                 .ReturnsAsync(expected);
             var controller = GetController(serviceMock);
 
@@ -85,7 +85,7 @@ namespace Backend.Tests.Controllers
         public async Task AddShoppingListItemAsync_Returns500_OnException()
         {
             var serviceMock = new Mock<IShoppingListService>();
-            serviceMock.Setup(s => s.AddShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42))
+            serviceMock.Setup(s => s.AddShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42, System.Threading.CancellationToken.None))
                 .ThrowsAsync(new Exception("fail"));
             var controller = GetController(serviceMock);
 
@@ -101,7 +101,7 @@ namespace Backend.Tests.Controllers
         {
             var serviceMock = new Mock<IShoppingListService>();
             var expected = new ShoppingListItemDto { Id = 1, FoodId = 10, Purchased = true, Notes = "note" };
-            serviceMock.Setup(s => s.UpdateShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42))
+            serviceMock.Setup(s => s.UpdateShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42, System.Threading.CancellationToken.None))
                 .ReturnsAsync(expected);
             var controller = GetController(serviceMock);
 
@@ -128,7 +128,7 @@ namespace Backend.Tests.Controllers
         public async Task UpdateShoppingList_Returns500_OnException()
         {
             var serviceMock = new Mock<IShoppingListService>();
-            serviceMock.Setup(s => s.UpdateShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42))
+            serviceMock.Setup(s => s.UpdateShoppingListItemAsync(It.IsAny<CreateUpdateShoppingListEntryRequestDto>(), 42, System.Threading.CancellationToken.None))
                 .ThrowsAsync(new Exception("fail"));
             var controller = GetController(serviceMock);
 
@@ -152,7 +152,7 @@ namespace Backend.Tests.Controllers
                     new ShoppingListItemDto { Id = 2, FoodId = 20, Purchased = true }
                 ]
             };
-            serviceMock.Setup(s => s.GetShoppingListAsync(42)).ReturnsAsync(expected);
+            serviceMock.Setup(s => s.GetShoppingListAsync(42, System.Threading.CancellationToken.None)).ReturnsAsync(expected);
             var controller = GetController(serviceMock);
 
             var result = await controller.GetShoppingListAsync();
@@ -168,7 +168,7 @@ namespace Backend.Tests.Controllers
         public async Task GetShoppingList_Returns500_OnException()
         {
             var serviceMock = new Mock<IShoppingListService>();
-            serviceMock.Setup(s => s.GetShoppingListAsync(42)).ThrowsAsync(new Exception("fail"));
+            serviceMock.Setup(s => s.GetShoppingListAsync(42, System.Threading.CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var controller = GetController(serviceMock);
 
             var result = await controller.GetShoppingListAsync();
@@ -201,7 +201,7 @@ namespace Backend.Tests.Controllers
         public async Task GenerateAsync_ReturnsOk_WhenServiceSucceeds()
         {
             var serviceMock = new Mock<IShoppingListService>();
-            serviceMock.Setup(s => s.GenerateAsync(It.IsAny<GenerateShoppingListRequestDto>(), 42))
+            serviceMock.Setup(s => s.GenerateAsync(It.IsAny<GenerateShoppingListRequestDto>(), 42, System.Threading.CancellationToken.None))
                 .Returns(Task.CompletedTask);
             var controller = GetController(serviceMock);
 
@@ -214,7 +214,7 @@ namespace Backend.Tests.Controllers
         public async Task GenerateAsync_Returns500_WhenServiceThrows()
         {
             var serviceMock = new Mock<IShoppingListService>();
-            serviceMock.Setup(s => s.GenerateAsync(It.IsAny<GenerateShoppingListRequestDto>(), 42))
+            serviceMock.Setup(s => s.GenerateAsync(It.IsAny<GenerateShoppingListRequestDto>(), 42, System.Threading.CancellationToken.None))
                 .ThrowsAsync(new Exception("fail"));
             var controller = GetController(serviceMock);
 

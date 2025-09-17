@@ -3,6 +3,7 @@ using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using System.Globalization;
 using System.Security.Claims;
 
 namespace Backend.Controllers
@@ -374,7 +375,7 @@ namespace Backend.Controllers
         /// Allows a valid user to reset their password.
         /// </summary>
         /// <param name="request">JSON object with reset token and email.</param>
-        /// <param name="ct">Cancellation token, unseen by user.</param>
+        /// <param name="ct">JSON object with reset token and email.</param>
         /// <remarks>Returns an OK status upon success.</remarks>
         [HttpPost("reset-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
@@ -415,7 +416,7 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogWarning("Failed to reset password for user, exception thrown. {ex}", ex.Message);
+                _logger.LogWarning(ex, "ResetPassword: Failed to reset password for user, exception thrown.");
                 _logger.LogInformation("Exiting ResetPassword: token={Token}", request?.ResetCode);
                 return StatusCode(500, "Could not reset password: {0}" + ex.Message);
             }
@@ -428,7 +429,7 @@ namespace Backend.Controllers
 
         private int GetUserId()
         {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Backend.Services.Impl
                 await _context.Users.AddAsync(user, ct);
                 await _context.SaveChangesAsync(ct);
 
-                var result = await GenerateTokensAsync(user, ip);
+                var result = await GenerateTokensAsync(user, ip, ct);
 
                 _logger.LogInformation("CreateUserAsync: User created successfully: {User}", user);
                 _logger.LogInformation("Exiting CreateUserAsync: email={Email}, userId={UserId}", request.Email, user.Id);
@@ -102,7 +102,6 @@ namespace Backend.Services.Impl
             }
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
-            _context.Users.Update(user);
             await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("UpdatePasswordAsync: Password updated successfully for user ID: {UserId}", userId);
@@ -140,7 +139,7 @@ namespace Backend.Services.Impl
 
             try
             {
-                var oldRefreshToken = await _tokenService.VerifyRefreshTokenAsync(refreshToken);
+                var oldRefreshToken = await _tokenService.VerifyRefreshTokenAsync(refreshToken, ct);
 
                 if (oldRefreshToken == null)
                 {
@@ -156,11 +155,11 @@ namespace Backend.Services.Impl
                 }
 
                 // Mark the old refresh token as revoked
-                await _tokenService.RevokeRefreshTokenAsync(refreshToken);
+                await _tokenService.RevokeRefreshTokenAsync(refreshToken, ct);
                 _logger.LogDebug("Revoking old refresh token: {RefreshToken}", refreshToken);
 
                 // Generate new tokens
-                var result = await GenerateTokensAsync(user, ip);
+                var result = await GenerateTokensAsync(user, ip, ct);
                 _logger.LogInformation("Generated new tokens for userId={UserId} using refresh token.", user.Id);
                 _logger.LogDebug("New AccessToken: {AccessToken}, New RefreshToken: {RefreshToken}", result.AccessToken, result.RefreshToken);
                 _logger.LogInformation("Exiting RefreshAsync: userId={UserId}", user.Id);
@@ -187,7 +186,7 @@ namespace Backend.Services.Impl
             // If the refresh token is not found, we can still return OK
             // This is to ensure that the client can safely call logout without worrying about the token's existence
             // This is a common practice to avoid leaking information about token validity
-            await _tokenService.RevokeRefreshTokenAsync(refreshToken);
+            await _tokenService.RevokeRefreshTokenAsync(refreshToken, ct);
             _logger.LogInformation("Exiting Logout: refreshToken={RefreshToken}", refreshToken);
         }
 
@@ -254,7 +253,7 @@ namespace Backend.Services.Impl
                 throw new ArgumentException("Invalid email or password.");
             }
 
-            var result = await GenerateTokensAsync(user, ip);
+            var result = await GenerateTokensAsync(user, ip, ct);
             _logger.LogInformation("User logged in successfully with email {Email}.", request.Email);
             _logger.LogInformation("Exiting Login: email={Email}", request.Email);
             return result;
@@ -302,9 +301,9 @@ namespace Backend.Services.Impl
             return result;
         }
 
-        private async Task<TokenResponse> GenerateTokensAsync(User user, string ip)
+        private async Task<TokenResponse> GenerateTokensAsync(User user, string ip, CancellationToken ct)
         {
-            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user, ip);
+            var refreshToken = await _tokenService.GenerateRefreshTokenAsync(user, ip, ct);
             var accessToken = _tokenService.GenerateAccessToken(user);
 
             if (accessToken == null || refreshToken == null)

@@ -33,7 +33,7 @@ namespace Backend.Tests.Services.Impl
             _context.Categories.Add(new Category { Id = 2, Name = "Vegetable" });
             await _context.SaveChangesAsync();
 
-            var result = await _service.GetAllAsync();
+            var result = await _service.GetAllAsync(CancellationToken.None);
             Assert.Equal(2, result.TotalCount);
             Assert.Contains(result.Items, c => c.Name == "Fruit");
             Assert.Contains(result.Items, c => c.Name == "Vegetable");
@@ -42,7 +42,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task GetAllAsync_ReturnsEmpty_WhenNoCategories()
         {
-            var result = await _service.GetAllAsync();
+            var result = await _service.GetAllAsync(CancellationToken.None);
             Assert.Empty(result.Items);
         }
     }

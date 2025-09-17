@@ -38,9 +38,9 @@ namespace Backend.Tests.Controllers
         {
             var dto = new CreateUpdatePantryItemRequestDto { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
             var resultDto = new PantryItemDto { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce " } }, Quantity = 2, Unit = "kg" };
-            _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId)).ReturnsAsync(resultDto);
+            _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId, CancellationToken.None)).ReturnsAsync(resultDto);
 
-            var result = await _controller.AddItemAsync(dto);
+            var result = await _controller.AddItemAsync(dto, CancellationToken.None);
 
             var okResult = Assert.IsType<CreatedResult>(result.Result);
             Assert.Equal(resultDto, okResult.Value);
@@ -50,8 +50,8 @@ namespace Backend.Tests.Controllers
             public async Task AddItem_Returns500_WhenServiceReturnsNull()
             {
                 var dto = new CreateUpdatePantryItemRequestDto { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
-                _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId)).ReturnsAsync((PantryItemDto)null!);
-                var result = await _controller.AddItemAsync(dto);
+                _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId, CancellationToken.None)).ReturnsAsync((PantryItemDto)null!);
+                var result = await _controller.AddItemAsync(dto, CancellationToken.None);
                 var objResult = Assert.IsType<ObjectResult>(result.Result);
                 Assert.Equal(500, objResult.StatusCode);
                 Assert.Equal("Service returned null pantry item.", objResult.Value);
@@ -62,9 +62,9 @@ namespace Backend.Tests.Controllers
         {
             var dtos = new List<CreateUpdatePantryItemRequestDto> { new() { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" } };
             var resultDtos = new List<PantryItemDto> { new() { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce " } }, Quantity = 2, Unit = "kg" } };
-            _serviceMock.Setup(s => s.CreatePantryItemsAsync(dtos, userId)).ReturnsAsync(new GetPantryItemsResult { TotalCount = resultDtos.Count, Items = resultDtos });
+            _serviceMock.Setup(s => s.CreatePantryItemsAsync(dtos, userId, CancellationToken.None)).ReturnsAsync(new GetPantryItemsResult { TotalCount = resultDtos.Count, Items = resultDtos });
 
-            var result = await _controller.AddItemsAsync(dtos);
+            var result = await _controller.AddItemsAsync(dtos, CancellationToken.None);
 
             var okResult = Assert.IsType<CreatedAtActionResult>(result.Result);
             var dto = Assert.IsType<GetPantryItemsResult>(okResult.Value);
@@ -75,8 +75,8 @@ namespace Backend.Tests.Controllers
             public async Task AddItems_Returns500_WhenServiceReturnsNull()
             {
                 var dtos = new List<CreateUpdatePantryItemRequestDto> { new() { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" } };
-                _serviceMock.Setup(s => s.CreatePantryItemsAsync(dtos, userId)).ReturnsAsync((GetPantryItemsResult)null!);
-                var result = await _controller.AddItemsAsync(dtos);
+                _serviceMock.Setup(s => s.CreatePantryItemsAsync(dtos, userId, CancellationToken.None)).ReturnsAsync((GetPantryItemsResult)null!);
+                var result = await _controller.AddItemsAsync(dtos, CancellationToken.None);
                 var objResult = Assert.IsType<ObjectResult>(result.Result);
                 Assert.Equal(500, objResult.StatusCode);
                 Assert.Equal("Service returned null pantry items.", objResult.Value);
@@ -86,9 +86,9 @@ namespace Backend.Tests.Controllers
         public async Task GetItem_ItemExists_ReturnsOk()
         {
             var resultDto = new PantryItemDto { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce " } }, Quantity = 2, Unit = "kg" };
-            _serviceMock.Setup(s => s.GetPantryItemByIdAsync(1)).ReturnsAsync(resultDto);
+            _serviceMock.Setup(s => s.GetPantryItemByIdAsync(1, CancellationToken.None)).ReturnsAsync(resultDto);
 
-            var result = await _controller.GetItemAsync(1);
+            var result = await _controller.GetItemAsync(1, CancellationToken.None);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(resultDto, okResult.Value);
@@ -97,9 +97,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GetItem_ItemDoesNotExist_ReturnsNotFound()
         {
-            _serviceMock.Setup(s => s.GetPantryItemByIdAsync(1)).ReturnsAsync((PantryItemDto)null!);
+            _serviceMock.Setup(s => s.GetPantryItemByIdAsync(1, CancellationToken.None)).ReturnsAsync((PantryItemDto)null!);
 
-            var result = await _controller.GetItemAsync(1);
+            var result = await _controller.GetItemAsync(1, CancellationToken.None);
 
             Assert.IsType<NotFoundResult>(result.Result);
         }
@@ -109,9 +109,9 @@ namespace Backend.Tests.Controllers
         {
             var items = new List<PantryItemDto> { new() { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce "} },
                 Quantity = 2, Unit = "kg" } };
-            _serviceMock.Setup(s => s.GetAllPantryItemsAsync(1, 10)).ReturnsAsync(new GetPantryItemsResult { TotalCount = items.Count, Items = items });
+            _serviceMock.Setup(s => s.GetAllPantryItemsAsync(1, 10, CancellationToken.None)).ReturnsAsync(new GetPantryItemsResult { TotalCount = items.Count, Items = items });
 
-            var result = await _controller.GetItemsAsync(1, 10);
+            var result = await _controller.GetItemsAsync(1, 10, CancellationToken.None);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             GetPantryItemsResult value = Assert.IsType<GetPantryItemsResult>(okResult.Value);
@@ -122,8 +122,8 @@ namespace Backend.Tests.Controllers
             [Fact]
             public async Task GetItems_Returns500_WhenServiceReturnsNull()
             {
-                _serviceMock.Setup(s => s.GetAllPantryItemsAsync(1, 10)).ReturnsAsync((GetPantryItemsResult)null!);
-                var result = await _controller.GetItemsAsync(1, 10);
+                _serviceMock.Setup(s => s.GetAllPantryItemsAsync(1, 10, CancellationToken.None)).ReturnsAsync((GetPantryItemsResult)null!);
+                var result = await _controller.GetItemsAsync(1, 10, CancellationToken.None);
                 var objResult = Assert.IsType<ObjectResult>(result.Result);
                 Assert.Equal(500, objResult.StatusCode);
                 Assert.Equal("Service returned null pantry items.", objResult.Value);
@@ -132,9 +132,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task DeleteItem_ItemExists_ReturnsNoContent()
         {
-            _serviceMock.Setup(s => s.DeletePantryItemAsync(1)).ReturnsAsync(true);
+            _serviceMock.Setup(s => s.DeletePantryItemAsync(1, CancellationToken.None)).ReturnsAsync(true);
 
-            var result = await _controller.DeleteItemAsync(1);
+            var result = await _controller.DeleteItemAsync(1, CancellationToken.None);
 
             Assert.IsType<NoContentResult>(result);
         }
@@ -142,9 +142,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task DeleteItem_ItemDoesNotExist_ReturnsNotFound()
         {
-            _serviceMock.Setup(s => s.DeletePantryItemAsync(1)).ReturnsAsync(false);
+            _serviceMock.Setup(s => s.DeletePantryItemAsync(1, CancellationToken.None)).ReturnsAsync(false);
 
-            var result = await _controller.DeleteItemAsync(1);
+            var result = await _controller.DeleteItemAsync(1, CancellationToken.None);
 
             Assert.IsType<NotFoundResult>(result);
         }
@@ -154,9 +154,9 @@ namespace Backend.Tests.Controllers
         {
             var ids = new List<int> { 1, 2 };
             var deleteRequest = new DeleteRequest { Ids = ids };
-            _serviceMock.Setup(s => s.DeletePantryItemsAsync(ids)).ReturnsAsync(new DeleteRequest { Ids = [2] });
+            _serviceMock.Setup(s => s.DeletePantryItemsAsync(ids, CancellationToken.None)).ReturnsAsync(new DeleteRequest { Ids = [2] });
 
-            var result = await _controller.DeleteItemsAsync(deleteRequest);
+            var result = await _controller.DeleteItemsAsync(deleteRequest, CancellationToken.None);
 
             var okResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(204, okResult.StatusCode);
@@ -169,9 +169,9 @@ namespace Backend.Tests.Controllers
         {
             var ids = new List<int> { 1, 2 };
             var deleteRequest = new DeleteRequest { Ids = ids };
-            _serviceMock.Setup(s => s.DeletePantryItemsAsync(ids)).ReturnsAsync(new DeleteRequest { Ids = [] });
+            _serviceMock.Setup(s => s.DeletePantryItemsAsync(ids, CancellationToken.None)).ReturnsAsync(new DeleteRequest { Ids = [] });
 
-            var result = await _controller.DeleteItemsAsync(deleteRequest);
+            var result = await _controller.DeleteItemsAsync(deleteRequest, CancellationToken.None);
 
             Assert.IsType<NotFoundResult>(result.Result);
         }
@@ -181,9 +181,9 @@ namespace Backend.Tests.Controllers
         {
             var dto = new CreateUpdatePantryItemRequestDto { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 5 }, Quantity = 2, Unit = "kg" };
             var resultDto = new PantryItemDto { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce " } }, Quantity = 2, Unit = "kg" };
-            _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId)).ReturnsAsync(resultDto);
+            _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId, CancellationToken.None)).ReturnsAsync(resultDto);
 
-            var result = await _controller.AddItemAsync(dto);
+            var result = await _controller.AddItemAsync(dto, CancellationToken.None);
             var okResult = Assert.IsType<CreatedResult>(result.Result);
             Assert.Equal(resultDto, okResult.Value);
         }
@@ -193,9 +193,9 @@ namespace Backend.Tests.Controllers
         {
             var dto = new CreateUpdatePantryItemRequestDto { Food = new NewFoodReferenceDto { Mode = AddFoodMode.New, Name = "Salt", CategoryId = 1 }, Quantity = 1, Unit = "g" };
             var resultDto = new PantryItemDto { Id = 2, FoodId = 1, Food = new FoodDto { Id = 1, Name = "salt", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce " } }, Quantity = 1, Unit = "g" };
-            _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId)).ReturnsAsync(resultDto);
+            _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId, CancellationToken.None)).ReturnsAsync(resultDto);
 
-            var result = await _controller.AddItemAsync(dto);
+            var result = await _controller.AddItemAsync(dto, CancellationToken.None);
             var okResult = Assert.IsType<CreatedResult>(result.Result);
             Assert.Equal(resultDto, okResult.Value);
         }
@@ -204,9 +204,9 @@ namespace Backend.Tests.Controllers
         public async Task AddItem_WithoutFoodIdOrName_ReturnsBadRequest()
         {
             var dto = new CreateUpdatePantryItemRequestDto { Quantity = 1, Unit = "g", Food = new TestFoodReferenceDto() };
-            _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId)).ThrowsAsync(new ArgumentException("test message"));
+            _serviceMock.Setup(s => s.CreatePantryItemAsync(dto, userId, CancellationToken.None)).ThrowsAsync(new ArgumentException("test message"));
 
-            var result = await _controller.AddItemAsync(dto);
+            var result = await _controller.AddItemAsync(dto, CancellationToken.None);
             var resulta = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, resulta.StatusCode);
             Assert.Equal("test message", resulta.Value);
@@ -228,10 +228,10 @@ namespace Backend.Tests.Controllers
                 new() { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "tomato", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 2, Unit = "kg" },
                 new() { Id = 2, FoodId = 2, Food = new FoodDto { Id = 2, Name = "banana", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 3, Unit = "g" }
             };
-            _serviceMock.Setup(s => s.CreatePantryItemsAsync(It.IsAny<IEnumerable<CreateUpdatePantryItemRequestDto>>(), userId))
+            _serviceMock.Setup(s => s.CreatePantryItemsAsync(It.IsAny<IEnumerable<CreateUpdatePantryItemRequestDto>>(), userId, CancellationToken.None))
                 .ReturnsAsync(new GetPantryItemsResult { TotalCount = resultDtos.Count, Items = resultDtos });
 
-            var result = await _controller.AddItemsAsync(dtos);
+            var result = await _controller.AddItemsAsync(dtos, CancellationToken.None);
             var okResult = Assert.IsType<CreatedAtActionResult>(result.Result);
             var dto = Assert.IsType<GetPantryItemsResult>(okResult.Value);
             Assert.Equal(resultDtos, dto.Items);
@@ -245,9 +245,10 @@ namespace Backend.Tests.Controllers
             {
                 new() { Id = 1, FoodId = 1, Food = new FoodDto { Id = 1, Name = "tomato", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce "} }, Quantity = 2, Unit = "g" }
             };
-            _serviceMock.Setup(s => s.Search(searchTerm, userId, null, null)).ReturnsAsync(new GetPantryItemsResult { TotalCount = expectedResults.Count, Items = expectedResults });
 
-            var result = await _controller.SearchAsync(searchTerm);
+            _serviceMock.Setup(s => s.Search(searchTerm, userId, null, null, CancellationToken.None)).ReturnsAsync(new GetPantryItemsResult { TotalCount = expectedResults.Count, Items = expectedResults });
+
+            var result = await _controller.SearchAsync(searchTerm, null, null, CancellationToken.None);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetPantryItemsResult>(okResult.Value);
@@ -259,8 +260,8 @@ namespace Backend.Tests.Controllers
             public async Task Search_Returns500_WhenServiceReturnsNull()
             {
                 var searchTerm = "Salt";
-                _serviceMock.Setup(s => s.Search(searchTerm, userId, null, null)).ReturnsAsync((GetPantryItemsResult)null!);
-                var result = await _controller.SearchAsync(searchTerm);
+                _serviceMock.Setup(s => s.Search(searchTerm, userId, null, null, CancellationToken.None)).ReturnsAsync((GetPantryItemsResult)null!);
+                var result = await _controller.SearchAsync(searchTerm, null, null, CancellationToken.None);
                 var objResult = Assert.IsType<ObjectResult>(result.Result);
                 Assert.Equal(500, objResult.StatusCode);
                 Assert.Equal("Service returned null search results.", objResult.Value);
@@ -269,7 +270,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Search_WithEmptyTerm_ReturnsBadRequest()
         {
-            var result = await _controller.SearchAsync("");
+            var result = await _controller.SearchAsync("", null, null, CancellationToken.None);
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("A search term is required.", badRequest.Value);
@@ -278,7 +279,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Search_WithNullTerm_ReturnsBadRequest()
         {
-            var result = await _controller.SearchAsync(null!);
+            var result = await _controller.SearchAsync(null!, null, null, CancellationToken.None);
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("A search term is required.", badRequest.Value);
@@ -288,9 +289,9 @@ namespace Backend.Tests.Controllers
         public async Task Search_ReturnsEmptyListIfNoResults()
         {
             var searchTerm = "NotFound";
-            _serviceMock.Setup(s => s.Search(searchTerm, userId, null, null)).ReturnsAsync(new GetPantryItemsResult { TotalCount = 0, Items = [] });
+            _serviceMock.Setup(s => s.Search(searchTerm, userId, null, null, CancellationToken.None)).ReturnsAsync(new GetPantryItemsResult { TotalCount = 0, Items = [] });
 
-            var result = await _controller.SearchAsync(searchTerm);
+            var result = await _controller.SearchAsync(searchTerm, null, null, CancellationToken.None);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var value = Assert.IsType<GetPantryItemsResult>(okResult.Value, exactMatch: false);
@@ -310,9 +311,9 @@ namespace Backend.Tests.Controllers
                 Quantity = 2,
                 Unit = "kg"
             };
-            _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, userId)).ReturnsAsync(updatedDto);
+            _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, userId, CancellationToken.None)).ReturnsAsync(updatedDto);
 
-            var result = await _controller.UpdateAsync("1", pantryItemDto);
+            var result = await _controller.UpdateAsync("1", pantryItemDto, CancellationToken.None);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(updatedDto, okResult.Value);
@@ -322,8 +323,8 @@ namespace Backend.Tests.Controllers
             public async Task Update_Returns500_WhenServiceReturnsNull()
             {
                 var pantryItemDto = new CreateUpdatePantryItemRequestDto { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
-                _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, userId)).ReturnsAsync((PantryItemDto)null!);
-                var result = await _controller.UpdateAsync("1", pantryItemDto);
+                _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, userId, CancellationToken.None)).ReturnsAsync((PantryItemDto)null!);
+                var result = await _controller.UpdateAsync("1", pantryItemDto, CancellationToken.None);
                 var objResult = Assert.IsType<ObjectResult>(result.Result);
                 Assert.Equal(500, objResult.StatusCode);
                 Assert.Equal("Service returned null updated pantry item.", objResult.Value);
@@ -334,7 +335,7 @@ namespace Backend.Tests.Controllers
         {
             var pantryItemDto = new CreateUpdatePantryItemRequestDto { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
 
-            var result = await _controller.UpdateAsync(null!, pantryItemDto);
+            var result = await _controller.UpdateAsync(null!, pantryItemDto, CancellationToken.None);
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("id is required.", badRequest.Value);
@@ -345,7 +346,7 @@ namespace Backend.Tests.Controllers
         {
             var pantryItemDto = new CreateUpdatePantryItemRequestDto { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
 
-            var result = await _controller.UpdateAsync("", pantryItemDto);
+            var result = await _controller.UpdateAsync("", pantryItemDto, CancellationToken.None);
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("id is required.", badRequest.Value);
@@ -354,7 +355,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_WithNullDto_ReturnsBadRequest()
         {
-            var result = await _controller.UpdateAsync("1", null!);
+            var result = await _controller.UpdateAsync("1", null!, CancellationToken.None);
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("PantryItemDto pantryItem is required.", badRequest.Value);
@@ -363,10 +364,10 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItem_Returns500_OnException()
         {
-            _serviceMock.Setup(s => s.CreatePantryItemAsync(It.IsAny<CreateUpdatePantryItemRequestDto>(), userId))
+            _serviceMock.Setup(s => s.CreatePantryItemAsync(It.IsAny<CreateUpdatePantryItemRequestDto>(), userId, CancellationToken.None))
                 .ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.AddItemAsync(new CreateUpdatePantryItemRequestDto { Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }});
+            var result = await _controller.AddItemAsync(new CreateUpdatePantryItemRequestDto { Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}, CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
         }
@@ -374,10 +375,10 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task AddItems_Returns500_OnException()
         {
-            _serviceMock.Setup(s => s.CreatePantryItemsAsync(It.IsAny<IEnumerable<CreateUpdatePantryItemRequestDto>>(), userId))
+            _serviceMock.Setup(s => s.CreatePantryItemsAsync(It.IsAny<IEnumerable<CreateUpdatePantryItemRequestDto>>(), userId, CancellationToken.None))
                 .ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.AddItemsAsync([new CreateUpdatePantryItemRequestDto{ Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}]);
+            var result = await _controller.AddItemsAsync([new CreateUpdatePantryItemRequestDto{ Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}], CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
         }
@@ -385,18 +386,18 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GetItem_ReturnsNotFound_WhenNull()
         {
-            _serviceMock.Setup(s => s.GetPantryItemByIdAsync(1)).ReturnsAsync((PantryItemDto)null!);
+            _serviceMock.Setup(s => s.GetPantryItemByIdAsync(1, CancellationToken.None)).ReturnsAsync((PantryItemDto)null!);
 
-            var result = await _controller.GetItemAsync(1);
+            var result = await _controller.GetItemAsync(1, CancellationToken.None);
             Assert.IsType<NotFoundResult>(result.Result);
         }
 
         [Fact]
         public async Task GetItem_Returns500_OnException()
         {
-            _serviceMock.Setup(s => s.GetPantryItemByIdAsync(1)).ThrowsAsync(new Exception("fail"));
+            _serviceMock.Setup(s => s.GetPantryItemByIdAsync(1, CancellationToken.None)).ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.GetItemAsync(1);
+            var result = await _controller.GetItemAsync(1, CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
         }
@@ -404,9 +405,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GetItems_Returns500_OnException()
         {
-            _serviceMock.Setup(s => s.GetAllPantryItemsAsync(1, 10)).ThrowsAsync(new Exception("fail"));
+            _serviceMock.Setup(s => s.GetAllPantryItemsAsync(1, 10, CancellationToken.None)).ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.GetItemsAsync(1, 10);
+            var result = await _controller.GetItemsAsync(1, 10, CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
         }
@@ -414,18 +415,18 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task DeleteItem_ReturnsNotFound_WhenFalse()
         {
-            _serviceMock.Setup(s => s.DeletePantryItemAsync(1)).ReturnsAsync(false);
+            _serviceMock.Setup(s => s.DeletePantryItemAsync(1, CancellationToken.None)).ReturnsAsync(false);
 
-            var result = await _controller.DeleteItemAsync(1);
+            var result = await _controller.DeleteItemAsync(1, CancellationToken.None);
             Assert.IsType<NotFoundResult>(result);
         }
 
         [Fact]
         public async Task DeleteItem_Returns500_OnException()
         {
-            _serviceMock.Setup(s => s.DeletePantryItemAsync(1)).ThrowsAsync(new Exception("fail"));
+            _serviceMock.Setup(s => s.DeletePantryItemAsync(1, CancellationToken.None)).ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.DeleteItemAsync(1);
+            var result = await _controller.DeleteItemAsync(1, CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, objResult.StatusCode);
         }
@@ -433,7 +434,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task DeleteItems_ReturnsBadRequest_WhenRequestIsNull()
         {
-            var result = await _controller.DeleteItemsAsync(null!);
+            var result = await _controller.DeleteItemsAsync(null!, CancellationToken.None);
             var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal(400, objResult.StatusCode);
         }
@@ -441,20 +442,20 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task DeleteItems_ReturnsNotFound_WhenNoIdsDeleted()
         {
-            _serviceMock.Setup(s => s.DeletePantryItemsAsync(It.IsAny<IEnumerable<int>>()))
+            _serviceMock.Setup(s => s.DeletePantryItemsAsync(It.IsAny<IEnumerable<int>>(), CancellationToken.None))
                 .ReturnsAsync(new DeleteRequest { Ids = [] });
 
-            var result = await _controller.DeleteItemsAsync(new DeleteRequest { Ids = [1] });
+            var result = await _controller.DeleteItemsAsync(new DeleteRequest { Ids = [1] }, CancellationToken.None);
             Assert.IsType<NotFoundResult>(result.Result);
         }
 
         [Fact]
         public async Task DeleteItems_Returns500_OnException()
         {
-            _serviceMock.Setup(s => s.DeletePantryItemsAsync(It.IsAny<IEnumerable<int>>()))
+            _serviceMock.Setup(s => s.DeletePantryItemsAsync(It.IsAny<IEnumerable<int>>(), CancellationToken.None))
                 .ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.DeleteItemsAsync(new DeleteRequest { Ids = [1] });
+            var result = await _controller.DeleteItemsAsync(new DeleteRequest { Ids = [1] }, CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
         }
@@ -462,7 +463,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Search_ReturnsBadRequest_WhenQueryIsNullOrEmpty()
         {
-            var result = await _controller.SearchAsync(null!);
+            var result = await _controller.SearchAsync(null!, null, null, CancellationToken.None);
             var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal(400, objResult.StatusCode);
         }
@@ -470,9 +471,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Search_Returns500_OnException()
         {
-            _serviceMock.Setup(s => s.Search(It.IsAny<string>(), userId, null, null)).ThrowsAsync(new Exception("fail"));
+            _serviceMock.Setup(s => s.Search(It.IsAny<string>(), userId, null, null, CancellationToken.None)).ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.SearchAsync("test");
+            var result = await _controller.SearchAsync("test", null, null, CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
         }
@@ -480,11 +481,11 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_ReturnsBadRequest_WhenIdIsNullOrEmpty()
         {
-            var result = await _controller.UpdateAsync(null!, new CreateUpdatePantryItemRequestDto{ Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }});
+            var result = await _controller.UpdateAsync(null!, new CreateUpdatePantryItemRequestDto{ Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}, CancellationToken.None);
             var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal(400, objResult.StatusCode);
 
-            result = await _controller.UpdateAsync("", new CreateUpdatePantryItemRequestDto{ Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }});
+            result = await _controller.UpdateAsync("", new CreateUpdatePantryItemRequestDto{ Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}, CancellationToken.None);
             objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal(400, objResult.StatusCode);
         }
@@ -492,7 +493,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_ReturnsBadRequest_WhenPantryItemIsNull()
         {
-            var result = await _controller.UpdateAsync("1", null!);
+            var result = await _controller.UpdateAsync("1", null!, CancellationToken.None);
             var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal(400, objResult.StatusCode);
         }
@@ -500,10 +501,10 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_Returns500_OnException()
         {
-            _serviceMock.Setup(s => s.UpdatePantryItemAsync(It.IsAny<CreateUpdatePantryItemRequestDto>(), userId))
+            _serviceMock.Setup(s => s.UpdatePantryItemAsync(It.IsAny<CreateUpdatePantryItemRequestDto>(), userId, CancellationToken.None))
                 .ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.UpdateAsync("1", new CreateUpdatePantryItemRequestDto { Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }});
+            var result = await _controller.UpdateAsync("1", new CreateUpdatePantryItemRequestDto { Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}, CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
         }

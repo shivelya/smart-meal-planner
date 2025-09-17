@@ -91,7 +91,7 @@ namespace Backend.Tests.Services.Impl
             var user = new User { Id = 2, Email = "user@example.com" };
             var ip = "127.0.0.1";
 
-            var refreshToken = await service.GenerateRefreshTokenAsync(user, ip);
+            var refreshToken = await service.GenerateRefreshTokenAsync(user, ip, CancellationToken.None);
 
             Assert.NotNull(refreshToken.Token);
             Assert.Equal(user.Id, refreshToken.UserId);
@@ -117,7 +117,7 @@ namespace Backend.Tests.Services.Impl
             context.RefreshTokens.Add(token);
             await context.SaveChangesAsync();
 
-            var found = await service.VerifyRefreshTokenAsync(tokenStr);
+            var found = await service.VerifyRefreshTokenAsync(tokenStr, CancellationToken.None);
 
             Assert.NotNull(found);
             Assert.Equal(tokenStr, found.Token);
@@ -130,7 +130,7 @@ namespace Backend.Tests.Services.Impl
             var configValues = new Dictionary<string, string?>();
             var service = CreateService(context, configValues);
 
-            var found = await service.VerifyRefreshTokenAsync("notfound");
+            var found = await service.VerifyRefreshTokenAsync("notfound", CancellationToken.None);
 
             Assert.Null(found);
         }
@@ -146,7 +146,7 @@ namespace Backend.Tests.Services.Impl
             context.RefreshTokens.Add(token);
             await context.SaveChangesAsync();
 
-            var found = await service.VerifyRefreshTokenAsync(tokenStr);
+            var found = await service.VerifyRefreshTokenAsync(tokenStr, CancellationToken.None);
 
             Assert.Null(found);
         }
@@ -162,7 +162,7 @@ namespace Backend.Tests.Services.Impl
             context.RefreshTokens.Add(token);
             await context.SaveChangesAsync();
 
-            var found = await service.VerifyRefreshTokenAsync(tokenStr);
+            var found = await service.VerifyRefreshTokenAsync(tokenStr, CancellationToken.None);
 
             Assert.Null(found);
         }
@@ -185,7 +185,7 @@ namespace Backend.Tests.Services.Impl
             context.RefreshTokens.Add(token);
             await context.SaveChangesAsync();
 
-            await service.RevokeRefreshTokenAsync(tokenStr);
+            await service.RevokeRefreshTokenAsync(tokenStr, CancellationToken.None);
 
             var found = await context.RefreshTokens.FindAsync(token.Id);
             Assert.NotNull(found);

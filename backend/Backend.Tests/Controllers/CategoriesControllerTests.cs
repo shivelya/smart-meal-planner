@@ -16,10 +16,10 @@ namespace Backend.Tests.Controllers
             var loggerMock = new Mock<ILogger<CategoriesController>>();
             var categories = new List<CategoryDto> { new() { Id = 1, Name = "Test" } };
             var resultMock = new GetCategoriesResult { TotalCount = 1, Items = categories };
-            serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(resultMock);
+            serviceMock.Setup(s => s.GetAllAsync(CancellationToken.None)).ReturnsAsync(resultMock);
             var controller = new CategoriesController(serviceMock.Object, loggerMock.Object);
 
-            var result = await controller.GetCategories();
+            var result = await controller.GetCategories(CancellationToken.None);
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var value = Assert.IsType<GetCategoriesResult>(okResult.Value);
             Assert.Equal(1, value.TotalCount);
@@ -31,9 +31,9 @@ namespace Backend.Tests.Controllers
         {
             var loggerMock = new Mock<ILogger<CategoriesController>>();
             var serviceMock = new Mock<ICategoryService>();
-            serviceMock.Setup(s => s.GetAllAsync()).ReturnsAsync(new GetCategoriesResult { TotalCount = 0, Items = [] });
+            serviceMock.Setup(s => s.GetAllAsync(CancellationToken.None)).ReturnsAsync(new GetCategoriesResult { TotalCount = 0, Items = [] });
             var controller = new CategoriesController(serviceMock.Object, loggerMock.Object);
-            var result = await controller.GetCategories();
+            var result = await controller.GetCategories(CancellationToken.None);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetCategoriesResult>(ok.Value);
             Assert.Empty(returned.Items);
@@ -45,10 +45,10 @@ namespace Backend.Tests.Controllers
         {
             var serviceMock = new Mock<ICategoryService>();
             var loggerMock = new Mock<ILogger<CategoriesController>>();
-            serviceMock.Setup(s => s.GetAllAsync()).ThrowsAsync(new Exception("fail"));
+            serviceMock.Setup(s => s.GetAllAsync(CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var controller = new CategoriesController(serviceMock.Object, loggerMock.Object);
 
-            var result = await controller.GetCategories();
+            var result = await controller.GetCategories(CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
             Assert.NotNull(objResult.Value);

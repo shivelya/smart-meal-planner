@@ -361,7 +361,7 @@ namespace Backend.Tests.Services.Impl
         public async Task GenerateMealPlanAsync_ReturnsGeneratedMealPlan()
         {
             var mealPlan = new CreateUpdateMealPlanRequestDto { Meals = [] };
-            _mockRecipeGenerator.Setup(r => r.GenerateMealPlanAsync(2, It.IsAny<int>(), false)).ReturnsAsync(mealPlan);
+            _mockRecipeGenerator.Setup(r => r.GenerateMealPlanAsync(2, It.IsAny<int>(), false, CancellationToken.None)).ReturnsAsync(mealPlan);
             var mock = new GenerateMealPlanRequestDto
             {
                 Days = 2,
