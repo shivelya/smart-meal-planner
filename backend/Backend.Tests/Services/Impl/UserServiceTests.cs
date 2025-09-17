@@ -9,23 +9,29 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Tests.Services.Impl
 {
-    public class UserServiceTests
+    [Collection("Database collection")]
+    public class UserServiceTests(SqliteTestFixture fixture) : IAsyncLifetime
     {
-        private PlannerContext context = null!;
+        private readonly SqliteTestFixture _fixture = fixture;
+
+        public async Task InitializeAsync()
+        {
+            using var context = _fixture.CreateContext();
+            await context.Database.EnsureDeletedAsync();
+            await context.Database.EnsureCreatedAsync();
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
+
         private UserService CreateService(
             Mock<ITokenService>? tokenService = null,
             Mock<IEmailService>? emailService = null,
             ILogger<UserService>? logger = null)
         {
-            var options = new DbContextOptionsBuilder<PlannerContext>()
-                .UseInMemoryDatabase(Guid.NewGuid().ToString())
-                .Options;
-            var config = new Microsoft.Extensions.Configuration.ConfigurationBuilder().Build();
-            context = new PlannerContext(options, config, new Microsoft.Extensions.Logging.Abstractions.NullLogger<PlannerContext>());
             var tokenSvc = tokenService ?? new Mock<ITokenService>();
             var emailSvc = emailService ?? new Mock<IEmailService>();
             var log = logger ?? new Microsoft.Extensions.Logging.Abstractions.NullLogger<UserService>();
-            return new UserService(context, tokenSvc.Object, emailSvc.Object, log);
+            return new UserService(_fixture.CreateContext(), tokenSvc.Object, emailSvc.Object, log);
         }
 
         [Fact]
@@ -36,10 +42,11 @@ namespace Backend.Tests.Services.Impl
             var request = new LoginRequest { Email = "test@example.com", Password = "password123" };
             var ip = "127.0.0.1";
             tokenService.Setup(t => t.GenerateAccessToken(It.IsAny<User>())).Returns("access-token");
-            tokenService.Setup(t => t.GenerateRefreshTokenAsync(It.IsAny<User>(), ip)).ReturnsAsync(new RefreshToken { Token = "refresh-token" });
+            tokenService.Setup(t => t.GenerateRefreshTokenAsync(It.IsAny<User>(), ip, CancellationToken.None)).ReturnsAsync(new RefreshToken { Token = "refresh-token" });
 
-            var result = await service.RegisterNewUserAsync(request, ip);
+            var result = await service.RegisterNewUserAsync(request, ip, CancellationToken.None);
 
+            var context = _fixture.CreateContext();
             Assert.Single(context.Users);
             var user = context.Users.First();
             Assert.Equal("test@example.com", user.Email);
@@ -57,10 +64,11 @@ namespace Backend.Tests.Services.Impl
             var request = new LoginRequest { Email = "test@example.com", Password = "password123" };
             var ip = "127.0.0.1";
 
+            var context = _fixture.CreateContext();
             context.Users.Add(new User { Email = "test@example.com", PasswordHash = "hashed" });
             context.SaveChanges();
 
-            await Assert.ThrowsAsync<InvalidOperationException>(() => service.RegisterNewUserAsync(request, ip));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => service.RegisterNewUserAsync(request, ip, CancellationToken.None));
         }
 
         [Fact]
@@ -70,13 +78,14 @@ namespace Backend.Tests.Services.Impl
             var service = CreateService(tokenService: tokenService);
             var ip = "127.0.0.1";
             tokenService.Setup(t => t.GenerateAccessToken(It.IsAny<User>())).Returns("access-token");
-            tokenService.Setup(t => t.GenerateRefreshTokenAsync(It.IsAny<User>(), ip)).ReturnsAsync(new RefreshToken { Token = "refresh-token" });
+            tokenService.Setup(t => t.GenerateRefreshTokenAsync(It.IsAny<User>(), ip, CancellationToken.None)).ReturnsAsync(new RefreshToken { Token = "refresh-token" });
             var login = new LoginRequest { Email = "test@example.com", Password = "password123" };
 
+            var context = _fixture.CreateContext();
             context.Users.Add(new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123") });
             context.SaveChanges();
 
-            var result = await service.LoginAsync(login, ip);
+            var result = await service.LoginAsync(login, ip, CancellationToken.None);
 
             Assert.NotNull(result);
             Assert.False(string.IsNullOrEmpty(result.AccessToken));
@@ -89,7 +98,7 @@ namespace Backend.Tests.Services.Impl
             var service = CreateService();
             var login = new LoginRequest { Email = "notfound@example.com", Password = "password123" };
             var ip = "127.0.0.1";
-            await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip, CancellationToken.None));
         }
 
         [Fact]
@@ -99,21 +108,23 @@ namespace Backend.Tests.Services.Impl
             var ip = "127.0.0.1";
             var login = new LoginRequest { Email = "test@example.com", Password = "wrongpassword" };
 
+            var context = _fixture.CreateContext();
             context.Users.Add(new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("hashed") });
             context.SaveChanges();
 
-            await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip, CancellationToken.None));
         }
 
         [Fact]
         public async Task ChangePasswordAsync_ChangesPassword_WhenOldPasswordCorrect()
         {
+            var context = _fixture.CreateContext();
             var service = CreateService();
             var user = new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass") };
             context.Users.Add(user);
             context.SaveChanges();
 
-            await service.ChangePasswordAsync(user.Id, "oldpass", "newpass");
+            await service.ChangePasswordAsync(user.Id, "oldpass", "newpass", CancellationToken.None);
 
             BCrypt.Net.BCrypt.Verify("newpass", context.Users.First().PasswordHash);
         }
@@ -121,24 +132,26 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task ChangePasswordAsync_Throws_WhenOldPasswordIncorrect()
         {
+            var context = _fixture.CreateContext();
             var service = CreateService();
             var user = new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass") };
             context.Users.Add(user);
             context.SaveChanges();
 
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ChangePasswordAsync(user.Id, "wrongpass", "newpass"));
+            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ChangePasswordAsync(user.Id, "wrongpass", "newpass", CancellationToken.None));
         }
 
         [Fact]
         public async Task ChangePasswordAsync_Throws_WhenUserNotFound()
         {
             var service = CreateService();
-            await Assert.ThrowsAsync<ArgumentException>(() => service.ChangePasswordAsync(9999, "oldpass", "newpass"));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.ChangePasswordAsync(9999, "oldpass", "newpass", CancellationToken.None));
         }
 
         [Fact]
         public async Task ForgotPasswordAsync_SendsEmail_WhenUserExists()
         {
+            var context = _fixture.CreateContext();
             var emailService = new Mock<IEmailService>();
             var tokenService = new Mock<ITokenService>();
             tokenService.Setup(t => t.GenerateResetToken(It.IsAny<User>())).Returns("reset-token");
@@ -147,7 +160,7 @@ namespace Backend.Tests.Services.Impl
             context.Users.Add(new User { Email = "forgot@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("hashed") });
             context.SaveChanges();
 
-            await service.ForgotPasswordAsync("forgot@example.com");
+            await service.ForgotPasswordAsync("forgot@example.com", CancellationToken.None);
 
             emailService.Verify(e => e.SendPasswordResetEmailAsync("forgot@example.com", "reset-token"), Times.Once);
         }
@@ -158,16 +171,16 @@ namespace Backend.Tests.Services.Impl
             var emailService = new Mock<IEmailService>();
             var tokenService = new Mock<ITokenService>();
             var service = CreateService(tokenService: tokenService, emailService: emailService);
-            await service.ForgotPasswordAsync("notfound@example.com");
+            await service.ForgotPasswordAsync("notfound@example.com", CancellationToken.None);
             emailService.Verify(e => e.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
         public async Task ResetPasswordAsync_UpdatesPassword_WhenTokenValid()
         {
+            var context = _fixture.CreateContext();
             var tokenService = new Mock<ITokenService>();
-            var emailService = new Mock<IEmailService>();
-            var service = CreateService(tokenService: tokenService, emailService: emailService);
+            var service = CreateService(tokenService: tokenService);
             var userEntity = new User { Email = "resetpass@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("oldpass") };
             context.Users.Add(userEntity);
             context.SaveChanges();
@@ -175,10 +188,11 @@ namespace Backend.Tests.Services.Impl
             tokenService.Setup(t => t.ValidateResetToken(It.IsAny<string>())).Returns(userEntity.Id);
             var request = new ResetPasswordRequest { ResetCode = "reset-token", NewPassword = "newpass" };
 
-            var result = await service.ResetPasswordAsync(request);
+            var result = await service.ResetPasswordAsync(request, CancellationToken.None);
 
+            var newContext = _fixture.CreateContext();
             Assert.True(result);
-            Assert.True(BCrypt.Net.BCrypt.Verify("newpass", context.Users.First(u => u.Id == userEntity.Id).PasswordHash));
+            Assert.True(BCrypt.Net.BCrypt.Verify("newpass", newContext.Users.First(u => u.Id == userEntity.Id).PasswordHash));
         }
 
         [Fact]
@@ -188,19 +202,20 @@ namespace Backend.Tests.Services.Impl
             tokenService.Setup(t => t.ValidateResetToken(It.IsAny<string>())).Returns((int?)null);
             var service = CreateService(tokenService: tokenService);
             var request = new ResetPasswordRequest { ResetCode = "bad-token", NewPassword = "newpass" };
-            await Assert.ThrowsAsync<ArgumentException>(() => service.ResetPasswordAsync(request));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.ResetPasswordAsync(request, CancellationToken.None));
         }
 
         [Fact]
         public async Task UpdateUserDtoAsync_UpdatesUser_WhenExists()
         {
+            var context = _fixture.CreateContext();
             var service = CreateService();
             var user = new User { Email = "updateuser@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password123") };
             context.Users.Add(user);
             context.SaveChanges();
             var dto = new UserDto { Id = user.Id, Email = "updated@example.com" };
 
-            var result = await service.UpdateUserDtoAsync(dto);
+            var result = await service.UpdateUserDtoAsync(dto, CancellationToken.None);
 
             Assert.True(result);
             context.Users.First(u => u.Id == user.Id).Email.Equals("updated@example.com");
@@ -211,14 +226,14 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateService();
             var dto = new UserDto { Id = 9999, Email = "notfound@example.com" };
-            await Assert.ThrowsAsync<ValidationException>(() => service.UpdateUserDtoAsync(dto));
+            await Assert.ThrowsAsync<ValidationException>(() => service.UpdateUserDtoAsync(dto, CancellationToken.None));
         }
 
         [Fact]
         public async Task RefreshTokensAsync_Throws_WhenTokenMissing()
         {
             var service = CreateService();
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync(null!, "ip"));
+            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync(null!, "ip", CancellationToken.None));
             Assert.Equal("Refresh token is required.", ex.Message);
         }
 
@@ -226,10 +241,10 @@ namespace Backend.Tests.Services.Impl
         public async Task RefreshTokensAsync_Throws_WhenTokenNotFound()
         {
             var tokenService = new Mock<ITokenService>();
-            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).ReturnsAsync((RefreshToken)null!);
             var service = CreateService(tokenService: tokenService);
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("badtoken", "ip"));
-            Assert.Equal("Invalid refresh token.", ex.Message);
+            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("badtoken", "ip", CancellationToken.None));
+            Assert.Equal("Invalid refresh token provided.", ex.Message);
         }
 
         [Fact]
@@ -237,11 +252,10 @@ namespace Backend.Tests.Services.Impl
         {
             var tokenService = new Mock<ITokenService>();
             var expiredToken = new RefreshToken { Expires = DateTime.UtcNow.AddMinutes(-1), IsRevoked = false };
-            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(expiredToken);
-            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).Throws<ValidationException>();
+            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).Returns(Task.CompletedTask);
             var service = CreateService(tokenService: tokenService);
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("expired", "ip"));
-            Assert.Equal("Invalid refresh token.", ex.Message);
+            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("expired", "ip", CancellationToken.None));
         }
 
         [Fact]
@@ -249,29 +263,30 @@ namespace Backend.Tests.Services.Impl
         {
             var tokenService = new Mock<ITokenService>();
             var validToken = new RefreshToken { Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false, UserId = 9999 };
-            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(validToken);
-            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).ReturnsAsync(validToken);
+            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).Returns(Task.CompletedTask);
             var service = CreateService(tokenService: tokenService);
             // No user with id 9999 in context
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("valid", "ip"));
+            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("valid", "ip", CancellationToken.None));
             Assert.Equal("Invalid user.", ex.Message);
         }
 
         [Fact]
         public async Task RefreshTokensAsync_ReturnsTokens_WhenValid()
         {
+            var context = _fixture.CreateContext();
             var tokenService = new Mock<ITokenService>();
             var user = new User { Email = "refresh@example.com", PasswordHash = "hash" };
             var service = CreateService(tokenService: tokenService);
             context.Users.Add(user);
             context.SaveChanges();
             var validToken = new RefreshToken { Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false, UserId = user.Id };
-            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(validToken);
-            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
-            tokenService.Setup(t => t.GenerateAccessToken(user)).Returns("access-token");
-            tokenService.Setup(t => t.GenerateRefreshTokenAsync(user, "ip")).ReturnsAsync(new RefreshToken { Token = "new-refresh" });
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).ReturnsAsync(validToken);
+            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).Returns(Task.CompletedTask);
+            tokenService.Setup(t => t.GenerateAccessToken(It.IsAny<User>())).Returns("access-token");
+            tokenService.Setup(t => t.GenerateRefreshTokenAsync(It.IsAny<User>(), "ip", CancellationToken.None)).ReturnsAsync(new RefreshToken { Token = "new-refresh" });
 
-            var result = await service.RefreshTokensAsync("valid", "ip");
+            var result = await service.RefreshTokensAsync("valid", "ip", CancellationToken.None);
 
             Assert.NotNull(result);
             Assert.Equal("access-token", result.AccessToken);
@@ -282,7 +297,7 @@ namespace Backend.Tests.Services.Impl
         public async Task LogoutAsync_Throws_WhenTokenMissing()
         {
             var service = CreateService();
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.LogoutAsync(null!));
+            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.LogoutAsync(null!, CancellationToken.None));
             Assert.Equal("Refresh token is required.", ex.Message);
         }
 
@@ -290,11 +305,10 @@ namespace Backend.Tests.Services.Impl
         public async Task LogoutAsync_DoesNothing_WhenTokenNotFound()
         {
             var tokenService = new Mock<ITokenService>();
-            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
             var service = CreateService(tokenService: tokenService);
             // Should not throw
-            await service.LogoutAsync("notfound");
-            tokenService.Verify(t => t.RevokeRefreshTokenAsync(It.IsAny<string>()), Times.Never);
+            await service.LogoutAsync("notfound", CancellationToken.None);
+            tokenService.Verify(t => t.RevokeRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None), Times.Once);
         }
 
         [Fact]
@@ -302,11 +316,11 @@ namespace Backend.Tests.Services.Impl
         {
             var tokenService = new Mock<ITokenService>();
             var token = new RefreshToken { Token = "tok", Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(token);
-            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).ReturnsAsync(token);
+            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).Returns(Task.CompletedTask).Verifiable();
             var service = CreateService(tokenService: tokenService);
-            await service.LogoutAsync("tok");
-            tokenService.Verify(t => t.RevokeRefreshTokenAsync(It.IsAny<string>()), Times.Once);
+            await service.LogoutAsync("tok", CancellationToken.None);
+            tokenService.Verify(t => t.RevokeRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None), Times.Once);
         }
     }
 }

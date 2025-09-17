@@ -212,7 +212,7 @@ namespace Backend.Services.Impl
             _logger.LogInformation("Entering Search: userId={UserId}, search={Search}, take={Take}, skip={Skip}", userId, search, take, skip);
             var items = _context.PantryItems
                 .Where(i => i.UserId == userId)
-                .Where(i => i.Food.Name.Contains(search.ToLower(CultureInfo.InvariantCulture), StringComparison.InvariantCultureIgnoreCase))
+                .Where(i => i.Food.Name.ToLower().Contains(search.ToLower()))
                 .OrderBy(i => i.Food.Name)
                 .AsQueryable();
 

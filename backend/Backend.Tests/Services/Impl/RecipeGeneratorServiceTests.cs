@@ -167,7 +167,7 @@ namespace Backend.Tests.Helpers
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
             _context.Users.Add(user);
             await _context.SaveChangesAsync();
-            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(2, It.IsAny<IEnumerable<PantryItem>>()))
+            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(2, It.IsAny<IEnumerable<PantryItem>>(), CancellationToken.None))
                 .ReturnsAsync([new GeneratedMealPlanEntryDto { Title = "test", Source = "", Instructions = "" }]);
 
             var result = await _generator.GenerateMealPlanAsync(2, 1, false);
@@ -198,7 +198,7 @@ namespace Backend.Tests.Helpers
             await _context.SaveChangesAsync();
 
             // Setup external generator to return a different recipe
-            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(1, It.IsAny<IEnumerable<PantryItem>>()))
+            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(1, It.IsAny<IEnumerable<PantryItem>>(), CancellationToken.None))
                 .ReturnsAsync([
                     new() {
                         Source = "Spoonacular",

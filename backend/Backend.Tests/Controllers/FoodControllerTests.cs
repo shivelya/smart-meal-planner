@@ -21,8 +21,8 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task SearchFoods_Returns_WhenSearchIsNullOrWhitespace()
         {
-            _serviceMock.Setup(s => s.SearchFoodsAsync("", It.IsAny<int?>(), It.IsAny<int?>())).ReturnsAsync(new GetFoodsResult { Items = [], TotalCount = 0 });
-            var result = await _controller.SearchFoodsAsync("");
+            _serviceMock.Setup(s => s.SearchFoodsAsync("", It.IsAny<int?>(), It.IsAny<int?>(), System.Threading.CancellationToken.None)).ReturnsAsync(new GetFoodsResult { Items = [], TotalCount = 0 });
+            var result = await _controller.SearchFoodsAsync("", System.Threading.CancellationToken.None);
             Assert.IsType<OkObjectResult>(result.Result);
         }
 
@@ -31,9 +31,9 @@ namespace Backend.Tests.Controllers
         {
             var foods = new List<FoodDto> { new() { Id = 1, Name = "Salt", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce" }},
                 new() { Id = 2, Name = "Pepper", CategoryId = 1, Category = new CategoryDto { Id = 1, Name = "produce" }}};
-            _serviceMock.Setup(s => s.SearchFoodsAsync("spice", null, 50)).ReturnsAsync(new GetFoodsResult { TotalCount = foods.Count, Items = foods });
+            _serviceMock.Setup(s => s.SearchFoodsAsync("spice", null, 50, System.Threading.CancellationToken.None)).ReturnsAsync(new GetFoodsResult { TotalCount = foods.Count, Items = foods });
 
-            var result = await _controller.SearchFoodsAsync("spice");
+            var result = await _controller.SearchFoodsAsync("spice", System.Threading.CancellationToken.None);
 
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetFoodsResult>(ok.Value);
@@ -43,9 +43,9 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task SearchFoods_ReturnsOk_WithEmptyResults()
         {
-            _serviceMock.Setup(s => s.SearchFoodsAsync("none", null, 50)).ReturnsAsync(new GetFoodsResult { TotalCount = 0, Items = [] });
+            _serviceMock.Setup(s => s.SearchFoodsAsync("none", null, 50, System.Threading.CancellationToken.None)).ReturnsAsync(new GetFoodsResult { TotalCount = 0, Items = [] });
 
-            var result = await _controller.SearchFoodsAsync("none");
+            var result = await _controller.SearchFoodsAsync("none", System.Threading.CancellationToken.None);
 
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             var returned = Assert.IsType<GetFoodsResult>(ok.Value);

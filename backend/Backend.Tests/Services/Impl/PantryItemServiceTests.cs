@@ -3,29 +3,33 @@ using Backend.DTOs;
 using Backend.Model;
 using Backend.Services.Impl;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
 namespace Backend.Tests.Services.Impl
 {
-    public class PantryItemServiceTests
+    [Collection("Database collection")]
+    public class PantryItemServiceTests : IAsyncLifetime
     {
         private readonly Mock<ILogger<PantryItemService>> _loggerMock;
-        private readonly PlannerContext plannerContext;
+        private readonly SqliteTestFixture _fixture;
         private readonly PantryItemService _service;
 
-        public PantryItemServiceTests()
+        public PantryItemServiceTests(SqliteTestFixture fixture)
         {
+            _fixture = fixture;
             _loggerMock = new Mock<ILogger<PantryItemService>>();
-            var options = new DbContextOptionsBuilder<PlannerContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString()).Options;
-            var logger = new Mock<ILogger<PlannerContext>>();
-            var configDict = new Dictionary<string, string?>();
-            var config = new ConfigurationBuilder().AddInMemoryCollection(configDict).Build();
-            plannerContext = new PlannerContext(options, config, logger.Object);
-            _service = new PantryItemService(plannerContext, _loggerMock.Object);
+            _service = new PantryItemService(fixture.CreateContext(), _loggerMock.Object);
         }
+
+        public async Task InitializeAsync()
+        {
+            using var context = _fixture.CreateContext();
+            await context.Database.EnsureDeletedAsync();
+            await context.Database.EnsureCreatedAsync();
+        }
+
+        public Task DisposeAsync() => Task.CompletedTask;
 
         [Fact]
         public async Task CreatePantryItemAsync_Throws_WhenDtoIsNull()
@@ -37,6 +41,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task CreatePantryItemAsync_Throws_WhenIdIsNotNull()
         {
+            var plannerContext = _fixture.CreateContext();
             var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
             plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
             plannerContext.Users.Add(new User { Id = 42, Email = "a@b.com", PasswordHash = "pw" });
@@ -50,6 +55,7 @@ namespace Backend.Tests.Services.Impl
         public async Task CreatePantryItemAsync_Throws_WhenQuantityIsNegative()
         {
             // Arrange
+            var plannerContext = _fixture.CreateContext();
             var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
             var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = -5, Unit = "kg" };
             plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
@@ -71,6 +77,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task CreatePantryItemAsync_Throws_WhenFoodIdDoesNotExist()
         {
+            var plannerContext = _fixture.CreateContext();
             var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 999 };
             var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = 1, Unit = "kg" };
             var userId = 42;
@@ -82,6 +89,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task CreatePantryItemAsync_Throws_WhenUserDoesNotExist()
         {
+            var plannerContext = _fixture.CreateContext();
             var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
             var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = 1, Unit = "kg" };
             plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });
@@ -93,6 +101,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task CreatePantryItemAsync_CreatesItem_ReturnsDto()
         {
+            var plannerContext = _fixture.CreateContext();
             // Arrange
             var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
             var dto = new CreateUpdatePantryItemRequestDto { Food = food, Quantity = 2, Unit = "kg" };
@@ -113,7 +122,8 @@ namespace Backend.Tests.Services.Impl
             Assert.Equal("refrigerated", result.Food.Category.Name);
 
             // Verify entity in database
-            var entity = plannerContext.PantryItems.Include(p => p.Food).FirstOrDefault(p => p.Id == result.Id);
+            var newContext = _fixture.CreateContext();
+            var entity = newContext.PantryItems.Include(p => p.Food).FirstOrDefault(p => p.Id == result.Id);
             Assert.NotNull(entity);
             Assert.Equal(userId, entity!.UserId);
             Assert.Equal(food.Id, entity.FoodId);
@@ -125,14 +135,16 @@ namespace Backend.Tests.Services.Impl
         public async Task CreatePantryItemsAsync_CreatesMultipleItems_ReturnsDtos()
         {
             // Arrange
+            var plannerContext = _fixture.CreateContext();
             var dtos = new List<CreateUpdatePantryItemRequestDto>
             {
                 new() { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" },
                 new() { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 2 }, Quantity = 3, Unit = "g" }
             };
             var userId = 42;
-            plannerContext.Foods.Add(new Food { Id = 1, Name = "banana", Category = new Category { Name = "produce" } });
-            plannerContext.Foods.Add(new Food { Id = 2, Name = "apple", Category = new Category { Name = "produce" } });
+            plannerContext.Users.Add(new User { Id = userId, Email = "", PasswordHash = "" });
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "banana", CategoryId = 1, Category = new Category { Id = 1, Name = "produce" } });
+            plannerContext.Foods.Add(new Food { Id = 2, Name = "apple", CategoryId = 2, Category = new Category { Id = 2, Name = "produce" } });
             plannerContext.SaveChanges();
 
             // Act
@@ -146,7 +158,11 @@ namespace Backend.Tests.Services.Impl
         public async Task DeletePantryItemAsync_ItemExists_DeletesAndReturnsTrue()
         {
             // Arrange
-            var item = new PantryItem { Id = 1 };
+            var plannerContext = _fixture.CreateContext();
+            var item = new PantryItem { Id = 1, UserId = 1, FoodId = 1 };
+            plannerContext.Users.Add(new User { Id = 1, Email = "", PasswordHash = "" });
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "", CategoryId = 1 });
+            plannerContext.Categories.Add(new Category { Id = 1, Name = "" });
             plannerContext.PantryItems.Add(item);
             plannerContext.SaveChanges();
 
@@ -171,8 +187,12 @@ namespace Backend.Tests.Services.Impl
         public async Task DeletePantryitemsAsync_DeletesMultipleItems_ReturnsCount()
         {
             // Arrange
+            var plannerContext = _fixture.CreateContext();
             var ids = new List<int> { 1, 2 };
-            var items = new List<PantryItem> { new() { Id = 1 }, new() { Id = 2 } };
+            var items = new List<PantryItem> { new() { Id = 1, FoodId = 1, UserId = 1 }, new() { Id = 2, FoodId = 1, UserId = 1 } };
+            plannerContext.Users.Add(new User { Id = 1, Email = "", PasswordHash = "" });
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "", CategoryId = 1 });
+            plannerContext.Categories.Add(new Category { Id = 1, Name = "" });
             plannerContext.PantryItems.AddRange(items);
             plannerContext.SaveChanges();
 
@@ -187,16 +207,19 @@ namespace Backend.Tests.Services.Impl
         public async Task GetPantryItemByIdAsync_ItemExists_ReturnsDto()
         {
             // Arrange
+            var plannerContext = _fixture.CreateContext();
             var item = new PantryItem
             {
                 Id = 1,
-                FoodId = 2,
+                FoodId = 1,
                 Quantity = 3,
                 Unit = "g",
-                UserId = 42,
-                Food = new Food { Id = 1, Name = "banana", Category = new Category { Name = "produce" } }
+                UserId = 1
             };
             plannerContext.PantryItems.Add(item);
+            plannerContext.Users.Add(new User { Id = 1, Email = "", PasswordHash = "" });
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "", CategoryId = 1 });
+            plannerContext.Categories.Add(new Category { Id = 1, Name = "" });
             plannerContext.SaveChanges();
 
             // Act
@@ -219,18 +242,17 @@ namespace Backend.Tests.Services.Impl
 
         private PantryItemService CreateServiceWithData(out int userId)
         {
-            var options = new DbContextOptionsBuilder<PlannerContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
             var logger = new LoggerFactory().CreateLogger<PantryItemService>();
-            var context = new PlannerContext(options, null!, new LoggerFactory().CreateLogger<PlannerContext>());
+            var context = _fixture.CreateContext();
             userId = 1;
+            context.Users.Add(new User { Id = userId, Email = "", PasswordHash = "" });
+            context.Users.Add(new User { Id = 99, Email = "", PasswordHash = "" });
 
             // Seed foods
-            var category = new Category { Name = "produce" };
+            var category = new Category { Id = 1, Name = "produce" };
             var food1 = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = category };
             var food2 = new Food { Id = 2, Name = "Sugar", CategoryId = 1, Category = category };
-            var food3 = new Food { Id = 3, Name = "Pepper", CategoryId = 2, Category = category };
+            var food3 = new Food { Id = 3, Name = "Pepper", CategoryId = 1, Category = category };
             context.Foods.AddRange(food1, food2, food3);
 
             // Seed pantry items
@@ -304,14 +326,11 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task Search_LimitsResultsTo20()
         {
-            var options = new DbContextOptionsBuilder<PlannerContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-            var logger = new LoggerFactory().CreateLogger<PantryItemService>();
-            var context = new PlannerContext(options, null!, new LoggerFactory().CreateLogger<PlannerContext>());
+            var context = _fixture.CreateContext();
             int userId = 1;
 
-            var food = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Name = "produce" } };
+            context.Users.Add(new User { Id = userId, Email = "", PasswordHash = "" });
+            var food = new Food { Id = 1, Name = "Salt", CategoryId = 1, Category = new Category { Id = 1, Name = "produce" } };
             context.Foods.Add(food);
 
             for (int i = 0; i < 25; i++)
@@ -328,9 +347,7 @@ namespace Backend.Tests.Services.Impl
             }
             context.SaveChanges();
 
-            var service = new PantryItemService(context, logger);
-
-            var results = await service.Search("Salt", userId, 20, null);
+            var results = await _service.Search("Salt", userId, 20, null);
 
             Assert.Equal(25, results.TotalCount);
             Assert.Equal(20, results.Items.Count());
@@ -342,7 +359,7 @@ namespace Backend.Tests.Services.Impl
                 .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
                 .Options;
             var logger = new LoggerFactory().CreateLogger<PantryItemService>();
-            context = new PlannerContext(options, null!, new LoggerFactory().CreateLogger<PlannerContext>());
+            context = new PlannerContext(options, _fixture.Configuration, new LoggerFactory().CreateLogger<PlannerContext>());
             userId = 1;
 
             var user = new User { Id = userId, Email = "test@example.com", PasswordHash = Guid.NewGuid().ToString() };
@@ -538,6 +555,8 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_Throws_WhenQuantityIsNegative()
         {
             // Arrange
+            var plannerContext = _fixture.CreateContext();
+            plannerContext.Users.Add(new User { Id = 42, Email = "", PasswordHash = "" });
             var food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 };
             var pantryItem = new PantryItem { Id = 1, FoodId = 1, Quantity = 2, Unit = "kg", UserId = 42 };
             plannerContext.Foods.Add(new Food { Id = 1, Name = "juice", Category = new Category { Name = "refrigerated" } });

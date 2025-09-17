@@ -34,7 +34,7 @@ namespace Backend.Tests.Services.Impl
             _context.Foods.Add(new Food { Id = 3, Name = "Sugar", CategoryId = 2, Category = new Category { Id = 2, Name = "Sweeteners" } });
             await _context.SaveChangesAsync();
 
-            var result = await _service.SearchFoodsAsync("S", null, null);
+            var result = await _service.SearchFoodsAsync("S", null, null, CancellationToken.None);
             Assert.Contains(result.Items, i => i.Name == "Salt");
             Assert.Contains(result.Items, i => i.Name == "Sugar");
             Assert.DoesNotContain(result.Items, i => i.Name == "Pepper");
@@ -48,7 +48,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task SearchFoods_ReturnsEmpty_WhenNoMatch()
         {
-            var result = await _service.SearchFoodsAsync("xyz", null, null);
+            var result = await _service.SearchFoodsAsync("xyz", null, null, CancellationToken.None);
             Assert.Empty(result.Items);
         }
 
@@ -61,7 +61,7 @@ namespace Backend.Tests.Services.Impl
                     Category = new Category { Id = i+1, Name = "Cat" } });
             }
             await _context.SaveChangesAsync();
-            var result = await _service.SearchFoodsAsync("Ing", 0, 20);
+            var result = await _service.SearchFoodsAsync("Ing", 0, 20, CancellationToken.None);
             Assert.Equal(25, result.TotalCount);
             Assert.Equal(20, result.Items.Count());
         }
