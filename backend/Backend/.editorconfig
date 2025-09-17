@@ -1,0 +1,26 @@
+[*.cs]
+# Make all diagnostics show as warnings by default
+dotnet_analyzer_diagnostic.severity = warning
+
+dotnet_diagnostic.IDE0008.severity = none
+dotnet_diagnostic.IDE0058.severity = none
+dotnet_diagnostic.IDE0011.severity = none
+dotnet_diagnostic.IDE0078.severity = none
+
+dotnet_diagnostic.CA1848.severity = none
+
+"editor.formatOnSave": true
+
+# Use spaces instead of tabs
+indent_style = space
+
+# Tab/indent size
+indent_size = 4
+
+# Trim trailing whitespace
+trim_trailing_whitespace = true
+
+# C# specific formatting
+csharp_new_line_before_open_brace = all
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true

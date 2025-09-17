@@ -16,5 +16,5 @@ var app = builder.Build();
 app.UseMyAppPipeline()
     .ConfigureExceptionHandling()
     .MapControllers();
-    
+
 app.Run();

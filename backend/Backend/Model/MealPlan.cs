@@ -7,6 +7,6 @@ namespace Backend.Model
         public DateTime? StartDate { get; set; }
 
         public User User { get; set; } = null!;
-        public ICollection<MealPlanEntry> Meals { get; set; } = new List<MealPlanEntry>();
+        public ICollection<MealPlanEntry> Meals { get; set; } = [];
     }
 }

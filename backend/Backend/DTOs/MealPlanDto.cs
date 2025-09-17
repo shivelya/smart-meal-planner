@@ -17,7 +17,7 @@ namespace Backend.DTOs
     public class GetMealPlansResult
     {
         public required int TotalCount { get; set; }
-        public required IEnumerable<MealPlanDto> MealPlans { get; set;}
+        public required IEnumerable<MealPlanDto> MealPlans { get; set; }
     }
 
     public class GenerateMealPlanRequestDto
