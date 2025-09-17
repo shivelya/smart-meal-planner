@@ -12,7 +12,7 @@ namespace Backend.Services.Impl
         private readonly IEmailService _emailService = emailService;
         private readonly ILogger<UserService> _logger = logger;
 
-        public async Task<TokenResponse> RegisterNewUserAsync(LoginRequest request, string ip)
+        public async Task<TokenResponse> RegisterNewUserAsync(LoginRequest request, string ip, CancellationToken ct)
         {
             _logger.LogInformation("Entering CreateUserAsync: email={Email}", request.Email);
 
@@ -27,7 +27,7 @@ namespace Backend.Services.Impl
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
             _logger.LogDebug("CreateUserAsync: Password hashed for user: {Email}; hash: {Hash}", request.Email, hashedPassword);
 
-            using var transaction = await _context.Database.BeginTransactionAsync();
+            using var transaction = await _context.Database.BeginTransactionAsync(ct);
 
             try
             {
@@ -37,25 +37,25 @@ namespace Backend.Services.Impl
                     PasswordHash = hashedPassword
                 };
 
-                _context.Users.Add(user);
-                await _context.SaveChangesAsync();
+                await _context.Users.AddAsync(user, ct);
+                await _context.SaveChangesAsync(ct);
 
                 var result = await GenerateTokensAsync(user, ip);
 
                 _logger.LogInformation("CreateUserAsync: User created successfully: {User}", user);
                 _logger.LogInformation("Exiting CreateUserAsync: email={Email}, userId={UserId}", request.Email, user.Id);
 
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(ct);
                 return result;
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(ct);
                 throw;
             }
         }
 
-        public async Task ChangePasswordAsync(int userId, string oldPassword, string newPassword)
+        public async Task ChangePasswordAsync(int userId, string oldPassword, string newPassword, CancellationToken ct)
         {
             _logger.LogInformation("Entering ChangePasswordAsync: userId={UserId}", userId);
             var user = await GetByIdAsync(userId);
@@ -75,13 +75,13 @@ namespace Backend.Services.Impl
             string newHashedPassword = BCrypt.Net.BCrypt.HashPassword(newPassword);
             user.PasswordHash = newHashedPassword;
 
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("ChangePasswordAsync: Password changed successfully for user ID: {UserId}", userId);
             _logger.LogInformation("Exiting ChangePasswordAsync: userId={UserId}", userId);
         }
 
-        public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request)
+        public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct)
         {
             var userId = _tokenService.ValidateResetToken(request.ResetCode);
             _logger.LogInformation("Entering UpdatePasswordAsync: userId={UserId}", userId);
@@ -103,14 +103,14 @@ namespace Backend.Services.Impl
 
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.NewPassword);
             _context.Users.Update(user);
-            await _context.SaveChangesAsync();
+            await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("UpdatePasswordAsync: Password updated successfully for user ID: {UserId}", userId);
             _logger.LogInformation("Exiting UpdatePasswordAsync: userId={UserId}", userId);
             return true;
         }
 
-        public async Task<bool> UpdateUserDtoAsync(UserDto userDto)
+        public async Task<bool> UpdateUserDtoAsync(UserDto userDto, CancellationToken ct)
         {
             _logger.LogInformation("Entering UpdateUserDtoAsync: userId={UserId}", userDto.Id);
             var user = await GetByIdAsync(userDto.Id);
@@ -121,13 +121,13 @@ namespace Backend.Services.Impl
             }
 
             user.Email = userDto.Email;
-            var result = await _context.SaveChangesAsync() > 0;
+            var result = await _context.SaveChangesAsync(ct) > 0;
             _logger.LogInformation("UpdateUserDtoAsync: User updated for userId={UserId}", userDto.Id);
             _logger.LogInformation("Exiting UpdateUserDtoAsync: userId={UserId}, result={Result}", userDto.Id, result);
             return result;
         }
 
-        public async Task<TokenResponse> RefreshTokensAsync(string refreshToken, string ip)
+        public async Task<TokenResponse> RefreshTokensAsync(string refreshToken, string ip, CancellationToken ct)
         {
             _logger.LogInformation("Entering RefreshAsync with refreshToken: {RefreshToken}", refreshToken);
             if (string.IsNullOrWhiteSpace(refreshToken))
@@ -136,7 +136,7 @@ namespace Backend.Services.Impl
                 throw new ValidationException("Refresh token is required.");
             }
 
-            var transaction = await _context.Database.BeginTransactionAsync();
+            var transaction = await _context.Database.BeginTransactionAsync(ct);
 
             try
             {
@@ -144,7 +144,7 @@ namespace Backend.Services.Impl
 
                 if (oldRefreshToken == null)
                 {
-                    _logger.LogWarning("RefreshTokensAsync: invalid refresh token provided. token={token}", refreshToken);
+                    _logger.LogWarning("RefreshTokensAsync: invalid refresh token provided. token={Token}", refreshToken);
                     throw new ValidationException("Invalid refresh token provided.");
                 }
 
@@ -165,17 +165,17 @@ namespace Backend.Services.Impl
                 _logger.LogDebug("New AccessToken: {AccessToken}, New RefreshToken: {RefreshToken}", result.AccessToken, result.RefreshToken);
                 _logger.LogInformation("Exiting RefreshAsync: userId={UserId}", user.Id);
 
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(ct);
                 return result;
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(ct);
                 throw;
             }
         }
 
-        public async Task LogoutAsync(string refreshToken)
+        public async Task LogoutAsync(string refreshToken, CancellationToken ct)
         {
             _logger.LogInformation("Entering Logout with refreshToken: {RefreshToken}", refreshToken);
             if (string.IsNullOrWhiteSpace(refreshToken))
@@ -191,7 +191,7 @@ namespace Backend.Services.Impl
             _logger.LogInformation("Exiting Logout: refreshToken={RefreshToken}", refreshToken);
         }
 
-        public async Task ForgotPasswordAsync(string email)
+        public async Task ForgotPasswordAsync(string email, CancellationToken ct)
         {
             _logger.LogInformation("Entering ForgotPassword: email={Email}", email);
             if (string.IsNullOrWhiteSpace(email))
@@ -210,7 +210,7 @@ namespace Backend.Services.Impl
                 return;
             }
 
-            var transaction = await _context.Database.BeginTransactionAsync();
+            var transaction = await _context.Database.BeginTransactionAsync(ct);
             try
             {
                 var token = _tokenService.GenerateResetToken(user);
@@ -223,19 +223,19 @@ namespace Backend.Services.Impl
 
                 _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", email, token);
                 await _emailService.SendPasswordResetEmailAsync(user.Email, token);
-                await transaction.CommitAsync();
+                await transaction.CommitAsync(ct);
 
                 _logger.LogInformation("Password reset email sent to {Email}.", email);
                 _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
             }
             catch
             {
-                await transaction.RollbackAsync();
+                await transaction.RollbackAsync(ct);
                 throw;
             }
         }
 
-        public async Task<TokenResponse> LoginAsync(LoginRequest request, string ip)
+        public async Task<TokenResponse> LoginAsync(LoginRequest request, string ip, CancellationToken ct)
         {
             _logger.LogInformation("Entering Login: email={Email}", request.Email);
 

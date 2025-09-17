@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Services;
@@ -17,11 +18,12 @@ namespace Backend.Controllers
         /// <summary>
         /// Retrieves the shopping list for the current user 
         /// </summary>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns the shopping list.</remarks>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetShoppingListResult>> GetShoppingListAsync()
+        public async Task<ActionResult<GetShoppingListResult>> GetShoppingListAsync(CancellationToken ct = default)
         {
             const string method = nameof(GetShoppingListAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(ShoppingListController));
@@ -29,7 +31,7 @@ namespace Backend.Controllers
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Getting shopping list for userId={UserId}", method, userId);
-                var result = await _service.GetShoppingListAsync(userId);
+                var result = await _service.GetShoppingListAsync(userId, ct);
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(result);
             }
@@ -45,12 +47,13 @@ namespace Backend.Controllers
         /// Edits an item on the shopping list
         /// </summary>
         /// <param name="request">The updated shopping list item.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns the shopping list.</remarks>
         [HttpPut]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ShoppingListItemDto>> UpdateShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request)
+        public async Task<ActionResult<ShoppingListItemDto>> UpdateShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(UpdateShoppingListItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(ShoppingListController), request);
@@ -65,7 +68,7 @@ namespace Backend.Controllers
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Updating shopping list item for userId={UserId}", method, userId);
-                var result = await _service.UpdateShoppingListItemAsync(request, userId);
+                var result = await _service.UpdateShoppingListItemAsync(request, userId, ct);
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(result);
             }
@@ -81,12 +84,13 @@ namespace Backend.Controllers
         /// Adds a new item to the shopping list
         /// </summary>
         /// <param name="request">The new shopping list item.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns the new shopping list item.</remarks>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ShoppingListItemDto>> AddShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request)
+        public async Task<ActionResult<ShoppingListItemDto>> AddShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(AddShoppingListItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(ShoppingListController), request);
@@ -101,7 +105,7 @@ namespace Backend.Controllers
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Adding shopping list item for userId={UserId}", method, userId);
-                var result = await _service.AddShoppingListItemAsync(request, userId);
+                var result = await _service.AddShoppingListItemAsync(request, userId, ct);
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(result);
             }
@@ -117,13 +121,14 @@ namespace Backend.Controllers
         /// Removes an item from the shopping list
         /// </summary>
         /// <param name="id">The id of the item to remove.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns 204 on success.</remarks>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ShoppingListItemDto>> DeleteShoppingListItemAsync(int id)
+        public async Task<ActionResult<ShoppingListItemDto>> DeleteShoppingListItemAsync(int id, CancellationToken ct = default)
         {
             const string method = nameof(DeleteShoppingListItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(ShoppingListController), id);
@@ -138,7 +143,7 @@ namespace Backend.Controllers
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Deleting shopping list item for userId={UserId}, id={Id}", method, userId, id);
-                var ok = await _service.DeleteShoppingListItemAsync(id, userId);
+                var ok = await _service.DeleteShoppingListItemAsync(id, userId, ct);
 
                 if (ok)
                 {
@@ -166,12 +171,13 @@ namespace Backend.Controllers
         /// This DOES save the shopping list to the database. It does not return the shopping list, just a 200 status if successful.
         /// </summary>
         /// <param name="request">Includes a meal plan id and whether or not to restart the list.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Ok on success. Use GET api/shoppingList/ to retrieve the list.</remarks>
         [HttpPost("generate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetShoppingListResult>> GenerateAsync(GenerateShoppingListRequestDto request)
+        public async Task<ActionResult<GetShoppingListResult>> GenerateAsync(GenerateShoppingListRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(GenerateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(ShoppingListController), request);
@@ -193,7 +199,7 @@ namespace Backend.Controllers
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Generating shopping list for userId={UserId}, mealPlanId={MealPlanId}, restart={Restart}", method, userId, request.MealPlanId, request.Restart);
-                await _service.GenerateAsync(request, userId);
+                await _service.GenerateAsync(request, userId, ct);
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok();
             }
@@ -207,7 +213,7 @@ namespace Backend.Controllers
 
         private int GetUserId()
         {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
         }
     }
 }

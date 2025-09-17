@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Helpers;
@@ -27,18 +28,19 @@ namespace Backend.Controllers
         /// Creates a new recipe on the server, given a CreateRecipeDto object.
         /// </summary>
         /// <param name="request">The requested recipe to be created.</param>
+        /// <param name="ct">A token to cancel the operation.</param>
         /// <remarks>Returns 201 on creation</remarks>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RecipeDto>> CreateAsync([FromBody, BindRequired] CreateUpdateRecipeDtoRequest request)
+        public async Task<ActionResult<RecipeDto>> CreateAsync([FromBody, BindRequired] CreateUpdateRecipeDtoRequest request, CancellationToken ct)
         {
             const string method = nameof(CreateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
             try
             {
                 var userId = GetUserId();
-                var created = await _recipeService.CreateAsync(request, userId);
+                var created = await _recipeService.CreateAsync(request, userId, ct);
                 if (created == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null created recipe.", method);
@@ -61,19 +63,20 @@ namespace Backend.Controllers
         /// Returns a recipe based on a given id.
         /// </summary>
         /// <param name="id">The id to return the recipe of.</param>
+        /// <param name="ct">A token to cancel the operation.</param>
         /// <remarks>Returns the found recipe. Ok on success, 404 on failure.</remarks>
         [HttpGet("{id}")]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RecipeDto>> GetByIdAsync(int id)
+        public async Task<ActionResult<RecipeDto>> GetByIdAsync(int id, CancellationToken ct)
         {
             const string method = nameof(GetByIdAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
             try
             {
                 var userId = GetUserId();
-                var r = await _recipeService.GetByIdAsync(id, userId);
+                var r = await _recipeService.GetByIdAsync(id, userId, ct);
                 if (r is null)
                 {
                     _logger.LogWarning("{Method}: Recipe with ID {Id} not found.", method, id);
@@ -96,11 +99,12 @@ namespace Backend.Controllers
         /// Returns a list of recipes based on a list of ids.
         /// </summary>
         /// <param name="request">The list of ids to return.</param>
+        /// <param name="ct">A token to cancel the operation.</param>
         /// <remarks>Returns a list of full recipe objects. Ok on success.</remarks>
         [HttpPost("bulk")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetRecipesResult>> GetByIdsAsync([FromBody, BindRequired] GetRecipesRequest request)
+        public async Task<ActionResult<GetRecipesResult>> GetByIdsAsync([FromBody, BindRequired] GetRecipesRequest request, CancellationToken ct)
         {
             const string method = nameof(GetByIdsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
@@ -121,7 +125,7 @@ namespace Backend.Controllers
             try
             {
                 var userId = GetUserId();
-                var r = await _recipeService.GetByIdsAsync(request.Ids, userId);
+                var r = await _recipeService.GetByIdsAsync(request.Ids, userId, ct);
                 if (r == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null recipes.", method);
@@ -147,11 +151,12 @@ namespace Backend.Controllers
         /// <param name="ingredient">The string to search in the ingredients for.</param>
         /// <param name="skip">The number of responses to skip for paging.</param>
         /// <param name="take">the number of responses to take for paging.</param>
+        /// <param name="ct">A token to cancel the operation.</param>
         /// <remarks>Returns a list of full recipe objects. Ok on success.</remarks>
         [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetRecipesResult>> SearchAsync([FromQuery] string? title = null, [FromQuery] string? ingredient = null, [FromQuery] int? skip = null, [FromQuery] int? take = null)
+        public async Task<ActionResult<GetRecipesResult>> SearchAsync([FromQuery] string? title = null, [FromQuery] string? ingredient = null, [FromQuery] int? skip = null, [FromQuery] int? take = null, CancellationToken ct = default)
         {
             const string method = nameof(SearchAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. title={Title}, ingredient={Ingredient}, skip={Skip}, take={Take}", method, nameof(RecipeController), title, ingredient, skip, take);
@@ -165,7 +170,7 @@ namespace Backend.Controllers
             try
             {
                 var userId = GetUserId();
-                var r = await _recipeService.SearchAsync(userId, title, ingredient, skip, take);
+                var r = await _recipeService.SearchAsync(userId, title, ingredient, skip, take, ct);
                 if (r == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null search results.", method);
@@ -189,13 +194,14 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="id">The id of the recipe to update.</param>
         /// <param name="request">The recipe object to update with.</param>
+        /// <param name="ct">A token to cancel the operation.</param>
         /// <remarks>Returns the updated recipe object. Ok on success, 404 if the recipe cannot be found.</remarks>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<RecipeDto>> UpdateAsync(int id, [FromBody, BindRequired] CreateUpdateRecipeDtoRequest request)
+        public async Task<ActionResult<RecipeDto>> UpdateAsync(int id, [FromBody, BindRequired] CreateUpdateRecipeDtoRequest request, CancellationToken ct)
         {
             const string method = nameof(UpdateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, request={Request}", method, nameof(RecipeController), id, request);
@@ -209,7 +215,7 @@ namespace Backend.Controllers
             try
             {
                 var userId = GetUserId();
-                var updated = await _recipeService.UpdateAsync(id, request, userId);
+                var updated = await _recipeService.UpdateAsync(id, request, userId, ct);
                 if (updated is null)
                 {
                     _logger.LogWarning("{Method}: Recipe with ID {Id} not found for update.", method, id);
@@ -232,19 +238,20 @@ namespace Backend.Controllers
         /// Deletes a recipe with the given id
         /// </summary>
         /// <param name="id">The id of the recipe to be deleted.</param>
+        /// <param name="ct">A token to cancel the operation.</param>
         /// <remarks>Returns 201 if deleted, 404 if not found.</remarks>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult> DeleteAsync(int id)
+        public async Task<ActionResult> DeleteAsync(int id, CancellationToken ct)
         {
             const string method = nameof(DeleteAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
             try
             {
                 var userId = GetUserId();
-                var ok = await _recipeService.DeleteAsync(id, userId);
+                var ok = await _recipeService.DeleteAsync(id, userId, ct);
                 if (ok)
                 {
                     _logger.LogInformation("{Method}: Recipe with ID {Id} deleted.", method, id);
@@ -271,11 +278,12 @@ namespace Backend.Controllers
         /// verifies and saves it.
         /// </summary>
         /// <param name="request">The URL to source the recipe from.</param>
+        /// <param name="ct">A token to cancel the operation.</param>
         /// <remarks>returns a recipe object for the user to verify. Does not insert recipe into the database. OK on success.</remarks>
         [HttpPost("extract")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<ExtractedRecipe>> ExtractRecipeAsync([FromBody, BindRequired] ExtractRequest request)
+        public async Task<ActionResult<ExtractedRecipe>> ExtractRecipeAsync([FromBody, BindRequired] ExtractRequest request, CancellationToken ct)
         {
             const string method = nameof(ExtractRecipeAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
@@ -296,7 +304,7 @@ namespace Backend.Controllers
             try
             {
                 _logger.LogInformation("{Method}: Extracting recipe from source URL: {Source}", method, request.Source);
-                var draft = await _extractor.ExtractRecipeAsync(request.Source);
+                var draft = await _extractor.ExtractRecipeAsync(request.Source, ct);
                 if (draft == null)
                 {
                     _logger.LogWarning("{Method}: No recipe could be extracted from the provided URL: {Source}", method, request.Source);
@@ -362,7 +370,7 @@ namespace Backend.Controllers
 
         private int GetUserId()
         {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
         }
     }
 }

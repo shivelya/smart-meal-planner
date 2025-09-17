@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Backend.Model;
+using System.Globalization;
 
 namespace Backend.Services.Impl
 {
@@ -20,18 +21,18 @@ namespace Backend.Services.Impl
             _logger.LogInformation("Entering GenerateAccessToken: userId={UserId}", user.Id);
             var claims = new[]
             {
-                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString(CultureInfo.InvariantCulture)),
                 new Claim(ClaimTypes.Name, user.Email)
             };
 
-            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(GetConfigOrThrow("Jwt:Key")));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(GetConfigOrThrow<string>("Jwt:Key")));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
             var token = new JwtSecurityToken(
-                issuer: GetConfigOrThrow("Jwt:Issuer"),
-                audience: GetConfigOrThrow("Jwt:Audience"),
+                issuer: GetConfigOrThrow<string>("Jwt:Issuer"),
+                audience: GetConfigOrThrow<string>("Jwt:Audience"),
                 claims: claims,
-                expires: DateTime.UtcNow.AddMinutes(int.Parse(GetConfigOrThrow("Jwt:ExpireMinutes"))),
+                expires: DateTime.UtcNow.AddMinutes(GetConfigOrThrow<int>("Jwt:ExpireMinutes")),
                 signingCredentials: creds
             );
 
@@ -40,7 +41,7 @@ namespace Backend.Services.Impl
             return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
-        public async Task<RefreshToken> GenerateRefreshTokenAsync(User user, string ipAddress)
+        public async Task<RefreshToken> GenerateRefreshTokenAsync(User user, string ipAddress, CancellationToken ct)
         {
             _logger.LogInformation("Entering GenerateRefreshTokenAsync: userId={UserId}, ipAddress={IpAddress}", user.Id, ipAddress);
             var randomBytes = new byte[64];
@@ -49,66 +50,66 @@ namespace Backend.Services.Impl
             var refreshToken = new RefreshToken
             {
                 Token = Convert.ToBase64String(randomBytes),
-                Expires = DateTime.UtcNow.AddDays(int.Parse(GetConfigOrThrow("Jwt:RefreshExpireDays"))),
+                Expires = DateTime.UtcNow.AddDays(GetConfigOrThrow<int>("Jwt:RefreshExpireDays")),
                 Created = DateTime.UtcNow,
                 UserId = user.Id,
                 CreatedByIp = ipAddress,
             };
 
-            _context.RefreshTokens.Add(refreshToken);
-            await _context.SaveChangesAsync();
+            await _context.RefreshTokens.AddAsync(refreshToken, ct);
+            await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("Generated refresh token for user {UserId} at {Time}", user.Id, DateTime.UtcNow);
             _logger.LogInformation("Exiting GenerateRefreshTokenAsync: userId={UserId}, ipAddress={IpAddress}", user.Id, ipAddress);
             return refreshToken;
         }
 
-        public async Task<RefreshToken?> VerifyRefreshTokenAsync(string tokenStr)
+        public async Task<RefreshToken?> VerifyRefreshTokenAsync(string token, CancellationToken ct)
         {
-            _logger.LogInformation("Entering VerifyRefreshTokenAsync: tokenStr={TokenStr}", tokenStr);
-            var refreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == tokenStr);
+            _logger.LogInformation("Entering VerifyRefreshTokenAsync: tokenStr={TokenStr}", token);
+            var refreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == token, ct);
 
             // if the refresh token is not found or is expired/revoked, return false and revoke it
             // this is a security measure to prevent token reuse
             if (refreshToken == null || refreshToken.Expires < DateTime.UtcNow || refreshToken.IsRevoked)
             {
                 if (refreshToken != null && refreshToken.Expires < DateTime.UtcNow && !refreshToken.IsRevoked)
-                    await RevokeRefreshTokenAsync(tokenStr);
+                    await RevokeRefreshTokenAsync(token, ct);
 
                 _logger.LogWarning("VerifyRefreshTokenAsync: Invalid or expired refresh token provided: {RefreshToken}", refreshToken);
                 return null;
             }
 
-            _logger.LogInformation("Exiting VerifyRefreshTokenAsync: tokenStr={TokenStr}", tokenStr);
+            _logger.LogInformation("Exiting VerifyRefreshTokenAsync: tokenStr={TokenStr}", token);
             return refreshToken;
         }
 
-        public async Task RevokeRefreshTokenAsync(string tokenStr)
+        public async Task RevokeRefreshTokenAsync(string token, CancellationToken ct)
         {
             _logger.LogInformation("Entering RevokeRefreshTokenAsync");
-            var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == tokenStr);
-            if (token == null)
+            var refreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == token, ct);
+            if (refreshToken == null)
             {
                 _logger.LogWarning("Refresh token could not be found.");
                 return;
             }
 
-            token.IsRevoked = true;
-            await _context.SaveChangesAsync();
+            refreshToken.IsRevoked = true;
+            await _context.SaveChangesAsync(ct);
 
-            _logger.LogInformation("Revoked refresh token for user {UserId} at {Time}", token.UserId, DateTime.UtcNow);
-            _logger.LogInformation("Exiting RevokeRefreshTokenAsync: userId={UserId}", token.UserId);
+            _logger.LogInformation("Revoked refresh token for user {UserId} at {Time}", refreshToken.UserId, DateTime.UtcNow);
+            _logger.LogInformation("Exiting RevokeRefreshTokenAsync: userId={UserId}", refreshToken.UserId);
         }
 
         public string GenerateResetToken(User user)
         {
             _logger.LogInformation("Entering GenerateResetToken: userId={UserId}", user.Id);
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(GetConfigOrThrow("Jwt:Key"));
+            var key = Encoding.UTF8.GetBytes(GetConfigOrThrow<string>("Jwt:Key"));
 
             var claims = new[]
             {
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub, user.Id.ToString(CultureInfo.InvariantCulture)),
                 new Claim(_resetStr, "true") // custom claim to mark as reset token
             };
 
@@ -120,8 +121,8 @@ namespace Backend.Services.Impl
                     new SymmetricSecurityKey(key),
                     SecurityAlgorithms.HmacSha256Signature
                 ),
-                Audience = GetConfigOrThrow("Jwt:Audience"),
-                Issuer = GetConfigOrThrow("Jwt:Issuer")
+                Audience = GetConfigOrThrow<string>("Jwt:Audience"),
+                Issuer = GetConfigOrThrow<string>("Jwt:Issuer")
             };
 
             var token = tokenHandler.CreateToken(tokenDescriptor);
@@ -134,7 +135,7 @@ namespace Backend.Services.Impl
         {
             _logger.LogInformation("Entering ValidateResetToken: token={Token}", token);
             var tokenHandler = new JwtSecurityTokenHandler();
-            var key = Encoding.UTF8.GetBytes(GetConfigOrThrow("Jwt:Key"));
+            var key = Encoding.UTF8.GetBytes(GetConfigOrThrow<string>("Jwt:Key"));
 
             try
             {
@@ -143,9 +144,9 @@ namespace Backend.Services.Impl
                     ValidateIssuerSigningKey = true,
                     IssuerSigningKey = new SymmetricSecurityKey(key),
                     ValidateIssuer = true,
-                    ValidIssuer = GetConfigOrThrow("Jwt:Issuer"),
+                    ValidIssuer = GetConfigOrThrow<string>("Jwt:Issuer"),
                     ValidateAudience = true,
-                    ValidAudience = GetConfigOrThrow("Jwt:Audience"),
+                    ValidAudience = GetConfigOrThrow<string>("Jwt:Audience"),
                     ValidateLifetime = true,
                     ClockSkew = TimeSpan.Zero
                 }, out var validatedToken);
@@ -159,9 +160,7 @@ namespace Backend.Services.Impl
                     return null;
                 }
 
-                var sub = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-                int.TryParse(sub, out var userId);
+                var userId = int.Parse(principal.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
                 if (userId <= 0)
                 {
                     _logger.LogWarning("ValidateResetToken: Invalid user ID in reset token: {Token}", token);
@@ -180,14 +179,15 @@ namespace Backend.Services.Impl
             }
         }
 
-        private string GetConfigOrThrow(string key)
+        private T GetConfigOrThrow<T>(string key)
         {
-            var value = _config[key];
-            if (string.IsNullOrWhiteSpace(value))
+            var value = _config.GetValue<T>(key);
+            if (value == null)
             {
                 _logger.LogError("Missing required configuration value: {Key}", key);
                 throw new InvalidOperationException($"Missing required configuration value: {key}");
             }
+
             return value;
         }
     }

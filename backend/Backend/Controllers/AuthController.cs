@@ -26,12 +26,13 @@ namespace Backend.Controllers
         /// Returns access and refresh tokens if successful so user is immediately logged in.
         /// </summary>
         /// <param name="request">JSON object with email and password.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns access and refresh tokens if successful.</remarks>
         [HttpPost("register")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<TokenResponse>> RegisterAsync(DTOs.LoginRequest request)
+        public async Task<ActionResult<TokenResponse>> RegisterAsync(DTOs.LoginRequest request, CancellationToken ct)
         {
             const string method = nameof(RegisterAsync);
             _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
@@ -58,7 +59,7 @@ namespace Backend.Controllers
 
             try
             {
-                var result = await _userService.RegisterNewUserAsync(request, GetIP());
+                var result = await _userService.RegisterNewUserAsync(request, GetIP(), ct);
                 if (result == null)
                 {
                     _logger.LogError("Registration failed: User creation returned null tokens.");
@@ -84,13 +85,14 @@ namespace Backend.Controllers
         /// Logs in a user with the provided email and password.
         /// </summary>
         /// <param name="request">JSON object with email and password.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns a JSON object with access and refresh tokens if successful.</remarks>
         [HttpPost("login")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<TokenResponse>> LoginAsync(DTOs.LoginRequest request)
+        public async Task<ActionResult<TokenResponse>> LoginAsync(DTOs.LoginRequest request, CancellationToken ct)
         {
             const string method = nameof(LoginAsync);
             _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
@@ -117,7 +119,7 @@ namespace Backend.Controllers
 
             try
             {
-                var result = await _userService.LoginAsync(request, GetIP());
+                var result = await _userService.LoginAsync(request, GetIP(), ct);
                 if (result == null)
                 {
                     _logger.LogError("Login failed: LoginAsync returned null tokens.");
@@ -142,13 +144,14 @@ namespace Backend.Controllers
         /// Refreshes the access and refresh tokens using a valid refresh token.
         /// </summary>
         /// <param name="request">A refresh token string.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns a JSON object with new access and refresh tokens if successful.</remarks>
         [HttpPost("refresh")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<TokenResponse>> RefreshAsync([FromBody] DTOs.RefreshRequest request)
+        public async Task<ActionResult<TokenResponse>> RefreshAsync([FromBody] DTOs.RefreshRequest request, CancellationToken ct)
         {
             const string method = nameof(RefreshAsync);
             _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request.RefreshToken);
@@ -161,7 +164,7 @@ namespace Backend.Controllers
 
             try
             {
-                var result = await _userService.RefreshTokensAsync(request.RefreshToken, GetIP());
+                var result = await _userService.RefreshTokensAsync(request.RefreshToken, GetIP(), ct);
 
                 _logger.LogInformation("Exiting RefreshAsync: refreshToken={RefreshToken}", request.RefreshToken);
                 return Ok(result);
@@ -178,12 +181,13 @@ namespace Backend.Controllers
         /// Logs out the user by revoking the provided refresh token.
         /// </summary>
         /// <param name="request">A refresh request containing a refresh token.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns an OK status upon logout.</remarks>
         [Authorize]
         [HttpPost("logout")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        public async Task<IActionResult> LogoutAsync([FromBody] DTOs.RefreshRequest request)
+        public async Task<IActionResult> LogoutAsync([FromBody] DTOs.RefreshRequest request, CancellationToken ct)
         {
             const string method = nameof(LogoutAsync);
             _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request?.RefreshToken);
@@ -203,7 +207,7 @@ namespace Backend.Controllers
 
             try
             {
-                await _userService.LogoutAsync(request.RefreshToken);
+                await _userService.LogoutAsync(request.RefreshToken, ct);
 
                 _logger.LogInformation("Exiting Logout: refreshToken={RefreshToken}", request.RefreshToken);
                 return Ok();
@@ -219,13 +223,14 @@ namespace Backend.Controllers
         /// Allows an authenticated user to change their email or any future user details.
         /// </summary>
         /// <param name="request">User object DTO with all the users details to be updated.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns an OK status upon success.</remarks>
         [Authorize]
         [HttpPut("update-user")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> UpdateUserAsync(UserDto request)
+        public async Task<IActionResult> UpdateUserAsync(UserDto request, CancellationToken ct)
         {
             const string method = nameof(UpdateUserAsync);
             _logger.LogInformation("{Method}: Entering. userId={UserId}", method, request?.Id);
@@ -245,7 +250,7 @@ namespace Backend.Controllers
 
             try
             {
-                if (await _userService.UpdateUserDtoAsync(request))
+                if (await _userService.UpdateUserDtoAsync(request, ct))
                 {
                     _logger.LogInformation("Exiting UpdateUserAsync: userId={UserId}", request.Id);
                     return Ok();
@@ -258,7 +263,7 @@ namespace Backend.Controllers
             }
             catch (Exception ex)
             {
-                _logger.LogInformation(ex.Message);
+                _logger.LogWarning(ex, "UpdateUserAsync: Exception thrown.");
                 _logger.LogInformation("Exiting UpdateUserAsync: userId={UserId}", request.Id);
                 return StatusCode(500, ex.Message);
             }
@@ -268,6 +273,7 @@ namespace Backend.Controllers
         /// Allows an authenticated user to change their password
         /// </summary>
         /// <param name="request">JSON object with old password and new password.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns an OK status upon success.</remarks>
         [Authorize]
         [HttpPut("change-password")]
@@ -275,7 +281,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ChangePasswordAsync(ChangePasswordRequest request)
+        public async Task<IActionResult> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct)
         {
             const string method = nameof(ChangePasswordAsync);
             var userId = GetUserId();
@@ -303,7 +309,7 @@ namespace Backend.Controllers
 
             try
             {
-                await _userService.ChangePasswordAsync(userId, request.OldPassword, request.NewPassword);
+                await _userService.ChangePasswordAsync(userId, request.OldPassword, request.NewPassword, ct);
             }
             catch (UnauthorizedAccessException ex)
             {
@@ -327,11 +333,12 @@ namespace Backend.Controllers
         /// Allows a user to request to reset their password. Sends an email to a valid user to allow them to reset password.
         /// </summary>
         /// <param name="request">JSON object with email.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns an OK status on success or if email isn't recognized.</remarks>
         [HttpPost("forgot-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request)
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken ct)
         {
             const string method = nameof(ForgotPassword);
             _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
@@ -351,7 +358,7 @@ namespace Backend.Controllers
 
             try
             {
-                await _userService.ForgotPasswordAsync(request.Email);
+                await _userService.ForgotPasswordAsync(request.Email, ct);
                 _logger.LogInformation("Exiting ForgotPassword: email={Email}", request.Email);
             }
             catch (Exception ex)
@@ -367,12 +374,13 @@ namespace Backend.Controllers
         /// Allows a valid user to reset their password.
         /// </summary>
         /// <param name="request">JSON object with reset token and email.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns an OK status upon success.</remarks>
         [HttpPost("reset-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ResetPassword(DTOs.ResetPasswordRequest request)
+        public async Task<IActionResult> ResetPassword(DTOs.ResetPasswordRequest request, CancellationToken ct)
         {
             const string method = nameof(ResetPassword);
             _logger.LogInformation("{Method}: Entering. token={Token}", method, request?.ResetCode);
@@ -392,7 +400,7 @@ namespace Backend.Controllers
 
             try
             {
-                var success = await _userService.ResetPasswordAsync(request);
+                var success = await _userService.ResetPasswordAsync(request, ct);
                 if (!success)
                 {
                     _logger.LogError("Failed to reset password for user.");

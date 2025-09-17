@@ -1,5 +1,4 @@
 using Backend.DTOs;
-using Backend.Model;
 
 namespace Backend.Services
 {
@@ -11,21 +10,24 @@ namespace Backend.Services
         /// <param name="recipeDto">The recipe DTO to create.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>The created recipe DTO.</returns>
-        Task<RecipeDto> CreateAsync(CreateUpdateRecipeDtoRequest recipeDto, int userId);
+        /// <param name="ct">A token to cancel the operation.</param>
+        Task<RecipeDto> CreateAsync(CreateUpdateRecipeDtoRequest recipeDto, int userId, CancellationToken ct = default);
         /// <summary>
         /// Retrieves a recipe by its unique ID.
         /// </summary>
         /// <param name="id">The recipe's unique identifier.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>The recipe DTO if found, otherwise null.</returns>
-        Task<RecipeDto?> GetByIdAsync(int id, int userId);
+        /// <param name="ct">A token to cancel the operation.</param>
+        Task<RecipeDto?> GetByIdAsync(int id, int userId, CancellationToken ct = default);
         /// <summary>
         /// Retrieves all recipes.
         /// </summary>
         /// <param name="ids">A list of recipe's unique identifiers.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>An enumerable collection of recipe DTOs.</returns>
-        Task<GetRecipesResult> GetByIdsAsync(IEnumerable<int> ids, int userId);
+        /// <param name="ct">A token to cancel the operation.</param>
+        Task<GetRecipesResult> GetByIdsAsync(IEnumerable<int> ids, int userId, CancellationToken ct = default);
         /// <summary>
         /// Searches for recipes by title or by ingredient.
         /// </summary>
@@ -35,7 +37,8 @@ namespace Backend.Services
         /// <param name="skip">How many results to skip for pagination.</param>
         /// <param name="take">How many results to take for pagniation.</param>
         /// <returns>The matching recipe ids.</returns>
-        Task<GetRecipesResult> SearchAsync(int userId, string? title, string? ingredient, int? skip = 0, int? take = 50);
+        /// <param name="ct">A token to cancel the operation.</param>
+        Task<GetRecipesResult> SearchAsync(int userId, string? title, string? ingredient, int? skip = 0, int? take = 50, CancellationToken ct = default);
         /// <summary>
         /// Updates an existing recipe.
         /// </summary>
@@ -43,14 +46,16 @@ namespace Backend.Services
         /// <param name="recipeDto">The recipe DTO to update.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>The updated recipe DTO.</returns>
-        Task<RecipeDto> UpdateAsync(int id, CreateUpdateRecipeDtoRequest recipeDto, int userId);
+        /// <param name="ct">A token to cancel the operation.</param>
+        Task<RecipeDto> UpdateAsync(int id, CreateUpdateRecipeDtoRequest recipeDto, int userId, CancellationToken ct = default);
         /// <summary>
         /// Deletes a recipe by its unique ID.
         /// </summary>
         /// <param name="id">The recipe's unique identifier.</param>
         /// <param name="userId">The id of the currently logged in user.</param>
         /// <returns>True if the recipe was deleted, otherwise false.</returns>
-        Task<bool> DeleteAsync(int id, int userId);
+        /// <param name="ct">A token to cancel the operation.</param>
+        Task<bool> DeleteAsync(int id, int userId, CancellationToken ct = default);
         /// <summary>
         /// Finds pantry items used while making this recipe.
         /// </summary>

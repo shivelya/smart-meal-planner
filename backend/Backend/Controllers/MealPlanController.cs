@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Services;
@@ -20,18 +21,19 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="skip">The number of results to skip for pagination.</param>
         /// <param name="take">The number of results to take for pagination.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns a list of meal plans, as well as the total count.</remarks>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetMealPlansResult>> GetMealPlansAsync(int? skip = null, int? take = null)
+        public async Task<ActionResult<GetMealPlansResult>> GetMealPlansAsync(int? skip = null, int? take = null, CancellationToken ct = default)
         {
             const string method = nameof(GetMealPlansAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. skip={Skip}, take={Take}", method, nameof(MealPlanController), skip, take);
             try
             {
                 var userId = GetUserId();
-                var plans = await _service.GetMealPlansAsync(userId, skip, take);
+                var plans = await _service.GetMealPlansAsync(userId, skip, take, ct);
                 if (plans == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null meal plans.", method);
@@ -55,12 +57,13 @@ namespace Backend.Controllers
         /// Creates a new meal plan
         /// </summary>
         /// <param name="request">The meal plan to be created.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns the created meal plan object.</remarks>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<MealPlanDto>> AddMealPlanAsync(CreateUpdateMealPlanRequestDto request)
+        public async Task<ActionResult<MealPlanDto>> AddMealPlanAsync(CreateUpdateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(AddMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(MealPlanController), request);
@@ -74,7 +77,7 @@ namespace Backend.Controllers
             try
             {
                 var userId = GetUserId();
-                var plan = await _service.AddMealPlanAsync(userId, request);
+                var plan = await _service.AddMealPlanAsync(userId, request, ct);
                 if (plan == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null meal plan.", method);
@@ -99,12 +102,13 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="id">The id of the meal plan to be updated.</param>
         /// <param name="request">The meal plan to be updated.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns the updated meal plan object.</remarks>
         [HttpPut("{id}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<MealPlanDto>> UpdateMealPlanAsync(int id, CreateUpdateMealPlanRequestDto request)
+        public async Task<ActionResult<MealPlanDto>> UpdateMealPlanAsync(int id, CreateUpdateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(UpdateMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, request={Request}", method, nameof(MealPlanController), id, request);
@@ -118,7 +122,7 @@ namespace Backend.Controllers
             try
             {
                 var userId = GetUserId();
-                var plan = await _service.UpdateMealPlanAsync(id, userId, request);
+                var plan = await _service.UpdateMealPlanAsync(id, userId, request, ct);
                 if (plan == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null meal plan.", method);
@@ -142,19 +146,20 @@ namespace Backend.Controllers
         /// Deletes an existing meal plan
         /// </summary>
         /// <param name="id">The id of the meal plan to be deleted.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns 204 on successful deletion, or 404 if not found.</remarks>
         [HttpDelete("{id}")]
         [ProducesResponseType(StatusCodes.Status204NoContent)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult> DeleteMealPlanAsync(int id)
+        public async Task<ActionResult> DeleteMealPlanAsync(int id, CancellationToken ct = default)
         {
             const string method = nameof(DeleteMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(MealPlanController), id);
             try
             {
                 var userId = GetUserId();
-                var deleted = await _service.DeleteMealPlanAsync(id, userId);
+                var deleted = await _service.DeleteMealPlanAsync(id, userId, ct);
                 if (deleted)
                 {
                     _logger.LogInformation("{Method}: Deleted meal plan successfully. id={Id}", method, id);
@@ -188,13 +193,14 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="request">An object describing how to generate the meal plan. Includes a number of days to generate for,
         /// the start date for the meal plan, and whether the recipes should come only from external sources.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns a MealPlanDto object with the correct number of recipes. It will not be be inserted into the DB until
         /// the user verifies the list.</remarks>
         [HttpPost("generate")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<CreateUpdateMealPlanRequestDto>> GenerateMealPlanAsync(GenerateMealPlanRequestDto request)
+        public async Task<ActionResult<CreateUpdateMealPlanRequestDto>> GenerateMealPlanAsync(GenerateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(GenerateMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(MealPlanController), request);
@@ -215,7 +221,7 @@ namespace Backend.Controllers
             try
             {
                 var userId = GetUserId();
-                var plan = await _service.GenerateMealPlanAsync(request, userId);
+                var plan = await _service.GenerateMealPlanAsync(request, userId, ct);
                 if (plan == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null generated meal plan.", method);
@@ -244,12 +250,13 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="id">The id of the meal plan the meal was taken from.</param>
         /// <param name="mealEntryId">The id of the meal within the meal plan being cooked.</param>
+        /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns a list of pantry items to possibly be deleted by the user now that the meal has been made.</remarks>
         [HttpGet("{id}/cook")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> CookMealAsync(int id, [FromQuery] int mealEntryId)
+        public async Task<ActionResult<GetPantryItemsResult>> CookMealAsync(int id, [FromQuery] int mealEntryId, CancellationToken ct = default)
         {
             const string method = nameof(CookMealAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, mealEntryId={MealEntryId}", method, nameof(MealPlanController), id, mealEntryId);
@@ -270,7 +277,7 @@ namespace Backend.Controllers
             var userId = GetUserId();
             try
             {
-                var result = await _service.CookMealAsync(id, mealEntryId, userId);
+                var result = await _service.CookMealAsync(id, mealEntryId, userId, ct);
                 if (result == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null pantry items.", method);
@@ -292,7 +299,7 @@ namespace Backend.Controllers
 
         private int GetUserId()
         {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!);
+            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
         }
     }
 }

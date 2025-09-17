@@ -19,17 +19,18 @@ namespace Backend.Controllers
         /// <summary>
         /// Lists all category types. They are currently static.
         /// </summary>
+        /// <param name="ct">Cancellation token, unsenn by the user.</param>
         /// <remarks>Returns all the existing category types.</remarks>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetCategoriesResult>> GetCategories()
+        public async Task<ActionResult<GetCategoriesResult>> GetCategories(CancellationToken ct)
         {
             const string method = nameof(GetCategories);
             _logger.LogInformation("{Method}: Entering {Controller}. No input parameters.", method, nameof(CategoriesController));
             try
             {
-                var categories = await _service.GetAllAsync();
+                var categories = await _service.GetAllAsync(ct);
                 if (categories == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null categories.", method);

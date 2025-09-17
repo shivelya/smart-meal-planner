@@ -5,9 +5,9 @@ namespace Backend.Services
         /// <summary>
         /// Sends a password reset email to the specified recipient with the provided reset link.
         /// </summary>
-        /// <param name="to">The recipient's email address.</param>
-        /// <param name="resetLink">The password reset link to include in the email.</param>
+        /// <param name="toEmail">The recipient's email address.</param>
+        /// <param name="resetCode">The password reset code to include in the email.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        Task SendPasswordResetEmailAsync(string to, string resetLink);
+        Task SendPasswordResetEmailAsync(string toEmail, string resetCode);
     }
 }

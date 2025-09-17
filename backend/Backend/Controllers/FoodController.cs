@@ -2,7 +2,6 @@ using Backend.DTOs;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
 
 namespace Backend.Controllers
 {
@@ -20,19 +19,20 @@ namespace Backend.Controllers
         /// <param name="query">The search term used to search foods by name.</param>
         /// <param name="skip">The number of results to skip for pagination.</param>
         /// <param name="take">The number of results to take for pagination.</param>
+        /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns a list of foods matching the given query, as well as the total count.</remarks>
         [HttpGet]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetFoodsResult>> SearchFoodsAsync([FromQuery] string? query, int? skip = null, int? take = 50)
+        public async Task<ActionResult<GetFoodsResult>> SearchFoodsAsync([FromQuery] string? query, CancellationToken ct, int? skip = null, int? take = 50)
         {
             const string method = nameof(SearchFoodsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, skip={Skip}, take={Take}", method, nameof(FoodController), query, skip, take);
 
             try
             {
-                var foods = await _service.SearchFoodsAsync(query!, skip, take);
+                var foods = await _service.SearchFoodsAsync(query!, skip, take, ct);
                 if (foods == null)
                 {
                     _logger.LogWarning("{Method}: Service returned null foods.", method);
