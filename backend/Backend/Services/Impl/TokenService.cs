@@ -63,21 +63,39 @@ namespace Backend.Services.Impl
             return refreshToken;
         }
 
-        public async Task<RefreshToken?> FindRefreshTokenAsync(string tokenStr)
+        public async Task<RefreshToken?> VerifyRefreshTokenAsync(string tokenStr)
         {
-            _logger.LogInformation("Entering FindRefreshTokenAsync: tokenStr={TokenStr}", tokenStr);
-            var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == tokenStr);
-            _logger.LogInformation("Found refresh token for user {UserId} at {Time}", token?.UserId, DateTime.UtcNow);
-            _logger.LogInformation("Exiting FindRefreshTokenAsync: tokenStr={TokenStr}", tokenStr);
-            return token;
+            _logger.LogInformation("Entering VerifyRefreshTokenAsync: tokenStr={TokenStr}", tokenStr);
+            var refreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == tokenStr);
+
+            // if the refresh token is not found or is expired/revoked, return false and revoke it
+            // this is a security measure to prevent token reuse
+            if (refreshToken == null || refreshToken.Expires < DateTime.UtcNow || refreshToken.IsRevoked)
+            {
+                if (refreshToken != null && refreshToken.Expires < DateTime.UtcNow && !refreshToken.IsRevoked)
+                    await RevokeRefreshTokenAsync(tokenStr);
+
+                _logger.LogWarning("VerifyRefreshTokenAsync: Invalid or expired refresh token provided: {RefreshToken}", refreshToken);
+                return null;
+            }
+
+            _logger.LogInformation("Exiting VerifyRefreshTokenAsync: tokenStr={TokenStr}", tokenStr);
+            return refreshToken;
         }
 
-        public async Task RevokeRefreshTokenAsync(RefreshToken token)
+        public async Task RevokeRefreshTokenAsync(string tokenStr)
         {
-            _logger.LogInformation("Entering RevokeRefreshTokenAsync: userId={UserId}", token.UserId);
+            _logger.LogInformation("Entering RevokeRefreshTokenAsync");
+            var token = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == tokenStr);
+            if (token == null)
+            {
+                _logger.LogWarning("Refresh token could not be found.");
+                return;
+            }
+
             token.IsRevoked = true;
-            _context.RefreshTokens.Update(token);
             await _context.SaveChangesAsync();
+
             _logger.LogInformation("Revoked refresh token for user {UserId} at {Time}", token.UserId, DateTime.UtcNow);
             _logger.LogInformation("Exiting RevokeRefreshTokenAsync: userId={UserId}", token.UserId);
         }

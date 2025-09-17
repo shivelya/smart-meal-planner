@@ -239,6 +239,7 @@ namespace Backend.Services.Impl
             _logger.LogInformation("Exiting ValidateIngredient: foodMode={FoodMode}", ing.Food.Mode);
         }
 
+        // do not save here for transactional purposes
         private async Task<List<RecipeIngredient>> CreateIngredients(List<CreateUpdateRecipeIngredientDto> ingredients)
         {
             _logger.LogInformation("Entering CreateIngredients: ingredientCount={IngredientCount}", ingredients.Count);
@@ -267,7 +268,6 @@ namespace Backend.Services.Impl
                     };
 
                     await _context.Foods.AddAsync(ingredient);
-                    await _context.SaveChangesAsync();
 
                     recipeIngredient.FoodId = ingredient.Id;
                 }

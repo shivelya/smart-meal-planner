@@ -226,7 +226,7 @@ namespace Backend.Tests.Services.Impl
         public async Task RefreshTokensAsync_Throws_WhenTokenNotFound()
         {
             var tokenService = new Mock<ITokenService>();
-            tokenService.Setup(t => t.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
             var service = CreateService(tokenService: tokenService);
             var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("badtoken", "ip"));
             Assert.Equal("Invalid refresh token.", ex.Message);
@@ -237,8 +237,8 @@ namespace Backend.Tests.Services.Impl
         {
             var tokenService = new Mock<ITokenService>();
             var expiredToken = new RefreshToken { Expires = DateTime.UtcNow.AddMinutes(-1), IsRevoked = false };
-            tokenService.Setup(t => t.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(expiredToken);
-            tokenService.Setup(t => t.RevokeRefreshTokenAsync(expiredToken)).Returns(Task.CompletedTask);
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(expiredToken);
+            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
             var service = CreateService(tokenService: tokenService);
             var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("expired", "ip"));
             Assert.Equal("Invalid refresh token.", ex.Message);
@@ -249,8 +249,8 @@ namespace Backend.Tests.Services.Impl
         {
             var tokenService = new Mock<ITokenService>();
             var validToken = new RefreshToken { Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false, UserId = 9999 };
-            tokenService.Setup(t => t.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(validToken);
-            tokenService.Setup(t => t.RevokeRefreshTokenAsync(validToken)).Returns(Task.CompletedTask);
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(validToken);
+            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
             var service = CreateService(tokenService: tokenService);
             // No user with id 9999 in context
             var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("valid", "ip"));
@@ -266,8 +266,8 @@ namespace Backend.Tests.Services.Impl
             context.Users.Add(user);
             context.SaveChanges();
             var validToken = new RefreshToken { Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false, UserId = user.Id };
-            tokenService.Setup(t => t.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(validToken);
-            tokenService.Setup(t => t.RevokeRefreshTokenAsync(validToken)).Returns(Task.CompletedTask);
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(validToken);
+            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>())).Returns(Task.CompletedTask);
             tokenService.Setup(t => t.GenerateAccessToken(user)).Returns("access-token");
             tokenService.Setup(t => t.GenerateRefreshTokenAsync(user, "ip")).ReturnsAsync(new RefreshToken { Token = "new-refresh" });
 
@@ -290,11 +290,11 @@ namespace Backend.Tests.Services.Impl
         public async Task LogoutAsync_DoesNothing_WhenTokenNotFound()
         {
             var tokenService = new Mock<ITokenService>();
-            tokenService.Setup(t => t.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync((RefreshToken)null!);
             var service = CreateService(tokenService: tokenService);
             // Should not throw
             await service.LogoutAsync("notfound");
-            tokenService.Verify(t => t.RevokeRefreshTokenAsync(It.IsAny<RefreshToken>()), Times.Never);
+            tokenService.Verify(t => t.RevokeRefreshTokenAsync(It.IsAny<string>()), Times.Never);
         }
 
         [Fact]
@@ -302,11 +302,11 @@ namespace Backend.Tests.Services.Impl
         {
             var tokenService = new Mock<ITokenService>();
             var token = new RefreshToken { Token = "tok", Expires = DateTime.UtcNow.AddMinutes(10), IsRevoked = false };
-            tokenService.Setup(t => t.FindRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(token);
-            tokenService.Setup(t => t.RevokeRefreshTokenAsync(token)).Returns(Task.CompletedTask).Verifiable();
+            tokenService.Setup(t => t.VerifyRefreshTokenAsync(It.IsAny<string>())).ReturnsAsync(token);
+            tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
             var service = CreateService(tokenService: tokenService);
             await service.LogoutAsync("tok");
-            tokenService.Verify(t => t.RevokeRefreshTokenAsync(token), Times.Once);
+            tokenService.Verify(t => t.RevokeRefreshTokenAsync(It.IsAny<string>()), Times.Once);
         }
     }
 }

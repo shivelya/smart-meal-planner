@@ -25,13 +25,13 @@ namespace Backend.Services
         /// </summary>
         /// <param name="token">The refresh token string to search for.</param>
         /// <returns>The found refresh token if it exists, otherwise null.</returns>
-        Task<RefreshToken?> FindRefreshTokenAsync(string token);
+        Task<RefreshToken?> VerifyRefreshTokenAsync(string token);
         /// <summary>
         /// Revokes the specified refresh token.
         /// </summary>
         /// <param name="token">The refresh token to revoke.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        Task RevokeRefreshTokenAsync(RefreshToken token);
+        Task RevokeRefreshTokenAsync(string token);
         /// <summary>
         /// Generates a password reset token for the specified user.
         /// </summary>

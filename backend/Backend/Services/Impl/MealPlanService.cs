@@ -244,7 +244,6 @@ namespace Backend.Services.Impl
             // mark the meal as cooked
             // this is idempotent, so cooking a meal twice is not an error
             mealPlanEntry.Cooked = true;
-            await _context.SaveChangesAsync();
 
             // find all pantry items that match the food ids in the recipe
             // we don't reduce the quantity here, just return the items that were used
@@ -257,11 +256,14 @@ namespace Backend.Services.Impl
 
             var recipeFoodIds = mealPlanEntry.Recipe.Ingredients.Select(i => i.FoodId).ToHashSet();
             var usedPantryItems = pantry.Where(p => recipeFoodIds.Contains(p.FoodId));
+            var items = usedPantryItems.Select(p => p.ToDto());
 
             _logger.LogInformation("CookMealAsync: Cooked meal for userId={UserId}, mealPlanId={MealPlanId}, mealEntryId={MealEntryId}", userId, id, mealEntryId);
             _logger.LogInformation("Exiting CookMealAsync: userId={UserId}, mealPlanId={MealPlanId}, mealEntryId={MealEntryId}", userId, id, mealEntryId);
 
-            return new GetPantryItemsResult { TotalCount = usedPantryItems.Count(), Items = usedPantryItems.Select(p => p.ToDto()) }; 
+            //we save after our logic so that in case something goes with pulling pantry items, the recipe doesn't get marked as cooked
+            await _context.SaveChangesAsync();
+            return new GetPantryItemsResult { TotalCount = usedPantryItems.Count(), Items = items }; 
         }
     }
 }
