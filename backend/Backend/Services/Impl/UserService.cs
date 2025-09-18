@@ -243,14 +243,14 @@ namespace Backend.Services.Impl
             {
                 _logger.LogWarning("Login failed: User with email {Email} not found.", request.Email);
                 _logger.LogInformation("Exiting Login: email={Email}", request.Email);
-                throw new ArgumentException("Invalid email or password.");
+                return null!;
             }
 
             if (!VerifyPasswordHash(request.Password, user))
             {
                 _logger.LogWarning("Login failed: Invalid password for user with email {Email}.", request.Email);
                 _logger.LogInformation("Exiting Login: email={Email}", request.Email);
-                throw new ArgumentException("Invalid email or password.");
+                return null!;
             }
 
             var result = await GenerateTokensAsync(user, ip, ct);
