@@ -8,6 +8,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "backend", "backend", "{4931
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.Tests", "backend\Backend.Tests\Backend.Tests.csproj", "{AB7029BF-06F6-49FD-A27F-393F7697DE32}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Backend.IntegrationTests", "backend\Backend.IntegrationTests\Backend.IntegrationTests.csproj", "{AC2AFE47-0524-4711-B4E1-E3508F060E82}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -22,6 +24,10 @@ Global
 		{AB7029BF-06F6-49FD-A27F-393F7697DE32}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AB7029BF-06F6-49FD-A27F-393F7697DE32}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AB7029BF-06F6-49FD-A27F-393F7697DE32}.Release|Any CPU.Build.0 = Release|Any CPU
+		{AC2AFE47-0524-4711-B4E1-E3508F060E82}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AC2AFE47-0524-4711-B4E1-E3508F060E82}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AC2AFE47-0524-4711-B4E1-E3508F060E82}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AC2AFE47-0524-4711-B4E1-E3508F060E82}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -31,5 +37,6 @@ Global
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AB7029BF-06F6-49FD-A27F-393F7697DE32} = {4931161D-218E-4DD6-AD2A-E699371EF55E}
+		{AC2AFE47-0524-4711-B4E1-E3508F060E82} = {4931161D-218E-4DD6-AD2A-E699371EF55E}
 	EndGlobalSection
 EndGlobal
