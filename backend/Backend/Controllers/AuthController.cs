@@ -74,6 +74,12 @@ namespace Backend.Controllers
                 _logger.LogInformation("Exiting Register: email={Email}", request.Email);
                 return Ok(result);
             }
+            catch (InvalidOperationException ex)
+            {
+                // user is already created
+                _logger.LogWarning(ex, "RegisterAsync: User already exists.");
+                return StatusCode(409, "User account already exists.");
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Registration failed");
