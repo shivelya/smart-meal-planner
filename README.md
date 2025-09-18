@@ -76,9 +76,24 @@ dotnet tool restore
 dotnet build
 ```
 
-4. Configure user-secrets?
+4. Configure required secrets
+These must be set before running the project:
+- `ConnectionStrings:DefaultConnection` → Your database connection string
+- `Auth:JwtKey` → Key for JWT token signing. Must be at least 256 bits
+- `Spoonacular:ApiKey` → API Key from Spoonacular. Available for free with sign up on their site
+- `Email:SMTPPassword` → Password to your SMTP server of choice. The other configuration values are in appsettings.json.
 
-5. Run migrations
+```bash
+# for VS code
+cd backend\Backend
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "connect"
+dotnet user-secrets set "Auth:JwtKey" "key"
+dotnet user-secrets set "Spoonacular:ApiKey" "spoonacular api key"
+dotnet user-secrets set "Email:SMTPPassword" "password"
+```
+
+6. Run migrations
 ```bash
 cd backend
 dotnet ef database update
@@ -87,7 +102,9 @@ dotnet ef database update
 6. Run the backend
 ```bash
 cd backend
-dotnet run (I like dotnet run | ForEach-Object { $_ | jq . } to help keep my terminal messages readable)
+dotnet run
+# I like dotnet run | ForEach-Object { $_ | jq . } to help keep my terminal messages readable
+# requires jq install (winget install jqlang.jq on windows)
 ```
 
 7. Run the frontend
@@ -100,10 +117,13 @@ ng start
 ```bash
 # Frontend unit (Karma)
 ng test
+
 # Frontend e2e (Playwright)
 npx playwright test
+
 # Backend (xUnit)
 dotnet test Backend.Tests
+dotnet test Backend.IntegrationTests
 ```
 
 ### API Endpoints
