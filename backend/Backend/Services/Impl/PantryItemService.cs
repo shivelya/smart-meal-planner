@@ -210,11 +210,17 @@ namespace Backend.Services.Impl
         public async Task<GetPantryItemsResult> Search(string search, int userId, int? take, int? skip, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering Search: userId={UserId}, search={Search}, take={Take}, skip={Skip}", userId, search, take, skip);
+#pragma warning disable CA1304 // Specify CultureInfo
+#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+#pragma warning disable CA1311 // Specify a culture or use an invariant version
             var items = _context.PantryItems
                 .Where(i => i.UserId == userId)
                 .Where(i => i.Food.Name.ToLower().Contains(search.ToLower()))
                 .OrderBy(i => i.Food.Name)
                 .AsQueryable();
+#pragma warning restore CA1311 // Specify a culture or use an invariant version
+#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
+#pragma warning restore CA1304 // Specify CultureInfo
 
             var count = await items.CountAsync(ct);
 
