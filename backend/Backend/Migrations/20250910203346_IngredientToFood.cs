@@ -1,6 +1,4 @@
-﻿using System;
-using Microsoft.EntityFrameworkCore.Migrations;
-using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
+﻿using Microsoft.EntityFrameworkCore.Migrations;
 
 #nullable disable
 
@@ -90,7 +88,7 @@ namespace Backend.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_RecipeIngredients",
                 table: "RecipeIngredients",
-                columns: new[] { "RecipeId", "FoodId" });
+                columns: ["RecipeId", "FoodId"]);
 
             // migrationBuilder.CreateTable(
             //     name: "Foods",
@@ -125,7 +123,7 @@ namespace Backend.Migrations
             migrationBuilder.CreateIndex(
                 name: "IX_PantryItem_UserIdFoodId",
                 table: "PantryItems",
-                columns: new[] { "UserId", "FoodId" });
+                columns: ["UserId", "FoodId"]);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Food_Name",
@@ -242,7 +240,7 @@ namespace Backend.Migrations
             migrationBuilder.AddPrimaryKey(
                 name: "PK_RecipeIngredients",
                 table: "RecipeIngredients",
-                columns: new[] { "RecipeId", "IngredientId" });
+                columns: ["RecipeId", "IngredientId"]);
 
             // migrationBuilder.CreateTable(
             //     name: "Ingredients",
