@@ -21,6 +21,12 @@ namespace Backend.DTOs
         public required string NewPassword { get; set; }
     }
 
+    public class ForgotPasswordRequest
+    {
+        [EmailAddress]
+        public required string Email { get; set; }
+    }
+
     public class ResetPasswordRequest
     {
         public required string ResetCode { get; set; }

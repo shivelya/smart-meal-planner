@@ -345,7 +345,7 @@ namespace Backend.Controllers
         [HttpPost("forgot-password")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken ct)
+        public async Task<IActionResult> ForgotPassword(DTOs.ForgotPasswordRequest request, CancellationToken ct)
         {
             const string method = nameof(ForgotPassword);
             _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
@@ -420,11 +420,17 @@ namespace Backend.Controllers
                 _logger.LogInformation("Exiting ResetPassword: token={Token}", request.ResetCode);
                 return Ok("Password has been reset successfully.");
             }
+            catch (InvalidOperationException ex)
+            {
+                _logger.LogWarning(ex, "ResetPassword: Failed to reset password for user, exception thrown.");
+                _logger.LogInformation("Exiting ResetPassword: token={Token}", request?.ResetCode);
+                return BadRequest(ex.Message);
+            }
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "ResetPassword: Failed to reset password for user, exception thrown.");
                 _logger.LogInformation("Exiting ResetPassword: token={Token}", request?.ResetCode);
-                return StatusCode(500, "Could not reset password: {0}" + ex.Message);
+                return StatusCode(500, "Could not reset password");
             }
         }
 
