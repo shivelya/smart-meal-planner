@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.DTOs;
 
@@ -143,6 +144,47 @@ namespace Backend.IntegrationTests
             {
                 RefreshToken = tokens.RefreshToken
             });
+
+            newResponse.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task Logout_Returns_400_missingToken()
+        {
+            await _factory.Login(_client);
+            var response = await _client.PostAsJsonAsync("/api/auth/logout", new { });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Logout_Returns_400_badToken()
+        {
+            await _factory.Login(_client);
+            var response = await _client.PostAsJsonAsync("/api/auth/logout", new RefreshRequest { RefreshToken = "" });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Refresh_Returns_200_withValidToken()
+        {
+            var tokens = await _factory.Login(_client);
+            var response = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest
+            {
+                RefreshToken = tokens.RefreshToken
+            });
+
+            response.EnsureSuccessStatusCode();
+            var newTokens = await response.Content.ReadFromJsonAsync<TokenResponse>();
+
+            Assert.NotNull(newTokens);
+            Assert.NotNull(newTokens.AccessToken);
+            Assert.NotNull(newTokens.RefreshToken);
+
+            // use token to hit protected route
+            _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", newTokens.AccessToken);
+            var newResponse = await _client.GetAsync("/api/pantryItem");
 
             newResponse.EnsureSuccessStatusCode();
         }

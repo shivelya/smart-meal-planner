@@ -90,7 +90,7 @@ namespace Backend.Services.Impl
                 _logger.LogWarning("Reset password failed: Invalid or expired token.");
                 _logger.LogDebug("Reset token: {Token}", request.ResetCode);
                 _logger.LogInformation("Exiting ResetPassword: token={Token}", request.ResetCode);
-                throw new ArgumentException("Invalid or expired token");
+                throw new InvalidOperationException("Invalid or expired token");
             }
 
             var user = await GetByIdAsync(userId.Value);
