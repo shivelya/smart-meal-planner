@@ -2,11 +2,13 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.DTOs;
 using Backend.Model;
+using Backend.Services;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
 
 namespace Backend.IntegrationTests
@@ -32,6 +34,12 @@ namespace Backend.IntegrationTests
         {
             builder.ConfigureTestServices(services =>
             {
+                // swap email service
+                services.RemoveAll<IEmailService>();
+                services.AddSingleton<FakeEmailService>();
+                services.AddSingleton<IEmailService>(sp => sp.GetRequiredService<FakeEmailService>());
+
+                // swap db context
                 services.AddDbContext<PlannerContext>(options =>
                 {
                     options.UseNpgsql(_databaseContainer.GetConnectionString());
