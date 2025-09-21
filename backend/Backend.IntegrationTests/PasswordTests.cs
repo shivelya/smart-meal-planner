@@ -22,7 +22,7 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task ChangePassword_200_WithCorrectOldPassword()
         {
-            await _factory.Login(_client);
+            await _factory.LoginAsync(_client);
 
             var result = await _client.PutAsJsonAsync("api/auth/change-password", new ChangePasswordRequest
             {
@@ -44,7 +44,7 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task ChangePassword_400_WithWrongOldPassword()
         {
-            await _factory.Login(_client);
+            await _factory.LoginAsync(_client);
 
             var result = await _client.PutAsJsonAsync("api/auth/change-password", new ChangePasswordRequest
             {
@@ -58,7 +58,7 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task ChangePassword_400_WithMissingData()
         {
-            await _factory.Login(_client);
+            await _factory.LoginAsync(_client);
 
             var result = await _client.PutAsJsonAsync("api/auth/change-password", new
             {
