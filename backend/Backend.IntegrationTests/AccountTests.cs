@@ -132,7 +132,7 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task Logout_Returns_200_evenIfRefreshTokenBad()
         {
-            var tokens = await _factory.Login(_client);
+            var tokens = await _factory.LoginAsync(_client);
             var response = await _client.PostAsJsonAsync("/api/auth/logout", new RefreshRequest
             {
                 RefreshToken = tokens.RefreshToken
@@ -151,7 +151,7 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task Logout_Returns_400_missingToken()
         {
-            await _factory.Login(_client);
+            await _factory.LoginAsync(_client);
             var response = await _client.PostAsJsonAsync("/api/auth/logout", new { });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -160,7 +160,7 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task Logout_Returns_400_badToken()
         {
-            await _factory.Login(_client);
+            await _factory.LoginAsync(_client);
             var response = await _client.PostAsJsonAsync("/api/auth/logout", new RefreshRequest { RefreshToken = "" });
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
@@ -169,7 +169,7 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task Refresh_Returns_200_withValidToken()
         {
-            var tokens = await _factory.Login(_client);
+            var tokens = await _factory.LoginAsync(_client);
             var response = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest
             {
                 RefreshToken = tokens.RefreshToken
@@ -187,6 +187,35 @@ namespace Backend.IntegrationTests
             var newResponse = await _client.GetAsync("/api/pantryItem");
 
             newResponse.EnsureSuccessStatusCode();
+        }
+
+        [Fact]
+        public async Task Refresh_Returns_401_withInvalidToken()
+        {
+            await _factory.LoginAsync(_client);
+            var response = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest
+            {
+                RefreshToken = "invalid token"
+            });
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task Refresh_Returns_401_withExpiredToken()
+        {
+            var factory = new CustomWebApplicationFactory();
+            factory.ConfigValues = new Dictionary<string, string> { { "Jwt:RefreshExpireDays", "-1" } };
+            await factory.InitializeAsync();
+            var client = factory.CreateClient();
+
+            var tokens = await factory.LoginAsync(client);
+            var response = await client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest
+            {
+                RefreshToken = tokens.RefreshToken
+            });
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
     }
 }
