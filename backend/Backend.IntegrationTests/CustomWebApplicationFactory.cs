@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.AspNetCore.TestHost;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Testcontainers.PostgreSql;
@@ -15,7 +16,11 @@ namespace Backend.IntegrationTests
 {
     public class CustomWebApplicationFactory : WebApplicationFactory<Program>, IAsyncLifetime
     {
-        private readonly PostgreSqlContainer _databaseContainer = new PostgreSqlBuilder().Build();
+        private readonly PostgreSqlContainer _databaseContainer = new PostgreSqlBuilder()
+            .WithDatabase(Guid.NewGuid().ToString())
+            .Build();
+
+        public Dictionary<string, string>? ConfigValues { get; set; }
 
         public Task InitializeAsync()
         {
@@ -34,6 +39,10 @@ namespace Backend.IntegrationTests
         {
             builder.ConfigureTestServices(services =>
             {
+                // if ConfigValues has a value then override configuration
+                if (ConfigValues != null)
+                    OverwriteConfig(services);
+
                 // swap email service
                 services.RemoveAll<IEmailService>();
                 services.AddSingleton<FakeEmailService>();
@@ -49,6 +58,7 @@ namespace Backend.IntegrationTests
                 var db = scope.ServiceProvider.GetRequiredService<PlannerContext>();
                 db.Database.EnsureCreated();
 
+                // seed data
                 db.Users.Add(new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("password") });
 
                 db.Foods.Add(new Food { CategoryId = 1, Name = "Bananas" });
@@ -76,11 +86,60 @@ namespace Backend.IntegrationTests
                 db.PantryItems.Add(new PantryItem { FoodId = 3, UserId = 1, Quantity = 1, Unit = "bag" });
                 db.PantryItems.Add(new PantryItem { FoodId = 6, Quantity = 12, UserId = 1 });
 
+                db.MealPlans.Add(new MealPlan
+                {
+                    StartDate = DateTime.UtcNow.AddDays(-2),
+                    UserId = 1,
+                    Meals =
+                    [
+                        new MealPlanEntry
+                        {
+                            Cooked = false,
+                            Notes = "I am a note",
+                            RecipeId = 1
+                        },
+                        new MealPlanEntry
+                        {
+                            Notes = "eat out tonight we are busy",
+                        }
+                    ]
+                });
+                db.MealPlans.Add(new MealPlan
+                {
+                    StartDate = DateTime.UtcNow,
+                    UserId = 1,
+                    Meals =
+                    [
+                        new MealPlanEntry
+                        {
+                            Cooked = true,
+                            Notes = "nachos"
+                        }
+                    ]
+                });
+
                 db.SaveChanges();
             });
         }
 
-        public async Task<TokenResponse> Login(HttpClient client)
+        private void OverwriteConfig(IServiceCollection services)
+        {
+            var provider = services.BuildServiceProvider();
+            using var scope = provider.CreateScope();
+            var hostingEnvi = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
+
+            var config = new ConfigurationBuilder()
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
+                .AddJsonFile($"appsettings.{hostingEnvi.EnvironmentName}.json", optional: true)
+                .AddEnvironmentVariables()
+                .AddUserSecrets<Program>(optional: true)
+                .AddInMemoryCollection(ConfigValues!)
+                .Build();
+
+            services.AddSingleton<IConfiguration>(config);
+        }
+
+        public async Task<TokenResponse> LoginAsync(HttpClient client)
         {
             var loginResponse = await client.PostAsJsonAsync("/api/auth/login", new LoginRequest
             {
