@@ -1,8 +1,8 @@
 using Backend.DTOs;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.AspNetCore.Mvc;
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Security.Claims;
 
@@ -175,6 +175,11 @@ namespace Backend.Controllers
 
                 _logger.LogInformation("Exiting RefreshAsync: refreshToken={RefreshToken}", request.RefreshToken);
                 return Ok(result);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Could not refresh token.");
+                return Unauthorized(ex.Message);
             }
             catch (Exception ex)
             {

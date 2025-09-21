@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
 using System.Security.Claims;
 using Backend.DTOs;
@@ -32,6 +33,7 @@ namespace Backend.Controllers
         /// <remarks>Returns 201 on creation</remarks>
         [HttpPost]
         [ProducesResponseType(StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RecipeDto>> CreateAsync([FromBody, BindRequired] CreateUpdateRecipeDtoRequest request, CancellationToken ct)
         {
@@ -49,13 +51,18 @@ namespace Backend.Controllers
                 }
                 _logger.LogInformation("{Method}: Recipe created with ID {Id}", method, created.Id);
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return CreatedAtAction(nameof(GetByIdAsync), new { id = created.Id }, created);
+                return Created("", created);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "{Method}: Could not create recipe.", method);
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
                 _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
+                return StatusCode(500, "Could not create recipe.");
             }
         }
 
