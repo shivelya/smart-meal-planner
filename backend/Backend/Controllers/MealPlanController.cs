@@ -1,4 +1,6 @@
+using System.ComponentModel.DataAnnotations;
 using System.Globalization;
+using System.Security;
 using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Services;
@@ -87,7 +89,12 @@ namespace Backend.Controllers
 
                 _logger.LogInformation("{Method}: Created meal plan successfully. Id={Id}", method, plan.Id);
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return CreatedAtAction(nameof(GetMealPlansAsync), plan);
+                return Created("", plan);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "Could not add meal plan.");
+                return BadRequest(ex.Message);
             }
             catch (Exception ex)
             {
@@ -133,6 +140,16 @@ namespace Backend.Controllers
                 _logger.LogInformation("{Method}: Updated meal plan successfully. Id={Id}", method, plan.Id);
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(plan);
+            }
+            catch (SecurityException ex)
+            {
+                _logger.LogWarning(ex, "{Method}: Non-existent ID for meal plan.", method);
+                return NotFound();
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "{Method}: Could not update meal plan", method);
+                return BadRequest();
             }
             catch (Exception ex)
             {
