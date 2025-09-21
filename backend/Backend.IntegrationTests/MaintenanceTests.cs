@@ -15,7 +15,7 @@ namespace Backend.IntegrationTests
         {
             _factory = factory;
             client = _factory.CreateClient();
-            factory.Login(client).Wait();
+            factory.LoginAsync(client).Wait();
         }
 
         [Fact]
