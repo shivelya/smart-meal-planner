@@ -51,6 +51,7 @@ namespace Backend.Tests.Controllers
 
         [Theory]
         [InlineData("CreateAsync", StatusCodes.Status201Created)]
+        [InlineData("CreateAsync", StatusCodes.Status400BadRequest)]
         [InlineData("CreateAsync", StatusCodes.Status500InternalServerError)]
         [InlineData("GetByIdAsync", StatusCodes.Status404NotFound)]
         [InlineData("GetByIdAsync", StatusCodes.Status200OK)]
