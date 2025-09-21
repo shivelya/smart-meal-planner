@@ -26,20 +26,31 @@ namespace Backend.Services.Impl
                 throw new ValidationException("User ID does not exist.");
             }
 
-            Recipe recipe = new()
+            var transaction = await _context.Database.BeginTransactionAsync(ct);
+            try
             {
-                UserId = userId,
-                Title = recipeDto.Title,
-                Instructions = recipeDto.Instructions,
-                Source = recipeDto.Source,
-                Ingredients = await CreateIngredients(recipeDto.Ingredients)
-            };
+                Recipe recipe = new()
+                {
+                    UserId = userId,
+                    Title = recipeDto.Title,
+                    Instructions = recipeDto.Instructions,
+                    Source = recipeDto.Source,
+                    Ingredients = await CreateIngredients(recipeDto.Ingredients)
+                };
 
-            await _context.Recipes.AddAsync(recipe, ct);
-            await _context.SaveChangesAsync(ct);
-            _logger.LogInformation("CreateAsync: Recipe created with ID {Id}", recipe.Id);
-            _logger.LogInformation("Exiting CreateAsync: userId={UserId}, recipeId={RecipeId}", userId, recipe.Id);
-            return recipe.ToDto();
+                await _context.Recipes.AddAsync(recipe, ct);
+                await _context.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+
+                _logger.LogInformation("CreateAsync: Recipe created with ID {Id}", recipe.Id);
+                _logger.LogInformation("Exiting CreateAsync: userId={UserId}, recipeId={RecipeId}", userId, recipe.Id);
+                return recipe.ToDto();
+            }
+            catch
+            {
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
         }
 
         public async Task<bool> DeleteAsync(int id, int userId, CancellationToken ct = default)
@@ -177,15 +188,26 @@ namespace Backend.Services.Impl
             entity.Instructions = recipeDto.Instructions;
             entity.Source = recipeDto.Source;
 
-            // Replace all ingredients with the provided set
-            entity.Ingredients.Clear();
-            foreach (var ing in await CreateIngredients(recipeDto.Ingredients))
-                entity.Ingredients.Add(ing);
+            var transaction = await _context.Database.BeginTransactionAsync(ct);
+            try
+            {
+                // Replace all ingredients with the provided set
+                entity.Ingredients.Clear();
+                foreach (var ing in await CreateIngredients(recipeDto.Ingredients))
+                    entity.Ingredients.Add(ing);
 
-            await _context.SaveChangesAsync(ct);
-            _logger.LogInformation("UpdateAsync: Recipe with ID {Id} updated", id);
-            _logger.LogInformation("Exiting UpdateAsync: userId={UserId}, recipeId={RecipeId}", userId, id);
-            return entity.ToDto();
+                await _context.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+
+                _logger.LogInformation("UpdateAsync: Recipe with ID {Id} updated", id);
+                _logger.LogInformation("Exiting UpdateAsync: userId={UserId}, recipeId={RecipeId}", userId, id);
+                return entity.ToDto();
+            }
+            catch
+            {
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
         }
 
         public GetPantryItemsResult CookRecipe(int id, int userId)
@@ -209,13 +231,13 @@ namespace Backend.Services.Impl
             return new GetPantryItemsResult { TotalCount = usedPantryItems.Count, Items = usedPantryItems.Select(p => p.ToDto()) };
         }
 
-        private void ValidateIngredient(CreateUpdateRecipeIngredientDto ing)
+        private async Task ValidateIngredientAsync(CreateUpdateRecipeIngredientDto ing)
         {
             _logger.LogInformation("Entering ValidateIngredient: foodMode={FoodMode}", ing.Food.Mode);
             if (ing.Food.Mode == AddFoodMode.Existing)
             {
                 var food = (ExistingFoodReferenceDto)ing.Food;
-                if (_context.Foods.FirstOrDefaultAsync(i => i.Id == food.Id) == null)
+                if (await _context.Foods.FirstOrDefaultAsync(i => i.Id == food.Id) == null)
                 {
                     _logger.LogWarning("ValidateIngredient: Found ingredient with unknown ID.");
                     throw new ValidationException("Found ingredient with unknown ID.");
@@ -224,7 +246,7 @@ namespace Backend.Services.Impl
             else if (ing.Food.Mode == AddFoodMode.New)
             {
                 var food1 = (NewFoodReferenceDto)ing.Food;
-                if (_context.Categories.FirstOrDefaultAsync(i => i.Id == food1.CategoryId) == null)
+                if (await _context.Categories.FirstOrDefaultAsync(i => i.Id == food1.CategoryId) == null)
                 {
                     _logger.LogWarning("ValidateIngredient: Found ingredient with unknown category.");
                     throw new ValidationException("Found ingredient with unknown category.");
@@ -246,7 +268,7 @@ namespace Backend.Services.Impl
             var toReturn = new List<RecipeIngredient>();
             foreach (var ing in ingredients)
             {
-                ValidateIngredient(ing);
+                await ValidateIngredientAsync(ing);
                 var recipeIngredient = new RecipeIngredient
                 {
                     Quantity = ing.Quantity,
@@ -268,6 +290,9 @@ namespace Backend.Services.Impl
                     };
 
                     await _context.Foods.AddAsync(ingredient);
+                    // save this off to the DB to get an ID
+                    // wrap the whole thing in a transaction for safety
+                    await _context.SaveChangesAsync();
 
                     recipeIngredient.FoodId = ingredient.Id;
                 }
