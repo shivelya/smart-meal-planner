@@ -66,13 +66,22 @@ namespace Backend.Services.Impl
             if (user == null)
             {
                 _logger.LogWarning("AddMealPlanAsync: Attempting to create meal plan for non-existent user. userId={UserId}", userId);
-                throw new SecurityException("Attempting to create meal pln for non-existent user.");
+                throw new ValidationException("Attempting to create meal pln for non-existent user.");
             }
 
             if (request.Meals.IsNullOrEmpty())
             {
                 _logger.LogWarning("AddMealPlanAsync: Cannot create meal plan with no meals. userId={UserId}", userId);
                 throw new ValidationException("Cannot create meal plan with no meals.");
+            }
+
+            // verify recipe ids before creating meal plan entries
+            var recipeIds = request.Meals.Where(m => m.RecipeId != null).Select(m => m.RecipeId).ToHashSet();
+            var recipeDbCount = await _context.Recipes.Where(r => r.UserId == userId && recipeIds.Contains(r.Id)).CountAsync(ct);
+            if (recipeIds.Count != recipeDbCount)
+            {
+                _logger.LogWarning("Invalid RecipeIds were passed in.");
+                throw new ValidationException("Not all given RecipeIds were valid.");
             }
 
             var newMeals = request.Meals.Select(m => new MealPlanEntry { Notes = m.Notes, RecipeId = m.RecipeId });
@@ -93,7 +102,7 @@ namespace Backend.Services.Impl
             if (user == null)
             {
                 _logger.LogWarning("UpdateMealPlanAsync: Attempting to update meal plan for non-existent user. userId={UserId}", userId);
-                throw new SecurityException("Attempting to create meal pln for non-existent user.");
+                throw new ValidationException("Attempting to create meal pln for non-existent user.");
             }
 
             var mealPlan = await _context.MealPlans
@@ -110,7 +119,7 @@ namespace Backend.Services.Impl
             if (request.Id != null && request.Id != id)
             {
                 _logger.LogWarning("UpdateMealPlanAsync: Attempting to update a different meal plan than the one defined by the id. userId={UserId}, mealPlanId={MealPlanId}", userId, id);
-                throw new SecurityException("Attempting to update a different meal plan than the one defined by the id.");
+                throw new ValidationException("Attempting to update a different meal plan than the one defined by the id.");
             }
 
             mealPlan.StartDate = request.StartDate;
