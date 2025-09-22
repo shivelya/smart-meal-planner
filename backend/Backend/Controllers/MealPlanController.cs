@@ -32,27 +32,13 @@ namespace Backend.Controllers
         {
             const string method = nameof(GetMealPlansAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. skip={Skip}, take={Take}", method, nameof(MealPlanController), skip, take);
-            try
+            return await CallToService(method, async () =>
             {
                 var userId = GetUserId();
-                var plans = await _service.GetMealPlansAsync(userId, skip, take, ct);
-                if (plans == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null meal plans.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null meal plans.");
-                }
-
-                _logger.LogInformation("{Method}: GET for meal plans completed with {Count} results. PlanIds: {PlanIds}", method, plans.TotalCount, string.Join(",", plans.MealPlans.Select(p => p.Id)));
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return Ok(plans);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, "Could not retrieve meal plans: " + ex.Message);
-            }
+                return await _service.GetMealPlansAsync(userId, skip, take, ct);
+            }, Ok, (plans) =>
+                _logger.LogInformation("{Method}: GET for meal plans completed with {Count} results. PlanIds: {PlanIds}", method, plans.TotalCount, string.Join(",", plans.MealPlans.Select(p => p.Id)))
+            );
         }
 
         /// <summary>
@@ -76,32 +62,15 @@ namespace Backend.Controllers
                 return BadRequest("Request must be non-null.");
             }
 
-            try
+            return await CallToService(method, async () =>
             {
                 var userId = GetUserId();
-                var plan = await _service.AddMealPlanAsync(userId, request, ct);
-                if (plan == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null meal plan.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null meal plan.");
-                }
-
-                _logger.LogInformation("{Method}: Created meal plan successfully. Id={Id}", method, plan.Id);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return Created("", plan);
-            }
-            catch (ValidationException ex)
-            {
-                _logger.LogWarning(ex, "Could not add meal plan.");
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, "Could not create meal plan: " + ex.Message);
-            }
+                return await _service.AddMealPlanAsync(userId, request, ct);
+            },
+            (plan) => Created("", plan),
+            (plan) =>
+                _logger.LogInformation("{Method}: Created meal plan successfully. Id={Id}", method, plan.Id)
+            );
         }
 
         /// <summary>
@@ -126,37 +95,13 @@ namespace Backend.Controllers
                 return BadRequest("Request must be non-null.");
             }
 
-            try
+            return await CallToService(method, async () =>
             {
                 var userId = GetUserId();
-                var plan = await _service.UpdateMealPlanAsync(id, userId, request, ct);
-                if (plan == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null meal plan.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null meal plan.");
-                }
-
-                _logger.LogInformation("{Method}: Updated meal plan successfully. Id={Id}", method, plan.Id);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return Ok(plan);
-            }
-            catch (SecurityException ex)
-            {
-                _logger.LogWarning(ex, "{Method}: Non-existent ID for meal plan.", method);
-                return NotFound();
-            }
-            catch (ValidationException ex)
-            {
-                _logger.LogWarning(ex, "{Method}: Could not update meal plan", method);
-                return BadRequest();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, "Could not update meal plan: " + ex.Message);
-            }
+                return await _service.UpdateMealPlanAsync(id, userId, request, ct);
+            }, Ok, (plan) =>
+                _logger.LogInformation("{Method}: Updated meal plan successfully. Id={Id}", method, plan.Id)
+            );
         }
 
         /// <summary>
@@ -173,27 +118,16 @@ namespace Backend.Controllers
         {
             const string method = nameof(DeleteMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(MealPlanController), id);
-            try
+
+            return await CallToService(method, async () =>
             {
                 var userId = GetUserId();
-                var deleted = await _service.DeleteMealPlanAsync(id, userId, ct);
-                if (deleted)
-                {
-                    _logger.LogInformation("{Method}: Deleted meal plan successfully. id={Id}", method, id);
-                    _logger.LogInformation("{Method}: Exiting successfully.", method);
-                    return NoContent();
-                }
-
-                _logger.LogWarning("{Method}: Meal plan not found. id={Id}", method, id);
-                _logger.LogInformation("{Method}: Exiting with NotFound.", method);
-                return NotFound();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, "Could not update meal plan: " + ex.Message);
-            }
+                return await _service.DeleteMealPlanAsync(id, userId, ct);
+            },
+            (plan) => NoContent(),
+            (plan) =>
+                 _logger.LogInformation("{Method}: Deleted meal plan successfully. id={Id}", method, id)
+            );
         }
 
         /// <summary>
@@ -235,27 +169,13 @@ namespace Backend.Controllers
                 return BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,");
             }
 
-            try
+            return await CallToService(method, async () =>
             {
                 var userId = GetUserId();
-                var plan = await _service.GenerateMealPlanAsync(request, userId, ct);
-                if (plan == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null generated meal plan.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null generated meal plan.");
-                }
-
-                _logger.LogInformation("{Method}: Meal plan generated successfully. Days={Days}", method, request.Days);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return Ok(plan);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, "Could not generate meal plan: " + ex.Message);
-            }
+                return await _service.GenerateMealPlanAsync(request, userId, ct);
+            }, Ok, (plan) =>
+                 _logger.LogInformation("{Method}: Meal plan generated successfully. Days={Days}", method, request.Days)
+            );
         }
 
         /// <summary>
@@ -266,17 +186,17 @@ namespace Backend.Controllers
         /// this is a no-op and will simply return the pantry items again.
         /// </summary>
         /// <param name="id">The id of the meal plan the meal was taken from.</param>
-        /// <param name="mealEntryId">The id of the meal within the meal plan being cooked.</param>
+        /// <param name="entryId">The id of the meal within the meal plan being cooked.</param>
         /// <param name="ct">Cancellation token for the request.</param>
         /// <remarks>Returns a list of pantry items to possibly be deleted by the user now that the meal has been made.</remarks>
-        [HttpGet("{id}/cook")]
+        [HttpGet("{id}/cook/{entryId}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> CookMealAsync(int id, [FromQuery] int mealEntryId, CancellationToken ct = default)
+        public async Task<ActionResult<GetPantryItemsResult>> CookMealAsync(int id, int entryId, CancellationToken ct = default)
         {
             const string method = nameof(CookMealAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, mealEntryId={MealEntryId}", method, nameof(MealPlanController), id, mealEntryId);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, mealEntryId={MealEntryId}", method, nameof(MealPlanController), id, entryId);
             if (id <= 0)
             {
                 _logger.LogWarning("{Method}: Id must be positive.", method);
@@ -284,39 +204,65 @@ namespace Backend.Controllers
                 return BadRequest("Id must be positive.");
             }
 
-            if (mealEntryId <= 0)
+            if (entryId <= 0)
             {
                 _logger.LogWarning("{Method}: mealEntryId must be positive.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. mealEntryId={MealEntryId}", method, mealEntryId);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. mealEntryId={MealEntryId}", method, entryId);
                 return BadRequest("mealEntryId must be positive.");
             }
 
-            var userId = GetUserId();
-            try
+            return await CallToService(method, async () =>
             {
-                var result = await _service.CookMealAsync(id, mealEntryId, userId, ct);
-                if (result == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null pantry items.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null pantry items.");
-                }
-
-                _logger.LogInformation("{Method}: CookMealAsync completed successfully. ItemsCount={Count}", method, result.TotalCount);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+                var userId = GetUserId();
+                return await _service.CookMealAsync(id, entryId, userId, ct);
+            }, Ok, (result) =>
+                 _logger.LogInformation("{Method}: CookMealAsync completed successfully. ItemsCount={Count}", method, result.TotalCount)
+            );
         }
 
         private int GetUserId()
         {
             return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
+        }
+
+        private async Task<ActionResult> CallToService<T>(string method, Func<Task<T>> doWork, Func<T, ActionResult> successReturn,
+            Action<T> successLogs)
+        {
+            try
+            {
+                var result = await doWork();
+                if (result == null)
+                {
+                    _logger.LogWarning("{Method}: Service returned null.", method);
+                    _logger.LogInformation("{Method}: Exiting with null result.", method);
+                    return StatusCode(500, "Service returned null.");
+                }
+
+                successLogs(result);
+                _logger.LogInformation("{Method}: Exiting successfully.", method);
+                return successReturn(result);
+            }
+            catch (ValidationException ex)
+            {
+                _logger.LogWarning(ex, "{Method}: User does not have permission.", method);
+                return Unauthorized();
+            }
+            catch (SecurityException ex)
+            {
+                _logger.LogWarning(ex, "{Method}: Non-existent ID for meal plan.", method);
+                return NotFound();
+            }
+            catch (ArgumentException ex)
+            {
+                _logger.LogWarning(ex, "{Method}: Could not update meal plan", method);
+                return BadRequest();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
+                _logger.LogInformation("{Method}: Exiting with error.", method);
+                return StatusCode(500);
+            }
         }
     }
 }

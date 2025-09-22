@@ -1,17 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
 using Backend.DTOs;
-using Backend.Model;
-using DotNet.Testcontainers.Builders;
 
 namespace Backend.IntegrationTests
 {
-    public class MealPlanTests : IClassFixture<CustomWebApplicationFactory>
+    public class MealPlanGetTests : IClassFixture<CustomWebApplicationFactory>
     {
         private readonly CustomWebApplicationFactory _factory;
         private readonly HttpClient _client;
 
-        public MealPlanTests(CustomWebApplicationFactory factory)
+        public MealPlanGetTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
             _client = _factory.CreateClient();
@@ -134,12 +132,12 @@ namespace Backend.IntegrationTests
         }
     }
 
-    public class AddMealPlanTests : IClassFixture<CustomWebApplicationFactory>
+    public class MealPlanAddTests : IClassFixture<CustomWebApplicationFactory>
     {
         private readonly CustomWebApplicationFactory _factory;
         private readonly HttpClient _client;
 
-        public AddMealPlanTests(CustomWebApplicationFactory factory)
+        public MealPlanAddTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
             _client = _factory.CreateClient();
@@ -227,12 +225,12 @@ namespace Backend.IntegrationTests
         }
     }
 
-    public class UpdateMealPlanTests : IClassFixture<CustomWebApplicationFactory>
+    public class MealPlanUpdateTests : IClassFixture<CustomWebApplicationFactory>
     {
         private readonly CustomWebApplicationFactory _factory;
         private readonly HttpClient _client;
 
-        public UpdateMealPlanTests(CustomWebApplicationFactory factory)
+        public MealPlanUpdateTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
             _client = _factory.CreateClient();
@@ -315,12 +313,199 @@ namespace Backend.IntegrationTests
             var response = await _client.PutAsJsonAsync($"api/mealplan/99", new CreateUpdateMealPlanRequestDto { Meals = [] });
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
-        
+
         [Fact]
         public async Task UpdateMealPlans_Returns_401_withNoToken()
         {
-            var response = await _client.PutAsJsonAsync($"api/mealplan/99", new CreateUpdateMealPlanRequestDto{ Meals = [] });
+            var response = await _client.PutAsJsonAsync($"api/mealplan/99", new CreateUpdateMealPlanRequestDto { Meals = [] });
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+    }
+
+    public class MealPlanDeleteTests : IClassFixture<CustomWebApplicationFactory>
+    {
+        private readonly CustomWebApplicationFactory _factory;
+        private readonly HttpClient _client;
+
+        public MealPlanDeleteTests(CustomWebApplicationFactory factory)
+        {
+            _factory = factory;
+            _client = _factory.CreateClient();
+        }
+
+        [Fact]
+        public async Task DeleteMealPlans_Returns_NoContent_onSuccess()
+        {
+            await _factory.LoginAsync(_client);
+
+            var response = await _client.GetAsync("api/mealplan");
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
+            Assert.NotNull(result);
+            var id = result.MealPlans.First().Id;
+
+            response = await _client.DeleteAsync($"api/mealplan/{id}");
+            response.EnsureSuccessStatusCode();
+            Assert.Equal(HttpStatusCode.NoContent, response.StatusCode);
+
+            // verify we can no longer find that meal plan
+            response = await _client.GetAsync("api/mealplan");
+            response.EnsureSuccessStatusCode();
+            result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
+            Assert.NotNull(result);
+            Assert.DoesNotContain(id, result.MealPlans.Select(m => m.Id));
+        }
+
+        [Fact]
+        public async Task DeleteMealPlans_Returns_notFound_withBadId()
+        {
+            await _factory.LoginAsync(_client);
+            var response = await _client.DeleteAsync("api/mealplan/99");
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task DeleteMealPlans_Returns_Unauthorized_withNoToken()
+        {
+            var response = await _client.DeleteAsync("api/mealplan/1");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+    }
+
+    public class MealPlanGenerateTests : IClassFixture<CustomWebApplicationFactory>
+    {
+        private readonly CustomWebApplicationFactory _factory;
+        private readonly HttpClient _client;
+
+        public MealPlanGenerateTests(CustomWebApplicationFactory factory)
+        {
+            _factory = factory;
+            _client = _factory.CreateClient();
+        }
+
+        [Fact]
+        public async Task GenerateMealPlans_Returns_Created_onSuccess()
+        {
+            await _factory.LoginAsync(_client);
+
+            var startDate = DateTime.UtcNow;
+            var response = await _client.PostAsJsonAsync("api/mealplan/generate", new GenerateMealPlanRequestDto
+            {
+                Days = 1,
+                StartDate = startDate
+            });
+
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<CreateUpdateMealPlanRequestDto>();
+            Assert.NotNull(result);
+            Assert.Equal(startDate, result.StartDate);
+            Assert.Single(result.Meals);
+
+            Assert.Null(result.Id); // because it doesn't get saved to DB til user persists it
+        }
+
+        [Fact]
+        public async Task GenerateMealPlans_Returns_Unauthorized_onNoToken()
+        {
+            var response = await _client.PostAsJsonAsync("api/mealplan/generate", new GenerateMealPlanRequestDto
+            {
+                Days = 1
+            });
+
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GenerateMealPlans_Returns_maxConfiguredMeals()
+        {
+            await _factory.LoginAsync(_client);
+
+            var response = await _client.PostAsJsonAsync("api/mealplan/generate", new GenerateMealPlanRequestDto
+            {
+                Days = 100,
+                StartDate = DateTime.UtcNow
+            });
+
+            Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task GenerateMealPlans_Uses_ExternalSource_WhenRequested()
+        {
+            await _factory.LoginAsync(_client);
+
+            var response = await _client.PostAsJsonAsync("api/mealplan/generate", new GenerateMealPlanRequestDto
+            {
+                UseExternal = true,
+                Days = 10
+            });
+
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<CreateUpdateMealPlanRequestDto>();
+            Assert.NotNull(result);
+            foreach (var meal in result.Meals.Cast<GeneratedMealPlanEntryDto>())
+            {
+                Assert.Contains("Spoonacular", meal.Source);
+            }
+        }
+    }
+
+    public class MealPlanCookTests : IClassFixture<CustomWebApplicationFactory>
+    {
+        private readonly CustomWebApplicationFactory _factory;
+        private readonly HttpClient _client;
+
+        public MealPlanCookTests(CustomWebApplicationFactory factory)
+        {
+            _factory = factory;
+            _client = _factory.CreateClient();
+        }
+
+        [Fact]
+        public async Task CookMealPlans_Returns_ListofItems_onSuccess()
+        {
+            await _factory.LoginAsync(_client);
+            var id = 1;
+            var entryId = 1;
+
+            // quantities shouldn't change before and after cooking
+            // user has to verify change and save it manually
+            var response = await _client.GetAsync("api/pantryitem/search?query=butternut");
+            response.EnsureSuccessStatusCode();
+            var pantryResult = await response.Content.ReadFromJsonAsync<GetPantryItemsResult>();
+            Assert.NotNull(pantryResult);
+            Assert.Single(pantryResult.Items);
+            var quantity = pantryResult.Items.First().Quantity;
+
+            response = await _client.GetAsync($"api/mealplan/{id}/cook/{entryId}");
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<GetPantryItemsResult>();
+            Assert.NotNull(result);
+            Assert.Single(result.Items);
+            Assert.Equal(1, result.TotalCount);
+
+            // the only seeded pantry item we can match is the butternut squash
+            Assert.Equal(6, result.Items.First().FoodId);
+            Assert.Equal(quantity, result.Items.First().Quantity);
+        }
+
+        [Fact]
+        public async Task CookMealPlans_Returns_Unauthorized_onNoToken()
+        {
+            var response = await _client.GetAsync($"api/mealplan/1/cook/1");
+            Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task CookMealPlans_Returns_NotFound_onInvalidId()
+        {
+            await _factory.LoginAsync(_client);
+            
+            var response = await _client.GetAsync($"api/mealplan/99/cook/1");
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+            
+            response = await _client.GetAsync($"api/mealplan/1/cook/99");
+            Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
         }
     }
 }
