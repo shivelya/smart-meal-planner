@@ -4,7 +4,7 @@ on:
   push:
     paths:
       - 'backend/**'
-      - '.github/workflows/main-backend-ci-cd.yml'
+      - '.github/workflows/main-backend-cd.yml'
     branches:
       - main
   workflow_dispatch:

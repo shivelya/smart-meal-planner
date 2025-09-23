@@ -1,16 +1,16 @@
-name: Backend CI for non-main branches
+name: Backend CI for all branches, and pull requests to main
   
 on:
   push:
     paths:
       - 'backend/**'
-      - '.github/workflows/backend-branch-ci.yml'
+      - '.github/workflows/backend-ci.yml'
     branches-ignore:
       - main
   pull_request:
     paths:
       - 'backend/**'
-      - '.github/workflows/backend-branch-ci.yml'
+      - '.github/workflows/backend-ci.yml'
   workflow_dispatch:
 
 jobs:
