@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using Backend.DTOs;
 using Backend.Model;
 using Microsoft.EntityFrameworkCore;
@@ -176,7 +177,7 @@ namespace Backend.Services.Impl
         public async Task<RecipeDto> UpdateAsync(int id, CreateUpdateRecipeDtoRequest recipeDto, int userId, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering UpdateAsync: userId={UserId}, recipeId={RecipeId}", userId, id);
-            _logger.LogInformation("Updating recipe with ID {Id} for user {UserId}: {@RecipeDto}", id, userId, recipeDto);
+            _logger.LogInformation("Updating recipe with ID {Id} for user {UserId}: {@RecipeDto}", id, userId, JsonSerializer.Serialize(recipeDto));
             var entity = await _context.Recipes
                 .Include(r => r.Ingredients)
                 .ThenInclude(i => i.Food)
