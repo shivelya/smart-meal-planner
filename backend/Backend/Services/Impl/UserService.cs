@@ -25,7 +25,7 @@ namespace Backend.Services.Impl
 
             // Hash password
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
-            _logger.LogDebug("CreateUserAsync: Password hashed for user: {Email}; hash: {Hash}", request.Email, hashedPassword);
+            _logger.LogDebug("CreateUserAsync: Password hashed for user: {Email}", request.Email);
 
             using var transaction = await _context.Database.BeginTransactionAsync(ct);
 
