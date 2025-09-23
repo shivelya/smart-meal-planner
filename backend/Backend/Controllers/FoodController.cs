@@ -27,6 +27,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetFoodsResult>> SearchFoodsAsync([FromQuery] string? query, CancellationToken ct, int? skip = null, int? take = 50)
         {
+            query = SanitizeInput(query);
             const string method = nameof(SearchFoodsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, skip={Skip}, take={Take}", method, nameof(FoodController), query, skip, take);
 
@@ -50,6 +51,11 @@ namespace Backend.Controllers
                 _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500, "Could not search for foods: " + ex.Message);
             }
+        }
+
+        private static string SanitizeInput(string? input)
+        {
+            return input?.Replace(Environment.NewLine, "").Trim()!;
         }
     }
 }
