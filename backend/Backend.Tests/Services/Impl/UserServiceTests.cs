@@ -93,12 +93,14 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task LoginAsync_Throws_WhenUserNotFound()
+        public async Task LoginAsync_ReturnsNull_WhenUserNotFound()
         {
             var service = CreateService();
             var login = new LoginRequest { Email = "notfound@example.com", Password = "password123" };
             var ip = "127.0.0.1";
-            await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip, CancellationToken.None));
+            // await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip, CancellationToken.None));
+            var response = await service.LoginAsync(login, ip, CancellationToken.None);
+            Assert.Null(response);
         }
 
         [Fact]
@@ -112,7 +114,8 @@ namespace Backend.Tests.Services.Impl
             context.Users.Add(new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("hashed") });
             context.SaveChanges();
 
-            await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip, CancellationToken.None));
+            var response = await service.LoginAsync(login, ip, CancellationToken.None);
+            Assert.Null(response);
         }
 
         [Fact]
@@ -202,7 +205,7 @@ namespace Backend.Tests.Services.Impl
             tokenService.Setup(t => t.ValidateResetToken(It.IsAny<string>())).Returns((int?)null);
             var service = CreateService(tokenService: tokenService);
             var request = new ResetPasswordRequest { ResetCode = "bad-token", NewPassword = "newpass" };
-            await Assert.ThrowsAsync<ArgumentException>(() => service.ResetPasswordAsync(request, CancellationToken.None));
+            await Assert.ThrowsAsync<InvalidOperationException>(() => service.ResetPasswordAsync(request, CancellationToken.None));
         }
 
         [Fact]

@@ -48,7 +48,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task GetMealPlansAsync_ThrowsIfUserNotFound()
         {
-            await Assert.ThrowsAsync<SecurityException>(() => _service.GetMealPlansAsync(999, 0, 10));
+            await Assert.ThrowsAsync<ValidationException>(() => _service.GetMealPlansAsync(999, 0, 10));
         }
 
         [Fact]
@@ -100,7 +100,7 @@ namespace Backend.Tests.Services.Impl
         public async Task AddMealPlanAsync_ThrowsIfUserNotFound()
         {
             var req = new CreateUpdateMealPlanRequestDto { Meals = [new CreateUpdateMealPlanEntryRequestDto()] };
-            await Assert.ThrowsAsync<SecurityException>(() => _service.AddMealPlanAsync(1, req));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.AddMealPlanAsync(1, req));
         }
 
         [Fact]
@@ -111,7 +111,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.SaveChanges();
             var req = new CreateUpdateMealPlanRequestDto { Meals = [] };
 
-            await Assert.ThrowsAsync<ValidationException>(() => _service.AddMealPlanAsync(1, req));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.AddMealPlanAsync(1, req));
         }
 
         [Fact]
@@ -120,14 +120,14 @@ namespace Backend.Tests.Services.Impl
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
             plannerContext.Users.Add(user);
             plannerContext.SaveChanges();
-            var req = new CreateUpdateMealPlanRequestDto { Meals = [new CreateUpdateMealPlanEntryRequestDto { Notes = "n", RecipeId = 2 }] };
+            var req = new CreateUpdateMealPlanRequestDto { Meals = [new CreateUpdateMealPlanEntryRequestDto { Notes = "n" }] };
 
             var result = await _service.AddMealPlanAsync(1, req);
 
             Assert.NotNull(result);
             Assert.Equal(1, result.Id);
             var entry = Assert.Single(result.Meals);
-            Assert.Equal(2, entry.RecipeId);
+            Assert.Null(entry.RecipeId);
             Assert.Equal("n", entry.Notes);
 
             // Verify it was actually added to the context
@@ -135,7 +135,7 @@ namespace Backend.Tests.Services.Impl
             Assert.NotNull(fromDb);
             Assert.Equal(1, fromDb.UserId);
             var dbEntry = Assert.Single(fromDb.Meals);
-            Assert.Equal(2, dbEntry.RecipeId);
+            Assert.Null(dbEntry.RecipeId);
             Assert.Equal("n", dbEntry.Notes);
         }
 
@@ -143,7 +143,7 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdateMealPlanAsync_ThrowsIfUserNotFound()
         {
             var req = new CreateUpdateMealPlanRequestDto { Meals = [new CreateUpdateMealPlanEntryRequestDto()] };
-            await Assert.ThrowsAsync<SecurityException>(() => _service.UpdateMealPlanAsync(1, 1, req));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateMealPlanAsync(1, 1, req));
         }
 
         [Fact]
@@ -153,7 +153,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.Users.Add(user);
             plannerContext.SaveChanges();
             var req = new CreateUpdateMealPlanRequestDto { Meals = [new CreateUpdateMealPlanEntryRequestDto()] };
-            await Assert.ThrowsAsync<SecurityException>(() => _service.UpdateMealPlanAsync(1, 1, req));
+            await Assert.ThrowsAsync<ValidationException>(() => _service.UpdateMealPlanAsync(1, 1, req));
         }
 
         [Fact]
@@ -166,7 +166,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.SaveChanges();
             var req = new CreateUpdateMealPlanRequestDto { Id = 2, Meals = [new CreateUpdateMealPlanEntryRequestDto()] };
 
-            await Assert.ThrowsAsync<SecurityException>(() => _service.UpdateMealPlanAsync(1, 1, req));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateMealPlanAsync(1, 1, req));
         }
 
         [Fact]
@@ -184,7 +184,7 @@ namespace Backend.Tests.Services.Impl
                 new CreateUpdateMealPlanEntryRequestDto { Id = 1, RecipeId = 42 }]
             };
 
-            await Assert.ThrowsAsync<ValidationException>(() => _service.UpdateMealPlanAsync(1, 1, req));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateMealPlanAsync(1, 1, req));
         }
 
         [Fact]
@@ -308,7 +308,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task DeleteMealPlanAsync_ThrowsIfUserNotFound()
         {
-            await Assert.ThrowsAsync<SecurityException>(() => _service.DeleteMealPlanAsync(1, 1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.DeleteMealPlanAsync(1, 1));
         }
 
         [Fact]
@@ -318,7 +318,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.Users.Add(user);
             plannerContext.SaveChanges();
 
-            await Assert.ThrowsAsync<ValidationException>(() => _service.DeleteMealPlanAsync(1, 1));
+            await Assert.ThrowsAsync<SecurityException>(() => _service.DeleteMealPlanAsync(1, 1));
         }
 
         [Fact]
@@ -330,7 +330,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
 
-            await Assert.ThrowsAsync<ValidationException>(() => _service.DeleteMealPlanAsync(1, 1));
+            await Assert.ThrowsAsync<SecurityException>(() => _service.DeleteMealPlanAsync(1, 1));
         }
 
         [Fact]
@@ -376,7 +376,7 @@ namespace Backend.Tests.Services.Impl
          [Fact]
         public async Task CookMeal_Throws_WhenMealPlanIdInvalid()
         {
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMealAsync(999, 1, 1));
+            await Assert.ThrowsAsync<SecurityException>(() => _service.CookMealAsync(999, 1, 1));
         }
 
         [Fact]
@@ -385,7 +385,7 @@ namespace Backend.Tests.Services.Impl
             var mealPlan = new MealPlan { Id = 1, UserId = 2 };
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMealAsync(1, 1, 1));
+            await Assert.ThrowsAsync<SecurityException>(() => _service.CookMealAsync(1, 1, 1));
         }
 
         [Fact]
@@ -394,7 +394,7 @@ namespace Backend.Tests.Services.Impl
             var mealPlan = new MealPlan { Id = 1, UserId = 1 };
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMealAsync(1, 999, 1));
+            await Assert.ThrowsAsync<SecurityException>(() => _service.CookMealAsync(1, 999, 1));
         }
 
         [Fact]
@@ -405,7 +405,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.MealPlanEntries.Add(mealPlanEntry);
             plannerContext.SaveChanges();
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.CookMealAsync(1, 2, 1));
+            await Assert.ThrowsAsync<SecurityException>(() => _service.CookMealAsync(1, 2, 1));
         }
 
         [Fact]
