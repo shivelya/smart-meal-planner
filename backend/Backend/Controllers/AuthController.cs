@@ -35,6 +35,8 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TokenResponse>> RegisterAsync(LoginRequest request, CancellationToken ct)
         {
+            request.Email = SanitizeInput(request.Email);
+            request.Password = SanitizeInput(request.Password);
             const string method = nameof(RegisterAsync);
             _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
 
@@ -78,6 +80,10 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TokenResponse>> LoginAsync(LoginRequest request, CancellationToken ct)
         {
+            request.Email = SanitizeInput(request.Email);
+            request.Password = SanitizeInput(request.Password);
+            request.Email = SanitizeInput(request.Email);
+            request.Password = SanitizeInput(request.Password);
             const string method = nameof(LoginAsync);
             _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
 
@@ -110,6 +116,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TokenResponse>> RefreshAsync([FromBody] RefreshRequest request, CancellationToken ct)
         {
+            request.RefreshToken = SanitizeInput(request.RefreshToken);
             const string method = nameof(RefreshAsync);
             _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request.RefreshToken);
 
@@ -137,6 +144,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         public async Task<IActionResult> LogoutAsync([FromBody] RefreshRequest request, CancellationToken ct)
         {
+            request.RefreshToken = SanitizeInput(request.RefreshToken);
             const string method = nameof(LogoutAsync);
             _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request?.RefreshToken);
             var userId = GetUserId();
@@ -166,6 +174,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateUserAsync(UserDto request, CancellationToken ct)
         {
+            request.Email = SanitizeInput(request.Email);
             const string method = nameof(UpdateUserAsync);
             _logger.LogInformation("{Method}: Entering. userId={UserId}", method, request?.Id);
 
@@ -201,6 +210,8 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ChangePasswordAsync(ChangePasswordRequest request, CancellationToken ct)
         {
+            request.NewPassword = SanitizeInput(request.NewPassword);
+            request.OldPassword = SanitizeInput(request.OldPassword);
             const string method = nameof(ChangePasswordAsync);
             var userId = GetUserId();
             _logger.LogInformation("{Method}: Entering. userId={UserId}", method, userId);
@@ -230,6 +241,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken ct)
         {
+            request.Email = SanitizeInput(request.Email);
             const string method = nameof(ForgotPassword);
             _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
 
@@ -258,6 +270,8 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken ct)
         {
+            request.NewPassword = SanitizeInput(request.NewPassword);
+            request.ResetCode = SanitizeInput(request.ResetCode);
             const string method = nameof(ResetPassword);
             _logger.LogInformation("{Method}: Entering. token={Token}", method, request?.ResetCode);
 
@@ -347,6 +361,11 @@ namespace Backend.Controllers
                 _logger.LogInformation("Exiting {Method}: Identifying Token={Token}", method, token);
                 return StatusCode(500);
             }
+        }
+
+        private static string SanitizeInput(string? input)
+        {
+            return input?.Replace(Environment.NewLine, "").Trim()!;
         }
     }
 }
