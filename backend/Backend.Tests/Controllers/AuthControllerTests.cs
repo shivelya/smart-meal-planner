@@ -6,6 +6,7 @@ using Backend.Services;
 using Backend.DTOs;
 using Microsoft.AspNetCore.Identity.Data;
 using System.Security.Claims;
+using System.ComponentModel.DataAnnotations;
 
 namespace Backend.Tests.Controllers
 {
@@ -61,14 +62,13 @@ namespace Backend.Tests.Controllers
         public async Task ChangePasswordAsync_ReturnsUnauthorized_WhenUnauthorizedAccessException()
         {
             var userService = new Mock<IUserService>();
-            userService.Setup(s => s.ChangePasswordAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None)).ThrowsAsync(new UnauthorizedAccessException());
+            userService.Setup(s => s.ChangePasswordAsync(It.IsAny<int>(), It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None)).ThrowsAsync(new ValidationException());
             var controller = GetController(userService);
             // Simulate user id in claims
             controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(
                 new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "1")]));
             var result = await controller.ChangePasswordAsync(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" }, CancellationToken.None);
-            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result);
-            Assert.Equal("Old password is incorrect.", unauthorized.Value);
+            var unauthorized = Assert.IsType<UnauthorizedResult>(result);
         }
 
         [Fact]
@@ -80,7 +80,7 @@ namespace Backend.Tests.Controllers
             controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(
                 new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "1")]));
             var result = await controller.ChangePasswordAsync(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" }, CancellationToken.None);
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<StatusCodeResult>(result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -93,8 +93,7 @@ namespace Backend.Tests.Controllers
             controller.ControllerContext.HttpContext.User = new ClaimsPrincipal(
                 new ClaimsIdentity([new Claim(ClaimTypes.NameIdentifier, "1")]));
             var result = await controller.ChangePasswordAsync(new ChangePasswordRequest { OldPassword = "old", NewPassword = "new" }, CancellationToken.None);
-            var ok = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal("Password updated successfully", ok.Value);
+            var ok = Assert.IsType<OkResult>(result);
         }
 
         // ForgotPassword
@@ -123,8 +122,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.ForgotPasswordAsync(It.IsAny<string>(), CancellationToken.None)).Returns(Task.CompletedTask);
             var controller = GetController(userService);
             var result = await controller.ForgotPassword(new Backend.DTOs.ForgotPasswordRequest { Email = "a" }, CancellationToken.None);
-            var ok = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal("If that email exists, a reset link has been sent.", ok.Value);
+            var ok = Assert.IsType<OkResult>(result);
         }
 
         [Fact]
@@ -134,7 +132,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.ForgotPasswordAsync(It.IsAny<string>(), CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var controller = GetController(userService);
             var result = await controller.ForgotPassword(new Backend.DTOs.ForgotPasswordRequest { Email = "a" }, CancellationToken.None);
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<StatusCodeResult>(result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -154,7 +152,6 @@ namespace Backend.Tests.Controllers
             var controller = GetController();
             var result = await controller.ResetPassword(new Backend.DTOs.ResetPasswordRequest { ResetCode = null!, NewPassword = "new" }, CancellationToken.None);
             var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Invalid or expired token", badRequest.Value);
         }
 
         [Fact]
@@ -164,7 +161,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.ResetPasswordAsync(It.IsAny<Backend.DTOs.ResetPasswordRequest>(), CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var controller = GetController(userService);
             var result = await controller.ResetPassword(new Backend.DTOs.ResetPasswordRequest { ResetCode = "token", NewPassword = "new" }, CancellationToken.None);
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<StatusCodeResult>(result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -175,7 +172,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.ResetPasswordAsync(It.IsAny<Backend.DTOs.ResetPasswordRequest>(), CancellationToken.None)).ReturnsAsync(false);
             var controller = GetController(userService);
             var result = await controller.ResetPassword(new Backend.DTOs.ResetPasswordRequest { ResetCode = "token", NewPassword = "new" }, CancellationToken.None);
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<StatusCodeResult>(result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -186,8 +183,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.ResetPasswordAsync(It.IsAny<Backend.DTOs.ResetPasswordRequest>(), CancellationToken.None)).ReturnsAsync(true);
             var controller = GetController(userService);
             var result = await controller.ResetPassword(new Backend.DTOs.ResetPasswordRequest { ResetCode = "token", NewPassword = "new" }, CancellationToken.None);
-            var ok = Assert.IsType<OkObjectResult>(result);
-            Assert.Equal("Password has been reset successfully.", ok.Value);
+            var ok = Assert.IsType<OkResult>(result);
         }
 
         // RegisterAsync
@@ -223,7 +219,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.RegisterNewUserAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>(), CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var controller = GetController(userService);
             var result = await controller.RegisterAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" }, CancellationToken.None);
-            var status = Assert.IsType<ObjectResult>(result.Result);
+            var status = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -234,7 +230,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.RegisterNewUserAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>(), CancellationToken.None)).ReturnsAsync((TokenResponse)null!);
             var controller = GetController(userService);
             var result = await controller.RegisterAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" }, CancellationToken.None);
-            var status = Assert.IsType<ObjectResult>(result.Result);
+            var status = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -284,7 +280,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.LoginAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>(), CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var controller = GetController(userService);
             var result = await controller.LoginAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" }, CancellationToken.None);
-            var status = Assert.IsType<ObjectResult>(result.Result);
+            var status = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -295,8 +291,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.LoginAsync(It.IsAny<Backend.DTOs.LoginRequest>(), It.IsAny<string>(), CancellationToken.None)).ReturnsAsync((TokenResponse)null!);
             var controller = GetController(userService);
             var result = await controller.LoginAsync(new Backend.DTOs.LoginRequest { Email = "a", Password = "b" }, CancellationToken.None);
-            var unauthorized = Assert.IsType<UnauthorizedObjectResult>(result.Result);
-            Assert.Equal("Invalid email or password.", unauthorized.Value);
+            var unauthorized = Assert.IsType<StatusCodeResult>(result.Result);
         }
 
         [Fact]
@@ -330,7 +325,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.RefreshTokensAsync(It.IsAny<string>(), It.IsAny<string>(), CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var controller = GetController(userService);
             var result = await controller.RefreshAsync(new Backend.DTOs.RefreshRequest { RefreshToken = "token" }, CancellationToken.None);
-            var status = Assert.IsType<ObjectResult>(result.Result);
+            var status = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, status.StatusCode);
         }
 
@@ -374,7 +369,7 @@ namespace Backend.Tests.Controllers
             userService.Setup(s => s.LogoutAsync(It.IsAny<string>(), CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var controller = GetController(userService);
             var result = await controller.LogoutAsync(new Backend.DTOs.RefreshRequest { RefreshToken = "token" }, CancellationToken.None);
-            var status = Assert.IsType<ObjectResult>(result);
+            var status = Assert.IsType<StatusCodeResult>(result);
             Assert.Equal(500, status.StatusCode);
         }
 

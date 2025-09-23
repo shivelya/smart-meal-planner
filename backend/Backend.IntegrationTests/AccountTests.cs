@@ -192,7 +192,6 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task Refresh_Returns_401_withInvalidToken()
         {
-            await _factory.LoginAsync(_client);
             var response = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshRequest
             {
                 RefreshToken = "invalid token"

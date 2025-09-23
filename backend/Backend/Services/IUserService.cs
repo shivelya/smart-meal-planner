@@ -40,7 +40,7 @@ namespace Backend.Services
         /// <param name="userDto">The user DTO to update.</param>
         /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <returns>True on success.</returns>
-        Task<bool> UpdateUserDtoAsync(UserDto userDto, CancellationToken ct);
+        Task UpdateUserDtoAsync(UserDto userDto, CancellationToken ct);
         /// <summary>
         /// Changes the password for the specified user.
         /// </summary>
