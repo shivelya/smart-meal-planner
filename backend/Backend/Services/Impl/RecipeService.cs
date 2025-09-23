@@ -119,6 +119,8 @@ namespace Backend.Services.Impl
 
         public async Task<GetRecipesResult> SearchAsync(int userId, string? title, string? ingredient, int? skip, int? take, CancellationToken ct = default)
         {
+            title = SanitizeInput(title);
+            ingredient = SanitizeInput(ingredient);
             _logger.LogInformation("Entering SearchAsync: userId={UserId}, title={Title}, ingredient={Ingredient}, skip={Skip}, take={Take}", userId, title, ingredient, skip, take);
             _logger.LogInformation("Searching recipes for user {UserId}: {Title}, {Ingredient}, {Skip}, {Take}", userId, title, ingredient, skip, take);
 
@@ -306,6 +308,11 @@ namespace Backend.Services.Impl
             }
             _logger.LogInformation("Exiting CreateIngredients: createdCount={CreatedCount}", toReturn.Count);
             return toReturn;
+        }
+
+        private static string SanitizeInput(string? input)
+        {
+            return input?.Replace(Environment.NewLine, "").Trim()!;
         }
     }
 }
