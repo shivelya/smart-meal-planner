@@ -153,7 +153,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.Users.Add(user);
             plannerContext.SaveChanges();
             var req = new CreateUpdateMealPlanRequestDto { Meals = [new CreateUpdateMealPlanEntryRequestDto()] };
-            await Assert.ThrowsAsync<ValidationException>(() => _service.UpdateMealPlanAsync(1, 1, req));
+            await Assert.ThrowsAsync<SecurityException>(() => _service.UpdateMealPlanAsync(1, 1, req));
         }
 
         [Fact]

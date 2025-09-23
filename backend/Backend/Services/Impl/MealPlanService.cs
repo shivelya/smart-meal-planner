@@ -113,7 +113,7 @@ namespace Backend.Services.Impl
             if (mealPlan == null)
             {
                 _logger.LogWarning("UpdateMealPlanAsync: Cannot find meal plan to update. userId={UserId}, mealPlanId={MealPlanId}", userId, id);
-                throw new ValidationException("Cannot find meal plan to update.");
+                throw new SecurityException("Cannot find meal plan to update.");
             }
 
             if (request.Id != null && request.Id != id)
