@@ -14,7 +14,7 @@ namespace Backend.Services.Impl
         public async Task<RecipeDto> CreateAsync(CreateUpdateRecipeDtoRequest recipeDto, int userId, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering CreateAsync: userId={UserId}", userId);
-            _logger.LogInformation("Creating recipe for user {UserId}: {@RecipeDto}", userId, recipeDto);
+            _logger.LogInformation("Creating recipe for user {UserId}: {@RecipeDto}", userId, JsonSerializer.Serialize(recipeDto));
             if (string.IsNullOrWhiteSpace(recipeDto.Title) || string.IsNullOrWhiteSpace(recipeDto.Instructions) || recipeDto.Ingredients == null || recipeDto.Ingredients.Count == 0)
             {
                 _logger.LogWarning("CreateAsync: Title, instructions, and at least one ingredient are required to create recipe.");
