@@ -66,6 +66,7 @@ namespace Backend.Services.Impl
 
         public async Task<RefreshToken?> VerifyRefreshTokenAsync(string token, CancellationToken ct)
         {
+            token = SanitizeInput(token);
             _logger.LogInformation("Entering VerifyRefreshTokenAsync: tokenStr={TokenStr}", token);
             var refreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == token, ct);
 
@@ -86,6 +87,7 @@ namespace Backend.Services.Impl
 
         public async Task RevokeRefreshTokenAsync(string token, CancellationToken ct)
         {
+            token = SanitizeInput(token);
             _logger.LogInformation("Entering RevokeRefreshTokenAsync");
             var refreshToken = await _context.RefreshTokens.FirstOrDefaultAsync(t => t.Token == token, ct);
             if (refreshToken == null)
@@ -133,6 +135,7 @@ namespace Backend.Services.Impl
 
         public int? ValidateResetToken(string token)
         {
+            token = SanitizeInput(token);
             _logger.LogInformation("Entering ValidateResetToken: token={Token}", token);
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.UTF8.GetBytes(GetConfigOrThrow<string>("Jwt:Key"));
@@ -189,6 +192,11 @@ namespace Backend.Services.Impl
             }
 
             return value;
+        }
+
+        private static string SanitizeInput(string input)
+        {
+            return input.Replace(Environment.NewLine, "").Trim();
         }
     }
 }

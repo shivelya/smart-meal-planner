@@ -14,6 +14,8 @@ namespace Backend.Services.Impl
 
         public async Task<TokenResponse> RegisterNewUserAsync(LoginRequest request, string ip, CancellationToken ct)
         {
+            request.Email = SanitizeInput(request.Email);
+            request.Password = SanitizeInput(request.Password);
             _logger.LogInformation("Entering CreateUserAsync: email={Email}", request.Email);
 
             // Check if user already exists
@@ -25,7 +27,7 @@ namespace Backend.Services.Impl
 
             // Hash password
             string hashedPassword = BCrypt.Net.BCrypt.HashPassword(request.Password);
-            _logger.LogDebug("CreateUserAsync: Password hashed for user: {Email}; hash: {Hash}", request.Email, hashedPassword);
+            _logger.LogDebug("CreateUserAsync: Password hashed for user: {Email}", request.Email);
 
             using var transaction = await _context.Database.BeginTransactionAsync(ct);
 
@@ -57,6 +59,8 @@ namespace Backend.Services.Impl
 
         public async Task ChangePasswordAsync(int userId, string oldPassword, string newPassword, CancellationToken ct)
         {
+            oldPassword = SanitizeInput(oldPassword);
+            newPassword = SanitizeInput(newPassword);
             _logger.LogInformation("Entering ChangePasswordAsync: userId={UserId}", userId);
             var user = await GetByIdAsync(userId);
             if (user == null)
@@ -83,6 +87,7 @@ namespace Backend.Services.Impl
 
         public async Task<bool> ResetPasswordAsync(ResetPasswordRequest request, CancellationToken ct)
         {
+            request.NewPassword = SanitizeInput(request.NewPassword);
             var userId = _tokenService.ValidateResetToken(request.ResetCode);
             _logger.LogInformation("Entering UpdatePasswordAsync: userId={UserId}", userId);
             if (userId == null)
@@ -111,6 +116,7 @@ namespace Backend.Services.Impl
 
         public async Task UpdateUserDtoAsync(UserDto userDto, CancellationToken ct)
         {
+            userDto.Email = SanitizeInput(userDto.Email);
             _logger.LogInformation("Entering UpdateUserDtoAsync: userId={UserId}", userDto.Id);
             var user = await GetByIdAsync(userDto.Id);
             if (user == null)
@@ -191,6 +197,8 @@ namespace Backend.Services.Impl
 
         public async Task ForgotPasswordAsync(string email, CancellationToken ct)
         {
+            email = SanitizeInput(email);
+
             _logger.LogInformation("Entering ForgotPassword: email={Email}", email);
             if (string.IsNullOrWhiteSpace(email))
             {
@@ -235,6 +243,7 @@ namespace Backend.Services.Impl
 
         public async Task<TokenResponse> LoginAsync(LoginRequest request, string ip, CancellationToken ct)
         {
+            request.Email = SanitizeInput(request.Email);
             _logger.LogInformation("Entering Login: email={Email}", request.Email);
 
             var user = await GetByEmailAsync(request.Email);
@@ -320,6 +329,11 @@ namespace Backend.Services.Impl
                 AccessToken = accessToken,
                 RefreshToken = refreshToken.Token!
             };
+        }
+
+        private static string SanitizeInput(string input)
+        {
+            return input.Replace(Environment.NewLine, "").Trim();
         }
     }
 }
