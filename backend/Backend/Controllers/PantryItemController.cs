@@ -39,7 +39,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<PantryItemDto>> AddItemAsync(CreateUpdatePantryItemRequestDto dto, CancellationToken ct)
         {
             const string method = nameof(AddItemAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. dto={Dto}", method, nameof(PantryItemController), dto);
+            _logger.LogInformation("{Method}: Entering {Controller}. dto={@Dto}", method, nameof(PantryItemController), dto);
             if (dto == null)
             {
                 _logger.LogWarning("{Method}: PantryItemDto dto is required.", method);
@@ -84,7 +84,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<GetPantryItemsResult>> AddItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> dtos, CancellationToken ct)
         {
             const string method = nameof(AddItemsAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. dtos={Dtos}", method, nameof(PantryItemController), dtos);
+            _logger.LogInformation("{Method}: Entering {Controller}. dtos={@Dtos}", method, nameof(PantryItemController), dtos);
             if (dtos == null || !dtos.Any())
             {
                 _logger.LogWarning("{Method}: A collection of PantryItemDto dtos is required.", method);
@@ -243,7 +243,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<DeleteRequest>> DeleteItemsAsync([FromBody, BindRequired] DeleteRequest request, CancellationToken ct)
         {
             const string method = nameof(DeleteItemsAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(PantryItemController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(PantryItemController), request);
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Delete request object is required.", method);
@@ -261,8 +261,8 @@ namespace Backend.Controllers
                     return StatusCode(204, deleted);
                 }
 
-                _logger.LogWarning("{Method}: No pantry items deleted for IDs: {Ids}", method, request.Ids);
-                _logger.LogInformation("{Method}: Exiting with NotFound. ids={Ids}", method, request.Ids);
+                _logger.LogWarning("{Method}: No pantry items deleted for IDs: {@Ids}", method, request.Ids);
+                _logger.LogInformation("{Method}: Exiting with NotFound. ids={@Ids}", method, request.Ids);
                 return NotFound();
             }
             catch (Exception ex)
@@ -287,6 +287,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetPantryItemsResult>> SearchAsync([FromQuery, BindRequired] string query, int? take = null, int? skip = null, CancellationToken ct = default)
         {
+            query = SanitizeInput(query);
             const string method = nameof(SearchAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, take={Take}, skip={Skip}", method, nameof(PantryItemController), query, take, skip);
             if (string.IsNullOrEmpty(query))
@@ -333,7 +334,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<PantryItemDto>> UpdateAsync(string id, [FromBody, BindRequired] CreateUpdatePantryItemRequestDto pantryItem, CancellationToken ct)
         {
             const string method = nameof(UpdateAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, pantryItem={PantryItem}", method, nameof(PantryItemController), id, pantryItem);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, pantryItem={@PantryItem}", method, nameof(PantryItemController), id, pantryItem);
             if (string.IsNullOrEmpty(id))
             {
                 _logger.LogWarning("{Method}: id is required.", method);
@@ -374,6 +375,11 @@ namespace Backend.Controllers
         private int GetUserId()
         {
             return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
+        }
+
+        private static string SanitizeInput(string? input)
+        {
+            return input?.Replace(Environment.NewLine, "").Trim()!;
         }
     }
 }
