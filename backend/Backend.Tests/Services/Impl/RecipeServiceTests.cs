@@ -9,28 +9,27 @@ using Moq;
 
 namespace Backend.Tests.Services.Impl
 {
+    [Collection("Database collection")]
     public class RecipeServiceTests
     {
-        private readonly DbContextOptions<PlannerContext> _dbOptions;
         private readonly PlannerContext _context;
         private readonly RecipeService _service;
         private readonly Mock<ILogger<RecipeService>> _loggerMock;
-        private readonly Mock<ILogger<PlannerContext>> _contextLoggerMock;
+        private readonly SqliteTestFixture _fixture;
 
-        public RecipeServiceTests()
+        public RecipeServiceTests(SqliteTestFixture fixture)
         {
-            _dbOptions = new DbContextOptionsBuilder<PlannerContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
-            var configDict = new Dictionary<string, string?>();
-            var config = new ConfigurationBuilder().AddInMemoryCollection(configDict).Build();
-            _contextLoggerMock = new Mock<ILogger<PlannerContext>>();
-            _context = new PlannerContext(_dbOptions, config, _contextLoggerMock.Object);
+            _fixture = fixture;
+            _context = fixture.CreateContext();
             _loggerMock = new Mock<ILogger<RecipeService>>();
             _service = new RecipeService(_context, _loggerMock.Object);
 
+
+            _context.Database.EnsureDeleted();
+            _context.Database.EnsureCreated();
+
             _context.Users.Add(new User { Id = 1, Email = "", PasswordHash = "" });
-            _context.SaveChanges();
+            var a = _context.SaveChanges();
         }
 
         [Fact]
@@ -56,6 +55,7 @@ namespace Backend.Tests.Services.Impl
                     new() { Food = new NewFoodReferenceDto { Mode = AddFoodMode.New, Name = "Ing", CategoryId = 1 }, Quantity = 1, Unit = "g" }
                 ]
             };
+
             var result = await _service.CreateAsync(dto, 1);
             Assert.NotNull(result);
             Assert.Equal("Test", result.Title);
@@ -86,6 +86,9 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task DeleteAsync_ThrowsArgumentException_WhenUserNotOwner()
         {
+            var fakeUser = new User { Id = 2, Email = "test@example.com", PasswordHash = "asdf",  };
+            _context.Users.Add(fakeUser);
+            _context.SaveChanges();
             var recipe = new Recipe { Id = 1, UserId = 2, Title = "T", Source = "S", Instructions = "I" };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
@@ -348,6 +351,8 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task UpdateAsync_ThrowsValidationException_WhenUserNotOwner()
         {
+            _context.Users.Add(new User { Id = 2, Email = "test@example", PasswordHash = "hash" });
+            _context.SaveChanges();
             var recipe = new Recipe { Id = 8, UserId = 2, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
@@ -412,6 +417,8 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public void CookRecipe_Throws_WhenUserIdDoesNotMatch()
         {
+            _context.Users.Add(new User { Id = 2, Email = "test@example.com", PasswordHash = "hash" });
+            _context.SaveChanges();
             var recipe = new Recipe { Id = 1, UserId = 2, Ingredients = [], Source = "", Title = "", Instructions = "" };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
@@ -452,6 +459,8 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public void CookRecipe_ReturnsEmpty_WhenNoMatchingPantryItems()
         {
+            var category = new Category { Id = 1, Name = "test" };
+            _context.Categories.Add(category);
             var food = new Food { Id = 1, Name = "Egg", CategoryId = 1 };
             var pantryItem = new PantryItem { Id = 1, UserId = 1, FoodId = 1, Food = food, Quantity = 2 };
             var recipe = new Recipe {

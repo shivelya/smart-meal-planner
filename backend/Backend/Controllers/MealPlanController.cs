@@ -235,7 +235,7 @@ namespace Backend.Controllers
                 {
                     _logger.LogWarning("{Method}: Service returned null.", method);
                     _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null.");
+                    return StatusCode(500);
                 }
 
                 successLogs(result);
