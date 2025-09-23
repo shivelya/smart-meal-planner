@@ -68,7 +68,7 @@ namespace Backend.Services.Impl
             if (!VerifyPasswordHash(oldPassword, user))
             {
                 _logger.LogWarning("ChangePasswordAsync: Old password does not match for user ID: {UserId}", userId);
-                throw new UnauthorizedAccessException("Old password is incorrect.");
+                throw new ValidationException("Old password is incorrect.");
             }
 
             // Hash the new password
@@ -90,7 +90,7 @@ namespace Backend.Services.Impl
                 _logger.LogWarning("Reset password failed: Invalid or expired token.");
                 _logger.LogDebug("Reset token: {Token}", request.ResetCode);
                 _logger.LogInformation("Exiting ResetPassword: token={Token}", request.ResetCode);
-                throw new InvalidOperationException("Invalid or expired token");
+                throw new ArgumentException("Invalid or expired token");
             }
 
             var user = await GetByIdAsync(userId.Value);
@@ -109,21 +109,20 @@ namespace Backend.Services.Impl
             return true;
         }
 
-        public async Task<bool> UpdateUserDtoAsync(UserDto userDto, CancellationToken ct)
+        public async Task UpdateUserDtoAsync(UserDto userDto, CancellationToken ct)
         {
             _logger.LogInformation("Entering UpdateUserDtoAsync: userId={UserId}", userDto.Id);
             var user = await GetByIdAsync(userDto.Id);
             if (user == null)
             {
                 _logger.LogWarning("UpdateUserDtoAsync: User not found with ID: {UserId}", userDto.Id);
-                throw new ValidationException($"User not found with ID: {userDto.Id}");
+                throw new ArgumentException($"User not found with ID: {userDto.Id}");
             }
 
             user.Email = userDto.Email;
-            var result = await _context.SaveChangesAsync(ct) > 0;
+            await _context.SaveChangesAsync(ct);
             _logger.LogInformation("UpdateUserDtoAsync: User updated for userId={UserId}", userDto.Id);
-            _logger.LogInformation("Exiting UpdateUserDtoAsync: userId={UserId}, result={Result}", userDto.Id, result);
-            return result;
+            _logger.LogInformation("Exiting UpdateUserDtoAsync: userId={UserId}", userDto.Id);
         }
 
         public async Task<TokenResponse> RefreshTokensAsync(string refreshToken, string ip, CancellationToken ct)
@@ -132,7 +131,7 @@ namespace Backend.Services.Impl
             if (string.IsNullOrWhiteSpace(refreshToken))
             {
                 _logger.LogWarning("RefreshAsync: Refresh token is null or empty.");
-                throw new ValidationException("Refresh token is required.");
+                throw new ArgumentException("Refresh token is required.");
             }
 
             var transaction = await _context.Database.BeginTransactionAsync(ct);
@@ -151,7 +150,7 @@ namespace Backend.Services.Impl
                 if (user == null)
                 {
                     _logger.LogWarning("User not found for refresh token: {RefreshToken}", refreshToken);
-                    throw new ValidationException("Invalid user.");
+                    throw new ArgumentException("Invalid user.");
                 }
 
                 // Mark the old refresh token as revoked
@@ -180,7 +179,7 @@ namespace Backend.Services.Impl
             if (string.IsNullOrWhiteSpace(refreshToken))
             {
                 _logger.LogWarning("Logout: Refresh token is null or empty.");
-                throw new ValidationException("Refresh token is required.");
+                throw new ArgumentException("Refresh token is required.");
             }
 
             // If the refresh token is not found, we can still return OK
@@ -196,7 +195,7 @@ namespace Backend.Services.Impl
             if (string.IsNullOrWhiteSpace(email))
             {
                 _logger.LogWarning("ForgotPassword: Email is null or empty.");
-                throw new ValidationException("Email is required.");
+                throw new ArgumentException("Email is required.");
             }
 
             var user = await GetByEmailAsync(email);
@@ -217,7 +216,7 @@ namespace Backend.Services.Impl
                 {
                     _logger.LogError("Failed to generate reset token for user with email {Email}.", email);
                     _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
-                    throw new ValidationException("Failed to generate reset token.");
+                    throw new InvalidOperationException("Failed to generate reset token.");
                 }
 
                 _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", email, token);
@@ -243,14 +242,14 @@ namespace Backend.Services.Impl
             {
                 _logger.LogWarning("Login failed: User with email {Email} not found.", request.Email);
                 _logger.LogInformation("Exiting Login: email={Email}", request.Email);
-                return null!;
+                throw new ValidationException($"User with email {request.Email} not found.");
             }
 
             if (!VerifyPasswordHash(request.Password, user))
             {
                 _logger.LogWarning("Login failed: Invalid password for user with email {Email}.", request.Email);
                 _logger.LogInformation("Exiting Login: email={Email}", request.Email);
-                return null!;
+                throw new ValidationException($"Invalid password for email {request.Email}");
             }
 
             var result = await GenerateTokensAsync(user, ip, ct);

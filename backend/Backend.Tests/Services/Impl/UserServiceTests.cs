@@ -93,14 +93,12 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task LoginAsync_ReturnsNull_WhenUserNotFound()
+        public async Task LoginAsync_ReturnsValidationException_WhenUserNotFound()
         {
             var service = CreateService();
             var login = new LoginRequest { Email = "notfound@example.com", Password = "password123" };
             var ip = "127.0.0.1";
-            // await Assert.ThrowsAsync<ArgumentException>(() => service.LoginAsync(login, ip, CancellationToken.None));
-            var response = await service.LoginAsync(login, ip, CancellationToken.None);
-            Assert.Null(response);
+            await Assert.ThrowsAsync<ValidationException>(() => service.LoginAsync(login, ip, CancellationToken.None));
         }
 
         [Fact]
@@ -114,8 +112,7 @@ namespace Backend.Tests.Services.Impl
             context.Users.Add(new User { Email = "test@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("hashed") });
             context.SaveChanges();
 
-            var response = await service.LoginAsync(login, ip, CancellationToken.None);
-            Assert.Null(response);
+            await Assert.ThrowsAsync<ValidationException>(() => service.LoginAsync(login, ip, CancellationToken.None));
         }
 
         [Fact]
@@ -141,7 +138,7 @@ namespace Backend.Tests.Services.Impl
             context.Users.Add(user);
             context.SaveChanges();
 
-            await Assert.ThrowsAsync<UnauthorizedAccessException>(() => service.ChangePasswordAsync(user.Id, "wrongpass", "newpass", CancellationToken.None));
+            await Assert.ThrowsAsync<ValidationException>(() => service.ChangePasswordAsync(user.Id, "wrongpass", "newpass", CancellationToken.None));
         }
 
         [Fact]
@@ -205,7 +202,7 @@ namespace Backend.Tests.Services.Impl
             tokenService.Setup(t => t.ValidateResetToken(It.IsAny<string>())).Returns((int?)null);
             var service = CreateService(tokenService: tokenService);
             var request = new ResetPasswordRequest { ResetCode = "bad-token", NewPassword = "newpass" };
-            await Assert.ThrowsAsync<InvalidOperationException>(() => service.ResetPasswordAsync(request, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.ResetPasswordAsync(request, CancellationToken.None));
         }
 
         [Fact]
@@ -218,9 +215,8 @@ namespace Backend.Tests.Services.Impl
             context.SaveChanges();
             var dto = new UserDto { Id = user.Id, Email = "updated@example.com" };
 
-            var result = await service.UpdateUserDtoAsync(dto, CancellationToken.None);
+            await service.UpdateUserDtoAsync(dto, CancellationToken.None);
 
-            Assert.True(result);
             context.Users.First(u => u.Id == user.Id).Email.Equals("updated@example.com");
         }
 
@@ -229,14 +225,14 @@ namespace Backend.Tests.Services.Impl
         {
             var service = CreateService();
             var dto = new UserDto { Id = 9999, Email = "notfound@example.com" };
-            await Assert.ThrowsAsync<ValidationException>(() => service.UpdateUserDtoAsync(dto, CancellationToken.None));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.UpdateUserDtoAsync(dto, CancellationToken.None));
         }
 
         [Fact]
         public async Task RefreshTokensAsync_Throws_WhenTokenMissing()
         {
             var service = CreateService();
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync(null!, "ip", CancellationToken.None));
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() => service.RefreshTokensAsync(null!, "ip", CancellationToken.None));
             Assert.Equal("Refresh token is required.", ex.Message);
         }
 
@@ -270,7 +266,7 @@ namespace Backend.Tests.Services.Impl
             tokenService.Setup(t => t.RevokeRefreshTokenAsync(It.IsAny<string>(), CancellationToken.None)).Returns(Task.CompletedTask);
             var service = CreateService(tokenService: tokenService);
             // No user with id 9999 in context
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.RefreshTokensAsync("valid", "ip", CancellationToken.None));
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() => service.RefreshTokensAsync("valid", "ip", CancellationToken.None));
             Assert.Equal("Invalid user.", ex.Message);
         }
 
@@ -300,7 +296,7 @@ namespace Backend.Tests.Services.Impl
         public async Task LogoutAsync_Throws_WhenTokenMissing()
         {
             var service = CreateService();
-            var ex = await Assert.ThrowsAsync<ValidationException>(() => service.LogoutAsync(null!, CancellationToken.None));
+            var ex = await Assert.ThrowsAsync<ArgumentException>(() => service.LogoutAsync(null!, CancellationToken.None));
             Assert.Equal("Refresh token is required.", ex.Message);
         }
 
