@@ -54,7 +54,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<MealPlanDto>> AddMealPlanAsync(CreateUpdateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(AddMealPlanAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(MealPlanController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(MealPlanController), request);
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request must be non-null.", method);
@@ -87,7 +87,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<MealPlanDto>> UpdateMealPlanAsync(int id, CreateUpdateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(UpdateMealPlanAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, request={Request}", method, nameof(MealPlanController), id, request);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, request={@Request}", method, nameof(MealPlanController), id, request);
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request must be non-null.", method);
@@ -154,18 +154,18 @@ namespace Backend.Controllers
         public async Task<ActionResult<CreateUpdateMealPlanRequestDto>> GenerateMealPlanAsync(GenerateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(GenerateMealPlanAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(MealPlanController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(MealPlanController), request);
             if (request.Days <= 0)
             {
                 _logger.LogWarning("{Method}: Cannot create meal plan for less than 1 day.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request={Request}", method, request);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request={@Request}", method, request);
                 return BadRequest("Cannot create meal plan for less than 1 day.");
             }
 
             if (request.Days > MAXDAYS)
             {
                 _logger.LogWarning("{Method}: User tried to create a meal plan for more than {Max} days.", method, MAXDAYS);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request={Request}", method, request);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request={@Request}", method, request);
                 return BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,");
             }
 
