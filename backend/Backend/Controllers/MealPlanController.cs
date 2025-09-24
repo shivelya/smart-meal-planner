@@ -158,7 +158,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<CreateUpdateMealPlanRequestDto>> GenerateMealPlanAsync(GenerateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(GenerateMealPlanAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(MealPlanController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(MealPlanController));
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request must be non-null.", method);

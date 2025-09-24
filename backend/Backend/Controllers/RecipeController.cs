@@ -127,7 +127,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<GetRecipesResult>> GetByIdsAsync([FromBody, BindRequired] GetRecipesRequest request, CancellationToken ct)
         {
             const string method = nameof(GetByIdsAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(RecipeController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(RecipeController));
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request object is required.", method);
