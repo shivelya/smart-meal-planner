@@ -155,14 +155,15 @@ namespace Backend.Tests.Services.Impl
             var emailService = new Mock<IEmailService>();
             var tokenService = new Mock<ITokenService>();
             tokenService.Setup(t => t.GenerateResetToken(It.IsAny<User>())).Returns("reset-token");
-            emailService.Setup(e => e.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
+            emailService.Setup(e => e.SendPasswordResetEmailAsync(It.IsAny<User>(), It.IsAny<string>())).Returns(Task.CompletedTask).Verifiable();
             var service = CreateService(tokenService: tokenService, emailService: emailService);
-            context.Users.Add(new User { Email = "forgot@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("hashed") });
+            var user = new User { Email = "forgot@example.com", PasswordHash = BCrypt.Net.BCrypt.HashPassword("hashed") };
+            context.Users.Add(user);
             context.SaveChanges();
 
             await service.ForgotPasswordAsync("forgot@example.com", CancellationToken.None);
 
-            emailService.Verify(e => e.SendPasswordResetEmailAsync("forgot@example.com", "reset-token"), Times.Once);
+            emailService.Verify(e => e.SendPasswordResetEmailAsync(It.Is<User>(u => u.Email == user.Email), "reset-token"), Times.Once);
         }
 
         [Fact]
@@ -172,7 +173,7 @@ namespace Backend.Tests.Services.Impl
             var tokenService = new Mock<ITokenService>();
             var service = CreateService(tokenService: tokenService, emailService: emailService);
             await service.ForgotPasswordAsync("notfound@example.com", CancellationToken.None);
-            emailService.Verify(e => e.SendPasswordResetEmailAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Never);
+            emailService.Verify(e => e.SendPasswordResetEmailAsync(It.IsAny<User>(), It.IsAny<string>()), Times.Never);
         }
 
         [Fact]

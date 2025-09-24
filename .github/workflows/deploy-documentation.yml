@@ -11,6 +11,8 @@ jobs:
   build_and_deploy_docs:
     runs-on: ubuntu-latest
     name: Build and Deploy Docs
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v3
         with:
@@ -33,7 +35,7 @@ jobs:
       - name: Download Code Coverage Report
         uses: actions/download-artifact@v4
         with:
-          name: code-coverage-report-deploy
+          name: code-coverage-report
           path: coveragereport
           github-token: ${{ secrets.GITHUB_TOKEN }}
           run-id: ${{ github.event.workflow_run.id }}
