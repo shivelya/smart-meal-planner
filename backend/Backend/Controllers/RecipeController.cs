@@ -38,7 +38,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<RecipeDto>> CreateAsync([FromBody, BindRequired] CreateUpdateRecipeDtoRequest request, CancellationToken ct)
         {
             const string method = nameof(CreateAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(RecipeController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(RecipeController));
 
             if (request == null)
             {
