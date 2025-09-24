@@ -8,20 +8,20 @@ namespace Backend.Helpers
         public static WebApplicationBuilder ConfigureLogging(this WebApplicationBuilder builder)
         {
             // Use Serilog in production, built-in logging in development
-            if (builder.Environment.IsDevelopment())
-            {
-                // Development: built-in logging (console + debug)
-                builder.Logging.ClearProviders();
-                builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
-                builder.Logging.AddDebug();
-                builder.Logging.AddJsonConsole(); // optional structured output
-            }
-            else
+            if (builder.Environment.IsProduction())
             {
                 // Production: use Serilog
                 builder.Host.UseSerilog((ctx, services, lc) =>
                     lc.ReadFrom.Configuration(ctx.Configuration).Enrich.FromLogContext()
                 );
+            }
+            else
+            {
+                // Development/Integration: built-in logging (console + debug)
+                builder.Logging.ClearProviders();
+                builder.Logging.AddConfiguration(builder.Configuration.GetSection("Logging"));
+                builder.Logging.AddDebug();
+                builder.Logging.AddJsonConsole(); // optional structured output
             }
 
             return builder;
