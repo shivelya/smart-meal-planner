@@ -90,7 +90,7 @@ jobs:
         run: dotnet restore backend/Backend.IntegrationTests
 
       - name: Build the test project
-        run: dotnet build backend/Backend.IntegrationTests --configuration Integration --no-restore
+        run: dotnet build backend/Backend.IntegrationTests --configuration Release --no-restore
 
       - name: Run tests
-        run: dotnet test backend/Backend.IntegrationTests --configuration Integration
+        run: dotnet test backend/Backend.IntegrationTests --configuration Release
