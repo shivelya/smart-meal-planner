@@ -14,7 +14,7 @@ namespace Backend.Services.Impl
         public async Task<RecipeDto> CreateAsync(CreateUpdateRecipeDtoRequest recipeDto, int userId, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering CreateAsync: userId={UserId}", userId);
-            _logger.LogInformation("Creating recipe for user {UserId}: {@RecipeDto}", userId, recipeDto);
+            _logger.LogInformation("Creating recipe for user {UserId}: {@RecipeDto}", userId, JsonSerializer.Serialize(recipeDto));
             if (string.IsNullOrWhiteSpace(recipeDto.Title) || string.IsNullOrWhiteSpace(recipeDto.Instructions) || recipeDto.Ingredients == null || recipeDto.Ingredients.Count == 0)
             {
                 _logger.LogWarning("CreateAsync: Title, instructions, and at least one ingredient are required to create recipe.");
@@ -119,6 +119,8 @@ namespace Backend.Services.Impl
 
         public async Task<GetRecipesResult> SearchAsync(int userId, string? title, string? ingredient, int? skip, int? take, CancellationToken ct = default)
         {
+            title = SanitizeInput(title);
+            ingredient = SanitizeInput(ingredient);
             _logger.LogInformation("Entering SearchAsync: userId={UserId}, title={Title}, ingredient={Ingredient}, skip={Skip}, take={Take}", userId, title, ingredient, skip, take);
             _logger.LogInformation("Searching recipes for user {UserId}: {Title}, {Ingredient}, {Skip}, {Take}", userId, title, ingredient, skip, take);
 
@@ -306,6 +308,11 @@ namespace Backend.Services.Impl
             }
             _logger.LogInformation("Exiting CreateIngredients: createdCount={CreatedCount}", toReturn.Count);
             return toReturn;
+        }
+
+        private static string SanitizeInput(string? input)
+        {
+            return input?.Replace(Environment.NewLine, "").Trim()!;
         }
     }
 }

@@ -36,23 +36,27 @@ namespace Backend.Controllers
         public async Task<ActionResult<TokenResponse>> RegisterAsync(LoginRequest request, CancellationToken ct)
         {
             const string method = nameof(RegisterAsync);
-            _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
+            _logger.LogInformation("{Method}: Entering", method);
 
             if (CheckForNull(method, request, null) is { } check) return check;
-            if (CheckForNullOrWhitespace(method, request?.Email, "Email") is { } check2) return check2;
+
+            request.Email = SanitizeInput(request.Email);
+            request.Password = SanitizeInput(request.Password);
+
+            if (CheckForNullOrWhitespace(method, request.Email, "Email") is { } check2) return check2;
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request?.Password, "Password", request?.Password) is { } check3) return check3;
+            if (CheckForNullOrWhitespace(method, request.Password, "Password", request.Password) is { } check3) return check3;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
-            return await TryCallToServiceAsync(method, request?.Email, async () =>
+            return await TryCallToServiceAsync(method, request.Email, async () =>
             {
                 try
                 {
-                    var result = await _userService.RegisterNewUserAsync(request!, GetIP(), ct);
-                    if (ResultNullCheck(method, result, request?.Email) is { } check4) return check4;
+                    var result = await _userService.RegisterNewUserAsync(request, GetIP(), ct);
+                    if (ResultNullCheck(method, result, request.Email) is { } check4) return check4;
 
-                    _logger.LogInformation("User registered successfully with email {Email}.", request?.Email);
-                    _logger.LogDebug("Generated tokens for user with email {Email}.", request?.Email);
+                    _logger.LogInformation("User registered successfully with email {Email}.", request.Email);
+                    _logger.LogDebug("Generated tokens for user with email {Email}.", request.Email);
                     return Ok(result);
                 }
                 catch (InvalidOperationException ex)
@@ -79,20 +83,24 @@ namespace Backend.Controllers
         public async Task<ActionResult<TokenResponse>> LoginAsync(LoginRequest request, CancellationToken ct)
         {
             const string method = nameof(LoginAsync);
-            _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
+            _logger.LogInformation("{Method}: Entering", method);
 
             if (CheckForNull(method, request, null) is { } check) return check;
-            if (CheckForNullOrWhitespace(method, request?.Email, "Email") is { } check2) return check2;
+
+            request.Email = SanitizeInput(request.Email);
+            request.Password = SanitizeInput(request.Password);
+
+            if (CheckForNullOrWhitespace(method, request.Email, "Email") is { } check2) return check2;
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request?.Password, "Password", request?.Email) is { } check3) return check3;
+            if (CheckForNullOrWhitespace(method, request.Password, "Password", request.Email) is { } check3) return check3;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
-            return await TryCallToServiceAsync(method, request?.Email, async () =>
+            return await TryCallToServiceAsync(method, request.Email, async () =>
             {
-                var result = await _userService.LoginAsync(request!, GetIP(), ct);
-                if (ResultNullCheck(method, result, request?.Email) is { } check4) return check4;
+                var result = await _userService.LoginAsync(request, GetIP(), ct);
+                if (ResultNullCheck(method, result, request.Email) is { } check4) return check4;
 
-                _logger.LogInformation("User logged in successfully with email {Email}.", request?.Email);
+                _logger.LogInformation("User logged in successfully with email {Email}.", request.Email);
                 return Ok(result);
             });
         }
@@ -110,6 +118,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<TokenResponse>> RefreshAsync([FromBody] RefreshRequest request, CancellationToken ct)
         {
+            request.RefreshToken = SanitizeInput(request.RefreshToken);
             const string method = nameof(RefreshAsync);
             _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request.RefreshToken);
 
@@ -138,17 +147,20 @@ namespace Backend.Controllers
         public async Task<IActionResult> LogoutAsync([FromBody] RefreshRequest request, CancellationToken ct)
         {
             const string method = nameof(LogoutAsync);
-            _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request?.RefreshToken);
+            _logger.LogInformation("{Method}: Entering", method);
             var userId = GetUserId();
 
             if (CheckForNull(method, request, userId.ToString(CultureInfo.InvariantCulture)) is { } result) return result;
+
+            request.RefreshToken = SanitizeInput(request.RefreshToken);
+
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request?.RefreshToken, "Refresh token", userId.ToString(CultureInfo.InvariantCulture)) is { } check) return check;
+            if (CheckForNullOrWhitespace(method, request.RefreshToken, "Refresh token", userId.ToString(CultureInfo.InvariantCulture)) is { } check) return check;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, userId.ToString(CultureInfo.InvariantCulture), async () =>
             {
-                await _userService.LogoutAsync(request?.RefreshToken!, ct);
+                await _userService.LogoutAsync(request.RefreshToken, ct);
                 return Ok();
             });
         }
@@ -167,16 +179,19 @@ namespace Backend.Controllers
         public async Task<IActionResult> UpdateUserAsync(UserDto request, CancellationToken ct)
         {
             const string method = nameof(UpdateUserAsync);
-            _logger.LogInformation("{Method}: Entering. userId={UserId}", method, request?.Id);
+            _logger.LogInformation("{Method}: Entering", method);
 
             var userId = GetUserId();
             if (CheckForNull(method, request, userId.ToString(CultureInfo.InvariantCulture)) is { } result) return result;
-            if (CheckForNullOrWhitespace(method, request?.Email, "Email", userId.ToString(CultureInfo.InvariantCulture)) is { } check) return check;
 
-            if (userId != request?.Id)
+            request.Email = SanitizeInput(request.Email);
+
+            if (CheckForNullOrWhitespace(method, request.Email, "Email", userId.ToString(CultureInfo.InvariantCulture)) is { } check) return check;
+
+            if (userId != request.Id)
             {
                 _logger.LogWarning("{Method}: Attempt to update different user.", method);
-                _logger.LogWarning("{Method}: Attempt to update different user. Current user: {CurrentId}  Passed in user: {RequestId}", method, User, request?.Id);
+                _logger.LogWarning("{Method}: Attempt to update different user. Current user: {CurrentId}  Passed in user: {RequestId}", method, User, request.Id);
                 return BadRequest("Id must match current user.");
             }
 
@@ -206,6 +221,10 @@ namespace Backend.Controllers
             _logger.LogInformation("{Method}: Entering. userId={UserId}", method, userId);
 
             if (CheckForNull(method, request, userId.ToString(CultureInfo.InvariantCulture)) is { } result) return result;
+
+            request.NewPassword = SanitizeInput(request.NewPassword);
+            request.OldPassword = SanitizeInput(request.OldPassword);
+
             if (CheckForNullOrWhitespace(method, request.OldPassword, "Old password", userId.ToString(CultureInfo.InvariantCulture)) is { } check) return check;
 #pragma warning disable IDE0046 // Convert to conditional expression
             if (CheckForNullOrWhitespace(method, request.NewPassword, "New password", userId.ToString(CultureInfo.InvariantCulture)) is { } check2) return check2;
@@ -231,17 +250,20 @@ namespace Backend.Controllers
         public async Task<IActionResult> ForgotPassword(ForgotPasswordRequest request, CancellationToken ct)
         {
             const string method = nameof(ForgotPassword);
-            _logger.LogInformation("{Method}: Entering. email={Email}", method, request?.Email);
+            _logger.LogInformation("{Method}: Entering.", method);
 
             if (CheckForNull(method, request, null, () => Ok("If that email exists, a reset link has been sent.")) is { } result) return result;
+
+            request.Email = SanitizeInput(request.Email);
+
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request?.Email, "Email", request?.Email,
+            if (CheckForNullOrWhitespace(method, request.Email, "Email", request.Email,
                 () => Ok("If that email exists, a reset link has been sent.")) is { } check) return check;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
-            return await TryCallToServiceAsync(method, request?.Email, async () =>
+            return await TryCallToServiceAsync(method, request.Email, async () =>
             {
-                await _userService.ForgotPasswordAsync(request?.Email!, ct);
+                await _userService.ForgotPasswordAsync(request.Email!, ct);
                 return Ok();
             });
         }
@@ -259,17 +281,21 @@ namespace Backend.Controllers
         public async Task<IActionResult> ResetPassword(ResetPasswordRequest request, CancellationToken ct)
         {
             const string method = nameof(ResetPassword);
-            _logger.LogInformation("{Method}: Entering. token={Token}", method, request?.ResetCode);
+            _logger.LogInformation("{Method}: Entering", method);
 
             if (CheckForNull(method, request, null) is { } result) return result;
+
+            request.NewPassword = SanitizeInput(request.NewPassword);
+            request.ResetCode = SanitizeInput(request.ResetCode);
+
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request?.ResetCode, "Reset token") is { } check) return check;
+            if (CheckForNullOrWhitespace(method, request.ResetCode, "Reset token") is { } check) return check;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
-            return await TryCallToServiceAsync(method, request?.ResetCode, async () =>
+            return await TryCallToServiceAsync(method, request.ResetCode, async () =>
             {
-                var success = await _userService.ResetPasswordAsync(request!, ct);
-                if (ResultNullCheck<bool?>(method, success ? success : null, request?.ResetCode) is { } check4) return check4;
+                var success = await _userService.ResetPasswordAsync(request, ct);
+                if (ResultNullCheck<bool?>(method, success ? success : null, request.ResetCode) is { } check4) return check4;
 
                 _logger.LogInformation("Password reset successfully for user.");
                 return Ok();
@@ -347,6 +373,11 @@ namespace Backend.Controllers
                 _logger.LogInformation("Exiting {Method}: Identifying Token={Token}", method, token);
                 return StatusCode(500);
             }
+        }
+
+        private static string SanitizeInput(string? input)
+        {
+            return input?.Replace(Environment.NewLine, "").Trim()!;
         }
     }
 }

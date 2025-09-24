@@ -313,7 +313,7 @@ namespace Backend.Tests.Controllers
             };
             _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, userId, CancellationToken.None)).ReturnsAsync(updatedDto);
 
-            var result = await _controller.UpdateAsync("1", pantryItemDto, CancellationToken.None);
+            var result = await _controller.UpdateAsync(1, pantryItemDto, CancellationToken.None);
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(updatedDto, okResult.Value);
@@ -324,38 +324,16 @@ namespace Backend.Tests.Controllers
             {
                 var pantryItemDto = new CreateUpdatePantryItemRequestDto { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
                 _serviceMock.Setup(s => s.UpdatePantryItemAsync(pantryItemDto, userId, CancellationToken.None)).ReturnsAsync((PantryItemDto)null!);
-                var result = await _controller.UpdateAsync("1", pantryItemDto, CancellationToken.None);
+                var result = await _controller.UpdateAsync(1, pantryItemDto, CancellationToken.None);
                 var objResult = Assert.IsType<ObjectResult>(result.Result);
                 Assert.Equal(500, objResult.StatusCode);
                 Assert.Equal("Service returned null updated pantry item.", objResult.Value);
             }
 
         [Fact]
-        public async Task Update_WithNullId_ReturnsBadRequest()
-        {
-            var pantryItemDto = new CreateUpdatePantryItemRequestDto { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
-
-            var result = await _controller.UpdateAsync(null!, pantryItemDto, CancellationToken.None);
-
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("id is required.", badRequest.Value);
-        }
-
-        [Fact]
-        public async Task Update_WithEmptyId_ReturnsBadRequest()
-        {
-            var pantryItemDto = new CreateUpdatePantryItemRequestDto { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" };
-
-            var result = await _controller.UpdateAsync("", pantryItemDto, CancellationToken.None);
-
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("id is required.", badRequest.Value);
-        }
-
-        [Fact]
         public async Task Update_WithNullDto_ReturnsBadRequest()
         {
-            var result = await _controller.UpdateAsync("1", null!, CancellationToken.None);
+            var result = await _controller.UpdateAsync(1, null!, CancellationToken.None);
 
             var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal("PantryItemDto pantryItem is required.", badRequest.Value);
@@ -479,21 +457,9 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public async Task Update_ReturnsBadRequest_WhenIdIsNullOrEmpty()
-        {
-            var result = await _controller.UpdateAsync(null!, new CreateUpdatePantryItemRequestDto{ Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}, CancellationToken.None);
-            var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal(400, objResult.StatusCode);
-
-            result = await _controller.UpdateAsync("", new CreateUpdatePantryItemRequestDto{ Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}, CancellationToken.None);
-            objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal(400, objResult.StatusCode);
-        }
-
-        [Fact]
         public async Task Update_ReturnsBadRequest_WhenPantryItemIsNull()
         {
-            var result = await _controller.UpdateAsync("1", null!, CancellationToken.None);
+            var result = await _controller.UpdateAsync(1, null!, CancellationToken.None);
             var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
             Assert.Equal(400, objResult.StatusCode);
         }
@@ -504,7 +470,7 @@ namespace Backend.Tests.Controllers
             _serviceMock.Setup(s => s.UpdatePantryItemAsync(It.IsAny<CreateUpdatePantryItemRequestDto>(), userId, CancellationToken.None))
                 .ThrowsAsync(new Exception("fail"));
 
-            var result = await _controller.UpdateAsync("1", new CreateUpdatePantryItemRequestDto { Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}, CancellationToken.None);
+            var result = await _controller.UpdateAsync(1, new CreateUpdatePantryItemRequestDto { Id = 1, Quantity = 1, Food = new ExistingFoodReferenceDto { Id = 1 }}, CancellationToken.None);
             var objResult = Assert.IsType<ObjectResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
         }
