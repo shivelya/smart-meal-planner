@@ -40,8 +40,7 @@ namespace Backend.IntegrationTests
             builder.ConfigureTestServices(services =>
             {
                 // if ConfigValues has a value then override configuration
-                if (ConfigValues != null)
-                    OverwriteConfig(services);
+                OverwriteConfig(services);
 
                 // swap email service
                 services.RemoveAll<IEmailService>();
@@ -49,6 +48,8 @@ namespace Backend.IntegrationTests
                 services.AddSingleton<IEmailService>(sp => sp.GetRequiredService<FakeEmailService>());
 
                 // swap db context
+                services.RemoveAll<DbContextOptions<PlannerContext>>();
+                services.RemoveAll<PlannerContext>();
                 services.AddDbContext<PlannerContext>(options =>
                 {
                     options.UseNpgsql(_databaseContainer.GetConnectionString());
@@ -128,13 +129,16 @@ namespace Backend.IntegrationTests
             using var scope = provider.CreateScope();
             var hostingEnvi = scope.ServiceProvider.GetRequiredService<IWebHostEnvironment>();
 
-            var config = new ConfigurationBuilder()
+            var configBuilder = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json", optional: false, reloadOnChange: false)
                 .AddJsonFile($"appsettings.{hostingEnvi.EnvironmentName}.json", optional: true)
                 .AddEnvironmentVariables()
-                .AddUserSecrets<Program>(optional: true)
-                .AddInMemoryCollection(ConfigValues!)
-                .Build();
+                .AddUserSecrets<Program>(optional: true);
+
+            if (ConfigValues != null)
+                configBuilder.AddInMemoryCollection(ConfigValues!);
+
+            var config = configBuilder.Build();
 
             services.AddSingleton<IConfiguration>(config);
         }

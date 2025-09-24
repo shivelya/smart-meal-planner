@@ -6,7 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.IntegrationTests
 {
-    public class MaintenanceTests : IClassFixture<CustomWebApplicationFactory>
+    [Collection("Database collection")]
+    public class MaintenanceTests
     {
         private readonly CustomWebApplicationFactory _factory;
         private readonly HttpClient client;
