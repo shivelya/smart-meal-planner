@@ -270,13 +270,14 @@ namespace Backend.Services.Impl
 
         private async Task<User> GetByEmailAsync(string email)
         {
+            const string method = nameof(GetByEmailAsync);
             var user = await _context.Users
                 .AsNoTracking()
                 .FirstOrDefaultAsync(u => u.Email == email);
 
             if (user == null)
             {
-                _logger.LogInformation("GetByEmailAsync: User not found with email: {Email}", email);
+                _logger.LogInformation("{Method}: User not found.", method);
                 return null!;
             }
 
