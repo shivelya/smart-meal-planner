@@ -74,6 +74,8 @@ jobs:
     needs: build
     permissions:
       contents: read #This is required for actions/checkout
+    env:
+      ASPNETCORE_ENVIRONMENT: Integration
 
     steps:
       - uses: actions/checkout@v4
