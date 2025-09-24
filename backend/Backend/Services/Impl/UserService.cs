@@ -197,20 +197,21 @@ namespace Backend.Services.Impl
 
         public async Task ForgotPasswordAsync(string email, CancellationToken ct)
         {
+            const string method = nameof(ForgotPasswordAsync);
             email = SanitizeInput(email);
 
-            _logger.LogInformation("Entering ForgotPassword: email={Email}", email);
+            _logger.LogInformation("{Method}: Entering", method);
             if (string.IsNullOrWhiteSpace(email))
             {
-                _logger.LogWarning("ForgotPassword: Email is null or empty.");
+                _logger.LogWarning("{Method}: Email is null or empty.", method);
                 throw new ArgumentException("Email is required.");
             }
 
             var user = await GetByEmailAsync(email);
             if (user == null)
             {
-                _logger.LogInformation("Forgot password request for non-existing email: {Email}", email);
-                _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
+                _logger.LogInformation("{Method}: Forgot password request for non-existing email", method);
+                _logger.LogInformation("{Method}: Exiting ForgotPassword", method);
 
                 // don’t reveal if email exists
                 return;
@@ -222,17 +223,17 @@ namespace Backend.Services.Impl
                 var token = _tokenService.GenerateResetToken(user);
                 if (string.IsNullOrEmpty(token))
                 {
-                    _logger.LogError("Failed to generate reset token for user with email {Email}.", email);
-                    _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
+                    _logger.LogError("{Method}: Failed to generate reset token for user with id {Id}.", method, user.Id);
+                    _logger.LogInformation("{Method}: Exiting ForgotPassword: id {Id}", method, user.Id);
                     throw new InvalidOperationException("Failed to generate reset token.");
                 }
 
-                _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", email, token);
+                _logger.LogInformation("{Method}: Reset token generated for user with id {Id}", method, user.Id);
                 await _emailService.SendPasswordResetEmailAsync(user, token);
                 await transaction.CommitAsync(ct);
 
-                _logger.LogInformation("Password reset email sent to {Email}.", email);
-                _logger.LogInformation("Exiting ForgotPassword: email={Email}", email);
+                _logger.LogInformation("{Method}: Password reset email sent to id {Id}.", method, user.Id);
+                _logger.LogInformation("{Method}: Exiting ForgotPassword: id={Id}", method, user.Id);
             }
             catch
             {
