@@ -1,3 +1,5 @@
+using Backend.Model;
+
 namespace Backend.Services
 {
     public interface IEmailService
@@ -5,9 +7,9 @@ namespace Backend.Services
         /// <summary>
         /// Sends a password reset email to the specified recipient with the provided reset link.
         /// </summary>
-        /// <param name="toEmail">The recipient's email address.</param>
+        /// <param name="user">The current user.</param>
         /// <param name="resetCode">The password reset code to include in the email.</param>
         /// <returns>A task representing the asynchronous operation.</returns>
-        Task SendPasswordResetEmailAsync(string toEmail, string resetCode);
+        Task SendPasswordResetEmailAsync(User user, string resetCode);
     }
 }

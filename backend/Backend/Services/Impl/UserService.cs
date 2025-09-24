@@ -228,7 +228,7 @@ namespace Backend.Services.Impl
                 }
 
                 _logger.LogInformation("Reset token generated for user with email {Email}: {Token}", email, token);
-                await _emailService.SendPasswordResetEmailAsync(user.Email, token);
+                await _emailService.SendPasswordResetEmailAsync(user, token);
                 await transaction.CommitAsync(ct);
 
                 _logger.LogInformation("Password reset email sent to {Email}.", email);
