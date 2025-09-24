@@ -37,8 +37,11 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RecipeDto>> CreateAsync([FromBody, BindRequired] CreateUpdateRecipeDtoRequest request, CancellationToken ct)
         {
+            request.Source = SanitizeInput(request.Source);
+            request.Title = SanitizeInput(request.Title);
+            SanitizeIngredients(request.Ingredients);
             const string method = nameof(CreateAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(RecipeController), request);
             try
             {
                 var userId = GetUserId();
@@ -114,7 +117,7 @@ namespace Backend.Controllers
         public async Task<ActionResult<GetRecipesResult>> GetByIdsAsync([FromBody, BindRequired] GetRecipesRequest request, CancellationToken ct)
         {
             const string method = nameof(GetByIdsAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(RecipeController), request);
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request object is required.", method);
@@ -165,6 +168,8 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetRecipesResult>> SearchAsync([FromQuery] string? title = null, [FromQuery] string? ingredient = null, [FromQuery] int? skip = null, [FromQuery] int? take = null, CancellationToken ct = default)
         {
+            title = SanitizeInput(title);
+            ingredient = SanitizeInput(ingredient);
             const string method = nameof(SearchAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. title={Title}, ingredient={Ingredient}, skip={Skip}, take={Take}", method, nameof(RecipeController), title, ingredient, skip, take);
             if (title == null && ingredient == null)
@@ -210,6 +215,9 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RecipeDto>> UpdateAsync(int id, [FromBody, BindRequired] CreateUpdateRecipeDtoRequest request, CancellationToken ct)
         {
+            request.Source = SanitizeInput(request.Source);
+            request.Title = SanitizeInput(request.Title);
+            SanitizeIngredients(request.Ingredients);
             const string method = nameof(UpdateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, request={Request}", method, nameof(RecipeController), id, request);
             if (request == null)
@@ -292,6 +300,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ExtractedRecipe>> ExtractRecipeAsync([FromBody, BindRequired] ExtractRequest request, CancellationToken ct)
         {
+            request.Source = SanitizeInput(request.Source);
             const string method = nameof(ExtractRecipeAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
             if (request == null)
@@ -378,6 +387,23 @@ namespace Backend.Controllers
         private int GetUserId()
         {
             return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
+        }
+
+        private static string SanitizeInput(string? input)
+        {
+            return input?.Replace(Environment.NewLine, "").Trim()!;
+        }
+
+        private static void SanitizeIngredients(List<CreateUpdateRecipeIngredientDto> ingredients)
+        {
+            foreach (var ing in ingredients)
+            {
+                ing.Unit = SanitizeInput(ing.Unit);
+                if (ing.Food.GetType() == typeof(NewFoodReferenceDto))
+                {
+                    ((NewFoodReferenceDto)ing.Food).Name = SanitizeInput(((NewFoodReferenceDto)ing.Food).Name);
+                }
+            }
         }
     }
 }
