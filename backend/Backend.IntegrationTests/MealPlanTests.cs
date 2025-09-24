@@ -503,6 +503,7 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task CookMealPlans_Returns_Unauthorized_onNoToken()
         {
+            await _factory.LoginAsync(_client);
             var response = await _client.GetAsync($"api/mealplan/1/cook/1");
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
