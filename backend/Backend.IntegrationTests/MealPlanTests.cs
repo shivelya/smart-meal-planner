@@ -478,8 +478,6 @@ namespace Backend.IntegrationTests
         public async Task CookMealPlans_Returns_ListofItems_onSuccess()
         {
             await _factory.LoginAsync(_client);
-            var id = 1;
-            var entryId = 1;
 
             // quantities shouldn't change before and after cooking
             // user has to verify change and save it manually
@@ -490,7 +488,7 @@ namespace Backend.IntegrationTests
             Assert.Single(pantryResult.Items);
             var quantity = pantryResult.Items.First().Quantity;
 
-            response = await _client.GetAsync($"api/mealplan/{id}/cook/{entryId}");
+            response = await _client.GetAsync($"api/mealplan/1/cook/1");
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<GetPantryItemsResult>();
             Assert.NotNull(result);

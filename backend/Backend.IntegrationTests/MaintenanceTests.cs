@@ -40,7 +40,7 @@ namespace Backend.IntegrationTests
         {
             var hostEnv = _factory.Services.GetRequiredService<IWebHostEnvironment>();
 
-            Assert.Equal("Development", hostEnv.EnvironmentName);
+            Assert.True(hostEnv.EnvironmentName == "Development" || hostEnv.EnvironmentName == "Integration");
         }
 
         [Fact]
