@@ -54,13 +54,15 @@ namespace Backend.Controllers
         public async Task<ActionResult<MealPlanDto>> AddMealPlanAsync(CreateUpdateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(AddMealPlanAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(MealPlanController), request);
+            _logger.LogInformation("{Method}: Entering", method);
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request must be non-null.", method);
                 _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("Request must be non-null.");
             }
+
+            SanitizeMeals(request.Meals);
 
             return await CallToService(method, async () =>
             {
@@ -87,13 +89,15 @@ namespace Backend.Controllers
         public async Task<ActionResult<MealPlanDto>> UpdateMealPlanAsync(int id, CreateUpdateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(UpdateMealPlanAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, request={@Request}", method, nameof(MealPlanController), id, request);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(MealPlanController), id);
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request must be non-null.", method);
                 _logger.LogInformation("{Method}: Exiting with BadRequest. id={Id}, request=null", method, id);
                 return BadRequest("Request must be non-null.");
             }
+
+            SanitizeMeals(request.Meals);
 
             return await CallToService(method, async () =>
             {
@@ -154,7 +158,14 @@ namespace Backend.Controllers
         public async Task<ActionResult<CreateUpdateMealPlanRequestDto>> GenerateMealPlanAsync(GenerateMealPlanRequestDto request, CancellationToken ct = default)
         {
             const string method = nameof(GenerateMealPlanAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(MealPlanController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(MealPlanController));
+            if (request == null)
+            {
+                _logger.LogWarning("{Method}: Request must be non-null.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest.", method);
+                return BadRequest("Request must be non-null.");
+            }
+
             if (request.Days <= 0)
             {
                 _logger.LogWarning("{Method}: Cannot create meal plan for less than 1 day.", method);
@@ -263,6 +274,17 @@ namespace Backend.Controllers
                 _logger.LogInformation("{Method}: Exiting with error.", method);
                 return StatusCode(500);
             }
+        }
+
+        private static void SanitizeMeals(IEnumerable<CreateUpdateMealPlanEntryRequestDto> meals)
+        {
+            foreach (var meal in meals)
+                meal.Notes = SanitizeInput(meal.Notes);
+        }
+
+        private static string? SanitizeInput(string? input)
+        {
+            return input?.Replace(Environment.NewLine, "").Trim()!;
         }
     }
 }

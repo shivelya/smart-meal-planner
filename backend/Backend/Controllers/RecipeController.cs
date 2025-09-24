@@ -37,11 +37,20 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RecipeDto>> CreateAsync([FromBody, BindRequired] CreateUpdateRecipeDtoRequest request, CancellationToken ct)
         {
+            const string method = nameof(CreateAsync);
+            _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(RecipeController));
+
+            if (request == null)
+            {
+                _logger.LogWarning("{Method}: Request object is required.", method);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
+                return BadRequest("request object is required.");
+            }
+
             request.Source = SanitizeInput(request.Source);
             request.Title = SanitizeInput(request.Title);
             SanitizeIngredients(request.Ingredients);
-            const string method = nameof(CreateAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(RecipeController), request);
+
             try
             {
                 var userId = GetUserId();
@@ -113,11 +122,12 @@ namespace Backend.Controllers
         /// <remarks>Returns a list of full recipe objects. Ok on success.</remarks>
         [HttpPost("bulk")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<GetRecipesResult>> GetByIdsAsync([FromBody, BindRequired] GetRecipesRequest request, CancellationToken ct)
         {
             const string method = nameof(GetByIdsAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(RecipeController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(RecipeController));
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request object is required.", method);
@@ -215,17 +225,18 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<RecipeDto>> UpdateAsync(int id, [FromBody, BindRequired] CreateUpdateRecipeDtoRequest request, CancellationToken ct)
         {
-            request.Source = SanitizeInput(request.Source);
-            request.Title = SanitizeInput(request.Title);
-            SanitizeIngredients(request.Ingredients);
             const string method = nameof(UpdateAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, request={Request}", method, nameof(RecipeController), id, request);
+            _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request object is required.", method);
                 _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("Request object is required.");
             }
+
+            request.Source = SanitizeInput(request.Source);
+            request.Title = SanitizeInput(request.Title);
+            SanitizeIngredients(request.Ingredients);
 
             try
             {
@@ -300,15 +311,16 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ExtractedRecipe>> ExtractRecipeAsync([FromBody, BindRequired] ExtractRequest request, CancellationToken ct)
         {
-            request.Source = SanitizeInput(request.Source);
             const string method = nameof(ExtractRecipeAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(RecipeController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}.", method, nameof(RecipeController));
             if (request == null)
             {
                 _logger.LogWarning("{Method}: Request object is required.", method);
                 _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
                 return BadRequest("Request object is required.");
             }
+
+            request.Source = SanitizeInput(request.Source);
 
             if (request.Source == null)
             {
