@@ -1,4 +1,4 @@
-name: Backend CI for all branches, and pull requests to main
+name: Backend CI
   
 on:
   push:
