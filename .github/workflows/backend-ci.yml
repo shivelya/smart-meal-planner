@@ -67,25 +67,25 @@ jobs:
         with:
           name: code-coverage-report
           path: coveragereport
-  # integration-test:
-  #   runs-on: windows-latest
-  #   needs: build
-  #   permissions:
-  #     contents: read #This is required for actions/checkout
+  integration-test:
+    runs-on: windows-latest
+    needs: build
+    permissions:
+      contents: read #This is required for actions/checkout
 
-  #   steps:
-  #     - uses: actions/checkout@v4
+    steps:
+      - uses: actions/checkout@v4
 
-  #     - name: Set up .NET Core
-  #       uses: actions/setup-dotnet@v4
-  #       with:
-  #         dotnet-version: '8.x'
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.x'
 
-  #     - name: Restore dependencies
-  #       run: dotnet restore backend/Backend.IntegrationTests
+      - name: Restore dependencies
+        run: dotnet restore backend/Backend.IntegrationTests
 
-  #     - name: Build the test project
-  #       run: dotnet build backend/Backend.IntegrationTests --configuration Release --no-restore
+      - name: Build the test project
+        run: dotnet build backend/Backend.IntegrationTests --configuration Release --no-restore
 
-  #     - name: Run tests
-  #       run: dotnet test backend/Backend.IntegrationTests --configuration Release
+      - name: Run tests
+        run: dotnet test backend/Backend.IntegrationTests --configuration Release
