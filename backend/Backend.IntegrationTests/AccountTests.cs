@@ -5,7 +5,8 @@ using Backend.DTOs;
 
 namespace Backend.IntegrationTests
 {
-    public class AccountTests : IClassFixture<CustomWebApplicationFactory>
+    [Collection("Database collection")]
+    public class AccountTests
     {
         private readonly CustomWebApplicationFactory _factory;
         private readonly HttpClient _client;

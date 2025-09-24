@@ -3,12 +3,12 @@ using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.DTOs;
 using Backend.Services;
-using Microsoft.AspNetCore.Identity.Data;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.IntegrationTests
 {
-    public class PasswordTests : IClassFixture<CustomWebApplicationFactory>
+    [Collection("Database collection")]
+    public class PasswordTests
     {
         private readonly CustomWebApplicationFactory _factory;
         private readonly HttpClient _client;
