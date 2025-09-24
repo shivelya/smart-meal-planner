@@ -76,11 +76,6 @@ namespace Backend.Services.Impl
                 if (string.IsNullOrWhiteSpace(fromName) || string.IsNullOrWhiteSpace(fromEmail) || string.IsNullOrWhiteSpace(mailServer) || string.IsNullOrWhiteSpace(smtpUser) || string.IsNullOrWhiteSpace(smtpPassword) || string.IsNullOrWhiteSpace(resetLink))
                 {
                     _logger.LogError("{Method}: Missing required email configuration. Id={Id}", method, user.Id);
-                    _logger.LogDebug("{Method}: FromName={FromName}", method, fromName);
-                    _logger.LogDebug("{Method}: FromEmail={FromEmail}", method, fromEmail);
-                    _logger.LogDebug("{Method}: MailServer={MailServer}", method, mailServer);
-                    _logger.LogDebug("{Method}: SMTPUser={SmtpUser}", method, smtpUser);
-                    _logger.LogDebug("{Method}: ResetLink={ResetLink}", method, resetLink);
                     throw new InvalidOperationException("Missing required email configuration.");
                 }
 

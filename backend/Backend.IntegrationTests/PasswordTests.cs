@@ -2,6 +2,7 @@ using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.DTOs;
+using Backend.Model;
 using Backend.Services;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -159,11 +160,11 @@ namespace Backend.IntegrationTests
         // Thread-safe read access
         public IReadOnlyList<SentEmail> Sent => _sent.AsReadOnly();
 
-        public Task SendPasswordResetEmailAsync(string to, string resetCode)
+        public Task SendPasswordResetEmailAsync(User user, string resetCode)
         {
             lock (_sent) // keep it safe for parallel test runs (if any)
             {
-                _sent.Add(new SentEmail(to, resetCode, DateTimeOffset.UtcNow));
+                _sent.Add(new SentEmail(user.Email, resetCode, DateTimeOffset.UtcNow));
             }
             return Task.CompletedTask;
         }

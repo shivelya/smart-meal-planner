@@ -3,6 +3,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using MimeKit;
+using Backend.Model;
 
 namespace Backend.Tests.Services.Impl
 {
@@ -30,7 +31,8 @@ namespace Backend.Tests.Services.Impl
 
             var service = new BrevoEmailService(configMock.Object, loggerMock.Object, smtpClientMock.Object);
 
-            await service.SendPasswordResetEmailAsync("recipient@example.com", "resetcode123");
+            var user = new User { Email = "recipient@example.com", PasswordHash = "hash" };
+            await service.SendPasswordResetEmailAsync(user, "resetcode123");
 
             smtpClientMock.Verify(c => c.ConnectAsync("smtp.example.com", 587, MailKit.Security.SecureSocketOptions.StartTls), Times.Once);
             smtpClientMock.Verify(c => c.AuthenticateAsync("user", "pass"), Times.Once);
@@ -58,7 +60,8 @@ namespace Backend.Tests.Services.Impl
             smtpClientMock.Setup(c => c.DisconnectAsync(true)).Returns(Task.CompletedTask);
 
             var service = new BrevoEmailService(configMock.Object, loggerMock.Object, smtpClientMock.Object);
-            await service.SendPasswordResetEmailAsync("recipient@example.com", "resetcode123");
+            var user = new User { Email = "recipient@example.com", PasswordHash = "hash" };
+            await service.SendPasswordResetEmailAsync(user, "resetcode123");
             smtpClientMock.Verify(c => c.ConnectAsync("smtp.example.com", 587, MailKit.Security.SecureSocketOptions.StartTls), Times.Once);
         }
     }
