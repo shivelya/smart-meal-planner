@@ -482,6 +482,11 @@ namespace Backend.IntegrationTests
             // we need to seed a mealplan to ensure there is one for our call
             var response = await _client.PostAsJsonAsync("api/mealplan", new CreateUpdateMealPlanRequestDto { Meals = [  new CreateUpdateMealPlanEntryRequestDto { RecipeId = 1 }] });
             response.EnsureSuccessStatusCode();
+            var mealPlanResult = await response.Content.ReadFromJsonAsync<MealPlanDto>();
+            Assert.NotNull(mealPlanResult);
+
+            var id = mealPlanResult.Id;
+            var entryId = mealPlanResult.Meals.First().Id;
 
             // quantities shouldn't change before and after cooking
             // user has to verify change and save it manually
@@ -492,7 +497,7 @@ namespace Backend.IntegrationTests
             Assert.Single(pantryResult.Items);
             var quantity = pantryResult.Items.First().Quantity;
 
-            response = await _client.GetAsync($"api/mealplan/1/cook/1");
+            response = await _client.GetAsync($"api/mealplan/{id}/cook/{entryId}");
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<GetPantryItemsResult>();
             Assert.NotNull(result);
