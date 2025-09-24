@@ -479,9 +479,13 @@ namespace Backend.IntegrationTests
         {
             await _factory.LoginAsync(_client);
 
+            // we need to seed a mealplan to ensure there is one for our call
+            var response = await _client.PostAsJsonAsync("api/mealplan", new CreateUpdateMealPlanRequestDto { Meals = [  new CreateUpdateMealPlanEntryRequestDto { RecipeId = 1 }] });
+            response.EnsureSuccessStatusCode();
+
             // quantities shouldn't change before and after cooking
             // user has to verify change and save it manually
-            var response = await _client.GetAsync("api/pantryitem/search?query=butternut");
+            response = await _client.GetAsync("api/pantryitem/search?query=butternut");
             response.EnsureSuccessStatusCode();
             var pantryResult = await response.Content.ReadFromJsonAsync<GetPantryItemsResult>();
             Assert.NotNull(pantryResult);
@@ -503,7 +507,6 @@ namespace Backend.IntegrationTests
         [Fact]
         public async Task CookMealPlans_Returns_Unauthorized_onNoToken()
         {
-            await _factory.LoginAsync(_client);
             var response = await _client.GetAsync($"api/mealplan/1/cook/1");
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
