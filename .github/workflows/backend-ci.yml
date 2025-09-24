@@ -76,6 +76,7 @@ jobs:
       contents: read #This is required for actions/checkout
     env:
       ASPNETCORE_ENVIRONMENT: Integration
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
       - uses: actions/checkout@v4
