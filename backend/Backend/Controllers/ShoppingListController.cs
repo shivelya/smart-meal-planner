@@ -55,8 +55,9 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ShoppingListItemDto>> UpdateShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request, CancellationToken ct = default)
         {
+            request.Notes = SanitizeInput(request.Notes);
             const string method = nameof(UpdateShoppingListItemAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(ShoppingListController), request);
+            _logger.LogInformation("{Method}: Entering {Controller}. request={@Request}", method, nameof(ShoppingListController), request);
             if (request == null)
             {
                 _logger.LogWarning("{Method}: request object is required.", method);
@@ -92,6 +93,7 @@ namespace Backend.Controllers
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ShoppingListItemDto>> AddShoppingListItemAsync(CreateUpdateShoppingListEntryRequestDto request, CancellationToken ct = default)
         {
+            request.Notes = SanitizeInput(request.Notes);
             const string method = nameof(AddShoppingListItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(ShoppingListController), request);
             if (request == null)
@@ -214,6 +216,11 @@ namespace Backend.Controllers
         private int GetUserId()
         {
             return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
+        }
+
+        private static string SanitizeInput(string? input)
+        {
+            return input?.Replace(Environment.NewLine, "").Trim()!;
         }
     }
 }
