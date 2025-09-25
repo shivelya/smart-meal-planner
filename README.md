@@ -30,9 +30,9 @@ A full-stack meal planning application built with **Angular** (frontend), **EF C
 - **Deployment & CI/CD**: GitHub Actions + Azure Web Apps + Static Web Apps
 
 ## Live Artifacts
-- [Frontend Docs](https://salmon-pond-0787b270f.1.azurestaticapps.net/frontend) (generated with Compodoc)
+- [Frontend Docs](https://shivelya.github.io/smart-meal-planner/frontend/) (generated with Compodoc)
 - [API Docs](https://smart-meal-planner-backend-ceazgjcaehfghdf7.canadacentral-01.azurewebsites.net/swagger/index.html) (generated with OpenAPI)
-- [Backend Unit Test Code Coverage](https://salmon-pond-0787b270f.1.azurestaticapps.net/coveragereport/index.htm)
+- [Backend Unit Test Code Coverage](https://shivelya.github.io/smart-meal-planner/frontend/)
 - [Frontend Live Site (planned)](https://lemon-tree-0078d2d0f.1.azurestaticapps.net/)
 - [User Stories](https://github.com/shivelya/smart-meal-planner/blob/main/docs/user-stories.md)
 
