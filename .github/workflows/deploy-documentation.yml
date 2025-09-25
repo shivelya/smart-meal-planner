@@ -17,9 +17,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build_and_deploy_docs:
-    # environment:
-    #   name: github-pages
-    #   url: ${{ steps.deployment.outputs.page_url }}
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     name: Build and Deploy Docs
   
