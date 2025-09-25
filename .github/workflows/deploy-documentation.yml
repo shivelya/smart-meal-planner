@@ -47,8 +47,6 @@ jobs:
         with:
           name: code-coverage-report
           path: coveragereport
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          run-id: ${{ github.event.workflow_run.id }}
 
       - name: Merge Docs
         run: |
