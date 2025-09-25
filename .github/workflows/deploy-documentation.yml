@@ -5,7 +5,6 @@ on:
     workflows: ["Main Backend CD", "Main Frontend CD"]
     types:
       - completed
-  workflow_dispatch:
 permissions:
       contents: read
       pages: write
