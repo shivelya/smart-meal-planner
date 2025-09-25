@@ -5,6 +5,7 @@ on:
     workflows: ["Main Backend CD", "Main Frontend CD"]
     types:
       - completed
+  workflow_dispatch:
 permissions:
       contents: read
       pages: write
@@ -16,9 +17,9 @@ concurrency:
   cancel-in-progress: false
 jobs:
   build_and_deploy_docs:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    # environment:
+    #   name: github-pages
+    #   url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
     name: Build and Deploy Docs
   
@@ -41,11 +42,36 @@ jobs:
         working-directory: ./frontend
         run: npx compodoc -p tsconfig.json -d _compodoc
 
-      - name: Download Code Coverage Report
-        uses: actions/download-artifact@v4
+      - name: Set up .NET Core
+        uses: actions/setup-dotnet@v4
         with:
-          name: code-coverage-report
-          path: coveragereport
+          dotnet-version: '8.x'
+
+      - name: Restore dependencies
+        run: dotnet restore backend/Backend.Tests
+
+      - name: Install report generator
+        run: dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.1.21
+
+      - name: Build the test project
+        run: dotnet build backend/Backend.Tests --configuration Release --no-restore
+
+      - name: Run unit tests with coverage
+        run: dotnet test backend/Backend.Tests --configuration Release --collect:"XPlat Code Coverage"
+
+      - name: Generate code coverage report
+        run: reportgenerator \
+          -reports:./backend/Backend.Tests/TestResults/**/coverage.cobertura.xml \
+          -targetdir:"coveragereport" \
+          -reporttypes:Html
+
+      # - name: Download Code Coverage Report
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: code-coverage-report
+      #     path: coveragereport
+      #     github-token: ${{ secrets.GITHUB_TOKEN }}
+      #     run-id: ${{ github.event.workflow_run.id }}
 
       - name: Merge Docs
         run: |
