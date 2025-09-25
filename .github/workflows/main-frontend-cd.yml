@@ -12,6 +12,8 @@ on:
 jobs:
   guard:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read #This is required for actions/checkout
     steps:
       - name: Check branch
         if: github.ref != 'refs/heads/main'
