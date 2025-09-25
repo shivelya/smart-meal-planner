@@ -10,6 +10,14 @@ on:
   workflow_dispatch:
 
 jobs:
+  guard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "This workflow can only be run on main"
+          exit 1
   build:
     runs-on: windows-latest
     permissions:
