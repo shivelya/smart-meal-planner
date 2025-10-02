@@ -19,7 +19,7 @@ namespace Backend.Services.Impl
                     .AsQueryable();
 
                 if (!string.IsNullOrWhiteSpace(search))
-                    foodsQuery = foodsQuery.Where(i => i.Name.Contains(search, StringComparison.InvariantCultureIgnoreCase));
+                    foodsQuery = foodsQuery.Where(i => i.Name.ToLower().Contains(search.ToLower()));
 
                 var count = await foodsQuery.CountAsync(ct);
 
