@@ -15,6 +15,7 @@ namespace Backend.IntegrationTests
         public MaintenanceTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             client = _factory.CreateClient();
             factory.LoginAsync(client).Wait();
         }

@@ -4,12 +4,6 @@ using Backend.DTOs;
 
 namespace Backend.IntegrationTests
 {
-    [CollectionDefinition("Database collection")]
-    public class DatabaseCollection : ICollectionFixture<CustomWebApplicationFactory>
-    {
-        // This class is just a marker; it doesn’t contain any code
-    }
-
     [Collection("Database collection")]
     public class MealPlanGetTests
     {
@@ -19,6 +13,7 @@ namespace Backend.IntegrationTests
         public MealPlanGetTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             _client = _factory.CreateClient();
         }
 
@@ -67,16 +62,37 @@ namespace Backend.IntegrationTests
         {
             await _factory.LoginAsync(_client);
 
-            // delete the twop plans that are seeded
-            var response = await _client.DeleteAsync("/api/mealplan/1");
+            var response = await _client.GetAsync("/api/mealplan?skip=0&take=10");
             response.EnsureSuccessStatusCode();
-            response = await _client.DeleteAsync("/api/mealplan/2");
+
+            var result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
+            Assert.NotNull(result);
+            int? firstId = null;
+            int? secondId = null;
+            foreach (var m in result.MealPlans)
+            {
+                if (firstId == null)
+                {
+                    firstId = m.Id;
+                    continue;
+                }
+                if (secondId == null)
+                {
+                    secondId = m.Id;
+                    continue;
+                }
+            }
+
+            // delete the twop plans that are seeded
+            response = await _client.DeleteAsync($"/api/mealplan/{firstId}");
+            response.EnsureSuccessStatusCode();
+            response = await _client.DeleteAsync($"/api/mealplan/{secondId}");
             response.EnsureSuccessStatusCode();
 
             response = await _client.GetAsync("/api/mealplan");
             response.EnsureSuccessStatusCode();
 
-            var result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
+            result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(result);
             Assert.Equal(0, result.TotalCount);
             Assert.Empty(result.MealPlans);
@@ -92,6 +108,7 @@ namespace Backend.IntegrationTests
         public MealPlanPaginationTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             _client = _factory.CreateClient();
         }
 
@@ -99,6 +116,25 @@ namespace Backend.IntegrationTests
         public async Task GetMealPlans_Returns_pages_whenRequested()
         {
             await _factory.LoginAsync(_client);
+
+            // delete meals so we know how many to expect once we add some
+            var getResponse = await _client.GetAsync($"api/mealplan?skip=0&take=5");
+            getResponse.EnsureSuccessStatusCode();
+            var result = await getResponse.Content.ReadFromJsonAsync<GetMealPlansResult>();
+            Assert.NotNull(result);
+
+            foreach (var m in result.MealPlans)
+            {
+                var r = await _client.DeleteAsync($"api/mealplan/{m.Id}");
+                r.EnsureSuccessStatusCode();
+            }
+
+            // get a meal so we know its id
+            getResponse = await _client.GetAsync("api/recipe/search?title=butternut");
+            getResponse.EnsureSuccessStatusCode();
+            var recipeResult = await getResponse.Content.ReadFromJsonAsync<GetRecipesResult>();
+            Assert.NotNull(recipeResult);
+            var id = recipeResult.Items.First().Id;
 
             //seed 15 meals
             for (int i = 0; i < 17; i++)
@@ -111,7 +147,7 @@ namespace Backend.IntegrationTests
                         new CreateUpdateMealPlanEntryRequestDto
                         {
                              Notes = "note " + i,
-                             RecipeId = 1
+                             RecipeId = id
                         }
                     ]
                 });
@@ -122,10 +158,10 @@ namespace Backend.IntegrationTests
             //ask for 5 at a time
             for (int i = 0; i < 21; i += 5)
             {
-                var getResponse = await _client.GetAsync($"api/mealplan?skip={i}&take=5");
+                getResponse = await _client.GetAsync($"api/mealplan?skip={i}&take=5");
 
                 getResponse.EnsureSuccessStatusCode();
-                var result = await getResponse.Content.ReadFromJsonAsync<GetMealPlansResult>();
+                result = await getResponse.Content.ReadFromJsonAsync<GetMealPlansResult>();
                 Assert.NotNull(result);
                 Assert.Equal(17, result.TotalCount);
 
@@ -149,6 +185,7 @@ namespace Backend.IntegrationTests
         public MealPlanAddTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             _client = _factory.CreateClient();
         }
 
@@ -157,7 +194,12 @@ namespace Backend.IntegrationTests
         {
             await _factory.LoginAsync(_client);
 
-            var response = await _client.PostAsJsonAsync("api/mealplan", new CreateUpdateMealPlanRequestDto
+            var response = await _client.GetAsync("api/recipe/search?title=butternut");
+            response.EnsureSuccessStatusCode();
+            var searchResult = await response.Content.ReadFromJsonAsync<GetRecipesResult>();
+            Assert.NotNull(searchResult);
+
+            response = await _client.PostAsJsonAsync("api/mealplan", new CreateUpdateMealPlanRequestDto
             {
                 StartDate = DateTime.UtcNow,
                 Meals =
@@ -165,7 +207,7 @@ namespace Backend.IntegrationTests
                         new CreateUpdateMealPlanEntryRequestDto
                         {
                              Notes = "new meal",
-                             RecipeId = 1
+                             RecipeId = searchResult.Items.First().Id
                         }
                     ]
             });
@@ -178,7 +220,7 @@ namespace Backend.IntegrationTests
             Assert.Single(result.Meals);
 
             // ensure we don't include full object, so we have recipe id but not the recipe
-            Assert.Equal(1, result.Meals.First().RecipeId);
+            Assert.NotEqual(0, result.Meals.First().RecipeId);
             Assert.Null(result.Meals.First().Recipe);
         }
 
@@ -243,6 +285,7 @@ namespace Backend.IntegrationTests
         public MealPlanUpdateTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             _client = _factory.CreateClient();
         }
 
@@ -341,6 +384,7 @@ namespace Backend.IntegrationTests
         public MealPlanDeleteTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             _client = _factory.CreateClient();
         }
 
@@ -392,6 +436,7 @@ namespace Backend.IntegrationTests
         public MealPlanGenerateTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             _client = _factory.CreateClient();
         }
 
@@ -471,6 +516,7 @@ namespace Backend.IntegrationTests
         public MealPlanCookTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             _client = _factory.CreateClient();
         }
 
@@ -480,7 +526,13 @@ namespace Backend.IntegrationTests
             await _factory.LoginAsync(_client);
 
             // we need to seed a mealplan to ensure there is one for our call
-            var response = await _client.PostAsJsonAsync("api/mealplan", new CreateUpdateMealPlanRequestDto { Meals = [  new CreateUpdateMealPlanEntryRequestDto { RecipeId = 1 }] });
+            var response = await _client.GetAsync("api/recipe/search?title=butternut");
+            response.EnsureSuccessStatusCode();
+            var searchResult = await response.Content.ReadFromJsonAsync<GetRecipesResult>();
+            Assert.NotNull(searchResult);
+
+            response = await _client.PostAsJsonAsync("api/mealplan",
+                new CreateUpdateMealPlanRequestDto { Meals = [new CreateUpdateMealPlanEntryRequestDto { RecipeId = searchResult.Items.First().Id }] });
             response.EnsureSuccessStatusCode();
             var mealPlanResult = await response.Content.ReadFromJsonAsync<MealPlanDto>();
             Assert.NotNull(mealPlanResult);
@@ -505,7 +557,7 @@ namespace Backend.IntegrationTests
             Assert.Equal(1, result.TotalCount);
 
             // the only seeded pantry item we can match is the butternut squash
-            Assert.Equal(6, result.Items.First().FoodId);
+            Assert.Contains("butternut", result.Items.First().Food.Name.ToLower());
             Assert.Equal(quantity, result.Items.First().Quantity);
         }
 
