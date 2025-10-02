@@ -97,20 +97,6 @@ namespace Backend.IntegrationTests
             Assert.Equal(0, result.TotalCount);
             Assert.Empty(result.MealPlans);
         }
-    }
-
-    [Collection("Database collection")]
-    public class MealPlanPaginationTests
-    {
-        private readonly CustomWebApplicationFactory _factory;
-        private readonly HttpClient _client;
-
-        public MealPlanPaginationTests(CustomWebApplicationFactory factory)
-        {
-            _factory = factory;
-            _factory.ResetDatabase();
-            _client = _factory.CreateClient();
-        }
 
         [Fact]
         public async Task GetMealPlans_Returns_pages_whenRequested()
@@ -173,20 +159,6 @@ namespace Backend.IntegrationTests
                 else
                     Assert.Empty(result.MealPlans);
             }
-        }
-    }
-
-    [Collection("Database collection")]
-    public class MealPlanAddTests
-    {
-        private readonly CustomWebApplicationFactory _factory;
-        private readonly HttpClient _client;
-
-        public MealPlanAddTests(CustomWebApplicationFactory factory)
-        {
-            _factory = factory;
-            _factory.ResetDatabase();
-            _client = _factory.CreateClient();
         }
 
         [Fact]
@@ -274,20 +246,6 @@ namespace Backend.IntegrationTests
 
             Assert.Equal(HttpStatusCode.BadRequest, response.StatusCode);
         }
-    }
-
-    [Collection("Database collection")]
-    public class MealPlanUpdateTests
-    {
-        private readonly CustomWebApplicationFactory _factory;
-        private readonly HttpClient _client;
-
-        public MealPlanUpdateTests(CustomWebApplicationFactory factory)
-        {
-            _factory = factory;
-            _factory.ResetDatabase();
-            _client = _factory.CreateClient();
-        }
 
         [Fact]
         public async Task UpdateMealPlans_Returns_DTO_onSuccess()
@@ -373,20 +331,6 @@ namespace Backend.IntegrationTests
             var response = await _client.PutAsJsonAsync($"api/mealplan/99", new CreateUpdateMealPlanRequestDto { Meals = [] });
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
         }
-    }
-
-    [Collection("Database collection")]
-    public class MealPlanDeleteTests
-    {
-        private readonly CustomWebApplicationFactory _factory;
-        private readonly HttpClient _client;
-
-        public MealPlanDeleteTests(CustomWebApplicationFactory factory)
-        {
-            _factory = factory;
-            _factory.ResetDatabase();
-            _client = _factory.CreateClient();
-        }
 
         [Fact]
         public async Task DeleteMealPlans_Returns_NoContent_onSuccess()
@@ -424,20 +368,6 @@ namespace Backend.IntegrationTests
         {
             var response = await _client.DeleteAsync("api/mealplan/1");
             Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
-        }
-    }
-
-    [Collection("Database collection")]
-    public class MealPlanGenerateTests
-    {
-        private readonly CustomWebApplicationFactory _factory;
-        private readonly HttpClient _client;
-
-        public MealPlanGenerateTests(CustomWebApplicationFactory factory)
-        {
-            _factory = factory;
-            _factory.ResetDatabase();
-            _client = _factory.CreateClient();
         }
 
         [Fact]
@@ -504,20 +434,6 @@ namespace Backend.IntegrationTests
             {
                 Assert.Contains("Spoonacular", meal.Source);
             }
-        }
-    }
-
-    [Collection("Database collection")]
-    public class MealPlanCookTests
-    {
-        private readonly CustomWebApplicationFactory _factory;
-        private readonly HttpClient _client;
-
-        public MealPlanCookTests(CustomWebApplicationFactory factory)
-        {
-            _factory = factory;
-            _factory.ResetDatabase();
-            _client = _factory.CreateClient();
         }
 
         [Fact]
