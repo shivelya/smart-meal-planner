@@ -136,14 +136,14 @@ namespace Backend.Services.Impl
             {
                 title = title.Trim();
                 var pattern = $"%{title}%";
-                query = query.Where(r => r.Title != null && r.Title!.Contains(title));
+                query = query.Where(r => r.Title != null && r.Title!.ToLower().Contains(title.ToLower()));
             }
 
             if (!string.IsNullOrWhiteSpace(ingredient))
             {
                 var ing = ingredient.Trim();
                 var pattern = $"%{ing}%";
-                query = query.Where(r => r.Ingredients.Any(i => i.Food.Name.Contains(ing)));
+                query = query.Where(r => r.Ingredients.Any(i => i.Food.Name.ToLower().Contains(ing.ToLower())));
             }
 
             var count = await query.CountAsync(ct);
