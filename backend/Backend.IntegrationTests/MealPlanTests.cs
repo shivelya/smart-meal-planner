@@ -1,16 +1,17 @@
 using System.Net;
 using System.Net.Http.Json;
 using Backend.DTOs;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Backend.IntegrationTests
 {
     [Collection("Database collection")]
-    public class MealPlanGetTests
+    public class MealPlanTests
     {
         private readonly CustomWebApplicationFactory _factory;
         private readonly HttpClient _client;
 
-        public MealPlanGetTests(CustomWebApplicationFactory factory)
+        public MealPlanTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
             _factory.ResetDatabase();
@@ -437,6 +438,25 @@ namespace Backend.IntegrationTests
         }
 
         [Fact]
+        public async Task GenerateMealPlans_FailsGracefully_WhenExternalSourceIsDown()
+        {
+            await _factory.LoginAsync(_client);
+
+            using var scope = _factory.Services.CreateScope();
+            var fakeGenerator = scope.ServiceProvider.GetRequiredService<FakeMealPlanGenerator>();
+            fakeGenerator.ShouldThrow = true;
+
+            var response = await _client.PostAsJsonAsync("api/mealplan/generate", new GenerateMealPlanRequestDto
+            {
+                UseExternal = true,
+                Days = 10
+            });
+
+            fakeGenerator.ShouldThrow = false;
+            Assert.Equal(HttpStatusCode.ServiceUnavailable, response.StatusCode);
+        }
+
+        [Fact]
         public async Task CookMealPlans_Returns_ListofItems_onSuccess()
         {
             await _factory.LoginAsync(_client);
@@ -494,6 +514,99 @@ namespace Backend.IntegrationTests
 
             response = await _client.GetAsync($"api/mealplan/1/cook/99");
             Assert.Equal(HttpStatusCode.NotFound, response.StatusCode);
+        }
+
+        [Fact]
+        public async Task CookMealPlans_withRecipeWithNoPantryItems_returnsEmptyArray()
+        {
+            await _factory.LoginAsync(_client);
+
+            // add recipe with no current pantry items
+            var response = await _client.PostAsJsonAsync("api/recipe", new CreateUpdateRecipeDtoRequest
+            {
+                Instructions = "i",
+                Source = "s",
+                Title = "t",
+                Ingredients =
+                [
+                    new CreateUpdateRecipeIngredientDto {
+                        Quantity = 1,
+                        Food = new NewFoodReferenceDto {
+                            CategoryId = 2,
+                            Name = "not in pantry food"
+                        }
+                    }
+                ]
+            });
+
+            response.EnsureSuccessStatusCode();
+            var result = await response.Content.ReadFromJsonAsync<RecipeDto>();
+            Assert.NotNull(result);
+            var id = result.Id;
+
+            // get meal plans
+            response = await _client.GetAsync("api/mealplan");
+            response.EnsureSuccessStatusCode();
+            var mealPlanResult = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
+            Assert.NotNull(mealPlanResult);
+            var mealPlan = mealPlanResult.MealPlans.First();
+
+            // add an entry with recipe
+            var meals = new List<CreateUpdateMealPlanEntryRequestDto>();
+            foreach (var m in mealPlan.Meals)
+            {
+                meals.Add(new CreateUpdateMealPlanEntryRequestDto { Id = m.Id, Notes = m.Notes, RecipeId = m.RecipeId });
+            }
+
+            meals.Add(new CreateUpdateMealPlanEntryRequestDto { RecipeId = id });
+            var request = new CreateUpdateMealPlanRequestDto
+            {
+                Id = mealPlan.Id,
+                StartDate = mealPlan.StartDate,
+                Meals = meals
+            };
+
+            response = await _client.PutAsJsonAsync($"api/mealplan/{mealPlan.Id}", request);
+            response.EnsureSuccessStatusCode();
+            var putResult = await response.Content.ReadFromJsonAsync<MealPlanDto>();
+            Assert.NotNull(putResult);
+
+            //cook said meal entry
+            var entryToCook = putResult.Meals.FirstOrDefault(m => m.RecipeId == id);
+            Assert.NotNull(entryToCook);
+
+            response = await _client.GetAsync($"api/mealplan/{mealPlan.Id}/cook/{entryToCook.Id}");
+            response.EnsureSuccessStatusCode();
+            var itemsResult = await response.Content.ReadFromJsonAsync<GetPantryItemsResult>();
+            Assert.NotNull(itemsResult);
+            Assert.Empty(itemsResult.Items);
+            Assert.Equal(0, itemsResult.TotalCount);
+        }
+
+        [Fact]
+        public async Task CookMealPlans_withEntryWithNoRecipe_returnsEmptyArray()
+        {
+            await _factory.LoginAsync(_client);
+
+            // get meal plans
+            var response = await _client.GetAsync("api/mealplan");
+            response.EnsureSuccessStatusCode();
+            var mealPlanResult = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
+            Assert.NotNull(mealPlanResult);
+            var mealPlan = mealPlanResult.MealPlans.First();
+
+            // find an entry with no recipe
+            var mealPlanEntry = mealPlan.Meals.FirstOrDefault(m => m.RecipeId == null);
+            Assert.NotNull(mealPlanEntry);
+            var id = mealPlanEntry.Id;
+
+            //cook said meal entry
+            response = await _client.GetAsync($"api/mealplan/{mealPlan.Id}/cook/{mealPlanEntry.Id}");
+            response.EnsureSuccessStatusCode();
+            var itemsResult = await response.Content.ReadFromJsonAsync<GetPantryItemsResult>();
+            Assert.NotNull(itemsResult);
+            Assert.Empty(itemsResult.Items);
+            Assert.Equal(0, itemsResult.TotalCount);
         }
     }
 }

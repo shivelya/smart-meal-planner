@@ -268,6 +268,11 @@ namespace Backend.Controllers
                 _logger.LogWarning(ex, "{Method}: Could not update meal plan", method);
                 return BadRequest();
             }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogWarning(ex, "{Method}: External service threw an exception.", method);
+                return StatusCode(503);
+            }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);

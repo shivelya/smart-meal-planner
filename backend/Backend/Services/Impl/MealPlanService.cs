@@ -242,17 +242,17 @@ namespace Backend.Services.Impl
                 throw new SecurityException("Valid meal plan entry id required.");
             }
 
-            // we allow meal plans with just notes, so recipe can be null
-            // but you can't cook a meal without a recipe
-            if (mealPlanEntry.Recipe == null)
-            {
-                _logger.LogWarning("CookMealAsync: Cannot cook a meal without a recipe. userId={UserId}, mealPlanId={MealPlanId}, mealEntryId={MealEntryId}", userId, id, mealEntryId);
-                throw new ArgumentException("Cannot cook a meal without a recipe.");
-            }
-
             // mark the meal as cooked
             // this is idempotent, so cooking a meal twice is not an error
             mealPlanEntry.Cooked = true;
+
+            // we allow meal plans with just notes, so recipe can be null
+            if (mealPlanEntry.Recipe == null)
+            {
+                _logger.LogInformation("CookMealAsync: Meal plan entry had no recipe, so returning early.");
+                _logger.LogInformation("Exiting CookMealAsync: userId={UserId}, mealPlanId={MealPlanId}, mealEntryId={MealEntryId}", userId, id, mealEntryId);
+                return new GetPantryItemsResult { TotalCount = 0, Items = [] };
+            }
 
             // find all pantry items that match the food ids in the recipe
             // we don't reduce the quantity here, just return the items that were used

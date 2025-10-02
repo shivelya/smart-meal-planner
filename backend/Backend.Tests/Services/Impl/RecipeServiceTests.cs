@@ -235,6 +235,19 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
+        public async Task SearchAsync_ReturnsRecipes_ByTitle_CaseInsensitive()
+        {
+            _context.Recipes.Add(new Recipe { Id = 6, UserId = 1, Title = "Pizza", Source = "S", Instructions = "I" });
+            _context.Recipes.Add(new Recipe { Id = 7, UserId = 1, Title = "Burger", Source = "S", Instructions = "I" });
+            _context.SaveChanges();
+
+            var result = await _service.SearchAsync(1, "pizza", null, null, null);
+
+            Assert.Single(result.Items);
+            Assert.Equal("Pizza", result.Items.First().Title);
+        }
+
+        [Fact]
         public async Task SearchAsync_ReturnsRecipes_ByIngredient()
         {
             var food = new Food { Id = 1, Name = "Tomato", CategoryId = 1, Category = new Category { Id = 1, Name = "Veg" } };
@@ -246,6 +259,22 @@ namespace Backend.Tests.Services.Impl
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
             var result = await _service.SearchAsync(1, null, "Tomato", null, null);
+            Assert.Single(result.Items);
+            Assert.Equal("Salad", result.Items.First().Title);
+        }
+
+        [Fact]
+        public async Task SearchAsync_ReturnsRecipes_ByIngredient_CaseInsensitive()
+        {
+            var food = new Food { Id = 1, Name = "Tomato", CategoryId = 1, Category = new Category { Id = 1, Name = "Veg" } };
+            var recipe = new Recipe {
+                Id = 10, UserId = 1, Title = "Salad", Source = "S", Instructions = "I",
+                Ingredients = [new RecipeIngredient { Food = food, FoodId = 1, Quantity = 1, Unit = "g" }]
+            };
+            _context.Foods.Add(food);
+            _context.Recipes.Add(recipe);
+            _context.SaveChanges();
+            var result = await _service.SearchAsync(1, null, "tomato", null, null);
             Assert.Single(result.Items);
             Assert.Equal("Salad", result.Items.First().Title);
         }

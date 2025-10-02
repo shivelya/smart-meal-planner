@@ -4,11 +4,9 @@ using Backend.Controllers;
 using Backend.Services;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Configuration;
-using Backend.Model;
 using Backend.DTOs;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
-using static Backend.Controllers.MealPlanController;
 using System.Security;
 
 namespace Backend.Tests.Controllers
@@ -235,6 +233,22 @@ namespace Backend.Tests.Controllers
 
             var objResult = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
+        }
+
+        [Fact]
+        public async Task GenerateMealPlanAsync_Returns503_OnExternalFailure()
+        {
+            var request = new GenerateMealPlanRequestDto
+            {
+                Days = 5,
+                StartDate = DateTime.Today,
+                UseExternal = false
+            };
+            _mockService.Setup(s => s.GenerateMealPlanAsync(request, It.IsAny<int>(), CancellationToken.None)).ThrowsAsync(new HttpRequestException("fail"));
+            var result = await _controller.GenerateMealPlanAsync(request);
+
+            var objResult = Assert.IsType<StatusCodeResult>(result.Result);
+            Assert.Equal(503, objResult.StatusCode);
         }
 
         [Theory]

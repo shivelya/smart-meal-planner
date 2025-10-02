@@ -1,6 +1,7 @@
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using Backend.DTOs;
+using Backend.Helpers;
 using Backend.Model;
 using Backend.Services;
 using Microsoft.AspNetCore.Hosting;
@@ -52,6 +53,11 @@ namespace Backend.IntegrationTests
                 services.RemoveAll<IEmailService>();
                 services.AddSingleton<FakeEmailService>();
                 services.AddSingleton<IEmailService>(sp => sp.GetRequiredService<FakeEmailService>());
+
+                // swap meal generator
+                services.RemoveAll<IExternalRecipeGenerator>();
+                services.AddSingleton<FakeMealPlanGenerator>();
+                services.AddSingleton<IExternalRecipeGenerator>(sp => sp.GetRequiredService<FakeMealPlanGenerator>());
 
                 // swap db context
                 services.RemoveAll<DbContextOptions<PlannerContext>>();
@@ -197,6 +203,23 @@ namespace Backend.IntegrationTests
             });
 
             context.SaveChanges();
+        }
+    }
+
+    public class FakeMealPlanGenerator : IExternalRecipeGenerator
+    {
+        public bool ShouldThrow { get; set; }
+
+        public Task<IEnumerable<GeneratedMealPlanEntryDto>> GenerateMealPlanAsync(int meals, IEnumerable<PantryItem> pantry, CancellationToken ct)
+        {
+            if (ShouldThrow)
+                return Task.FromException<IEnumerable<GeneratedMealPlanEntryDto>>(new Exception());
+
+            return Task.FromResult<IEnumerable<GeneratedMealPlanEntryDto>>([ new() {
+                Instructions = "i",
+                Source = "Spoonacular - test",
+                Title = "t"
+            }]);
         }
     }
 }
