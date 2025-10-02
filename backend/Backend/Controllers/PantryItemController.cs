@@ -112,7 +112,7 @@ namespace Backend.Controllers
 
                 _logger.LogInformation("{Method}: Pantry items added for user {UserId}. TotalCount={Count}", method, userId, result.TotalCount);
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return CreatedAtAction(nameof(GetItemAsync), result);
+                return Created("", result);
             }
             catch (Exception ex)
             {
