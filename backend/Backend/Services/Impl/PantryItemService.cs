@@ -78,14 +78,19 @@ namespace Backend.Services.Impl
             if (pantryItemDtos.Any(dto => dto.Food == null))
                 _logger.LogWarning("CreatePantryItemsAsync: Some pantry items have null Food for userId={UserId}", userId);
 
-            var tasks = pantryItemDtos.Where(p => p != null && p.Food != null).Select(async dto => await CreatePantryItem(dto, userId));
-            var pantryItems = await Task.WhenAll(tasks);
+            var dtoList = pantryItemDtos.Where(p => p != null && p.Food != null).ToList();
+            var pantryItems = new List<PantryItem>();
+            foreach (var d in dtoList)
+            {
+                var pantryItem = await CreatePantryItem(d, userId);
+                pantryItems.Add(pantryItem);
+            }
 
             int count = await _context.SaveChangesAsync(ct);
 
             _logger.LogInformation("CreatePantryItemsAsync: {Count} pantry items created for userId={UserId}", count, userId);
-            _logger.LogInformation("Exiting CreatePantryItemsAsync: userId={UserId}, totalCreated={Total}", userId, pantryItems.Length);
-            return new GetPantryItemsResult { TotalCount = pantryItems.Length, Items = pantryItems.Select(i => i.ToDto()) };
+            _logger.LogInformation("Exiting CreatePantryItemsAsync: userId={UserId}, totalCreated={Total}", userId, pantryItems.Count);
+            return new GetPantryItemsResult { TotalCount = pantryItems.Count, Items = pantryItems.Select(i => i.ToDto()) };
         }
 
         public async Task<bool> DeletePantryItemAsync(int id, CancellationToken ct = default)
