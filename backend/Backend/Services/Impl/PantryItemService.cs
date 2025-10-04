@@ -1,5 +1,4 @@
 using System.ComponentModel.DataAnnotations;
-using System.Globalization;
 using Backend.DTOs;
 using Backend.Model;
 using Microsoft.EntityFrameworkCore;
@@ -93,11 +92,21 @@ namespace Backend.Services.Impl
             return new GetPantryItemsResult { TotalCount = pantryItems.Count, Items = pantryItems.Select(i => i.ToDto()) };
         }
 
-        public async Task<bool> DeletePantryItemAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeletePantryItemAsync(int userId, int id, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering DeletePantryItemAsync: itemId={ItemId}", id);
             var entity = await _context.PantryItems.FindAsync([id], ct);
-            if (entity is null) return false;
+            if (entity is null)
+            {
+                _logger.LogWarning("DeletePantryItemAsync: Item {Id} could not be found.", id);
+                throw new ArgumentException("Item could not be found.", nameof(id));
+            }
+
+            if (entity.UserId != userId)
+            {
+                _logger.LogWarning("DeletePantryItemAsync: User {UserId} does not have permission to delete item {Id}.", userId, id);
+                throw new ArgumentException("Item does not belong to user.", nameof(id));
+            }
 
             _context.PantryItems.Remove(entity);
             var deleted = await _context.SaveChangesAsync(ct);
@@ -106,10 +115,10 @@ namespace Backend.Services.Impl
             return deleted > 0;
         }
 
-        public async Task<DeleteRequest> DeletePantryItemsAsync(IEnumerable<int> ids, CancellationToken ct = default)
+        public async Task<DeleteRequest> DeletePantryItemsAsync(int userId, IEnumerable<int> ids, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering DeletePantryItemsAsync: count={Count}", ids.Count());
-            var entities = _context.PantryItems.Where(p => ids.Contains(p.Id));
+            var entities = _context.PantryItems.Where(p => ids.Contains(p.Id) && p.UserId == userId);
             var deletedIds = await entities
                 .Select(e => e.Id)
                 .ToListAsync(ct);
@@ -122,13 +131,14 @@ namespace Backend.Services.Impl
             return new DeleteRequest { Ids = deletedIds };
         }
 
-        public async Task<GetPantryItemsResult> GetAllPantryItemsAsync(int? skip, int? take, CancellationToken ct = default)
+        public async Task<GetPantryItemsResult> GetAllPantryItemsAsync(int userId, int? skip, int? take, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering GetAllPantryItemsAsync: take={Take}, skip={Skip}", take, skip);
             var query = _context.PantryItems
                 .AsNoTracking()
                 .Include(i => i.Food)
                 .OrderBy(p => p.Food.Name)
+                .Where(p => p.UserId == userId)
                 .AsQueryable();
 
             var totalCount = await query.CountAsync(ct);
@@ -146,10 +156,10 @@ namespace Backend.Services.Impl
 
             if (take != null)
             {
-                if (take < 0)
+                if (take <= 0)
                 {
-                    _logger.LogWarning("GetAllPantryItemsAsync: Negative take {Take}", take);
-                    throw new ArgumentException("Non-negative take must be used for pagination.");
+                    _logger.LogWarning("GetAllPantryItemsAsync: Negative or zero take {Take}", take);
+                    throw new ArgumentException("A positive take must be used for pagination.");
                 }
 
                 query = query.Take(take.Value);

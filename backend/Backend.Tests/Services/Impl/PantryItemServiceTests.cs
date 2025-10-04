@@ -167,20 +167,31 @@ namespace Backend.Tests.Services.Impl
             plannerContext.SaveChanges();
 
             // Act
-            var result = await _service.DeletePantryItemAsync(1);
+            var result = await _service.DeletePantryItemAsync(1, 1);
 
             // Assert
             Assert.True(result);
         }
 
         [Fact]
-        public async Task DeletePantryItemAsync_ItemDoesNotExist_ReturnsFalse()
+        public async Task DeletePantryItemAsync_ItemDoesNotExist_Throws()
         {
             // Act
-            var result = await _service.DeletePantryItemAsync(1);
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.DeletePantryItemAsync(1, 1));
+        }
 
-            // Assert
-            Assert.False(result);
+        [Fact]
+        public async Task DeletePantryItemAsync_ItemBelongsToOtherUser_ThrowsArgumentException()
+        {
+            var plannerContext = _fixture.CreateContext();
+            var item = new PantryItem { Id = 1, UserId = 1, FoodId = 1 };
+            plannerContext.Users.Add(new User { Id = 1, Email = "", PasswordHash = "" });
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "", CategoryId = 1 });
+            plannerContext.Categories.Add(new Category { Id = 1, Name = "" });
+            plannerContext.PantryItems.Add(item);
+            plannerContext.SaveChanges();
+
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.DeletePantryItemAsync(2, 1));
         }
 
         [Fact]
@@ -197,10 +208,27 @@ namespace Backend.Tests.Services.Impl
             plannerContext.SaveChanges();
 
             // Act
-            var result = await _service.DeletePantryItemsAsync(ids);
+            var result = await _service.DeletePantryItemsAsync(1, ids);
 
             // Assert
             Assert.Equal(2, result.Ids.Count());
+        }
+
+        [Fact]
+        public async Task DeletePantryitemsAsync_ItemsDontBelongToUser_Throws()
+        {
+            var plannerContext = _fixture.CreateContext();
+            var ids = new List<int> { 1, 2 };
+            var items = new List<PantryItem> { new() { Id = 1, FoodId = 1, UserId = 1 }, new() { Id = 2, FoodId = 1, UserId = 1 } };
+            plannerContext.Users.Add(new User { Id = 1, Email = "", PasswordHash = "" });
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "", CategoryId = 1 });
+            plannerContext.Categories.Add(new Category { Id = 1, Name = "" });
+            plannerContext.PantryItems.AddRange(items);
+            plannerContext.SaveChanges();
+
+            var request = await _service.DeletePantryItemsAsync(2, ids);
+
+            Assert.Empty(request.Ids);
         }
 
         [Fact]
@@ -567,6 +595,68 @@ namespace Backend.Tests.Services.Impl
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdatePantryItemAsync(dto, userId));
+        }
+
+        [Fact]
+        public async Task GetAllPantryItemsAsync_ReturnsItems_ForUser()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            var result = await service.GetAllPantryItemsAsync(userId, 0, 10);
+
+            Assert.NotNull(result);
+            Assert.True(result.TotalCount > 0);
+        }
+
+        [Fact]
+        public async Task GetAllPantryItemsAsync_ReturnsEmpty_WhenUserHasNoItems()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            // Remove all items for user
+            context.PantryItems.RemoveRange(context.PantryItems.Where(p => p.UserId == userId));
+            context.SaveChanges();
+
+            var result = await service.GetAllPantryItemsAsync(userId, 0, 10);
+
+            Assert.NotNull(result);
+            Assert.Empty(result.Items);
+            Assert.Equal(0, result.TotalCount);
+        }
+
+        [Fact]
+        public async Task GetAllPantryItemsAsync_RespectsPagination()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            // Add more items for pagination
+            for (int i = 0; i < 15; i++)
+            {
+                context.PantryItems.Add(new PantryItem { FoodId = 1, Quantity = 1, Unit = "g", UserId = userId });
+            }
+            context.SaveChanges();
+
+            var result = await service.GetAllPantryItemsAsync(userId, 0, 10);
+
+            Assert.NotNull(result);
+            Assert.Equal(10, result.Items.Count());
+            Assert.True(result.TotalCount > 10);
+        }
+
+        [Fact]
+        public async Task GetAllPantryItemsAsync_Throws_WhenTakeIsZeroOrNegative()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.GetAllPantryItemsAsync(userId, 0, 0));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.GetAllPantryItemsAsync(userId, 0, -5));
+        }
+
+        [Fact]
+        public async Task GetAllPantryItemsAsync_Throws_WhenSkipIsNegative()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+            await Assert.ThrowsAsync<ArgumentException>(() => service.GetAllPantryItemsAsync(userId, -1, 10));
         }
     }
 }

@@ -14,11 +14,12 @@ namespace Backend.Services
         /// <summary>
         /// Retrieves all pantry items in a paged manner.
         /// </summary>
+        /// <param name="userId">The id of the current user.</param>
         /// <param name="skip">The number of results to skip for pagination.</param>
         /// <param name="take">The number of results to take for pagination.</param>
         /// <param name="ct">A token to cancel the operation.</param>
         /// <returns>An enumerable collection of pantry item DTOs.</returns>
-        Task<GetPantryItemsResult> GetAllPantryItemsAsync(int? skip, int? take, CancellationToken ct);
+        Task<GetPantryItemsResult> GetAllPantryItemsAsync(int userId, int? skip, int? take, CancellationToken ct);
 
         /// <summary>
         /// Creates a new pantry item. Assumes that the corresponding Food object has already been created.
@@ -49,17 +50,19 @@ namespace Backend.Services
         /// <summary>
         /// Deletes a pantry item by its unique ID.
         /// </summary>
+        /// <param name="userId">The id of the current user.</param>
         /// <param name="id">The pantry item's unique identifier.</param>
         /// <param name="ct">A token to cancel the operation.</param>
         /// <returns>True if the pantry item was deleted, otherwise false.</returns>
-        Task<bool> DeletePantryItemAsync(int id, CancellationToken ct);
+        Task<bool> DeletePantryItemAsync(int userId, int id, CancellationToken ct);
         /// <summary>
         /// Deletes a list of pantry items, like when they've all been used for a recipe or you're cleaning out your pantry.
         /// </summary>
+        /// <param name="userId">The id of the current user.</param>
         /// <param name="ids">The list of pantry item ids to be deleted.</param>
         /// <param name="ct">A token to cancel the operation.</param>
         /// <returns>The number of items that were deleted.</returns>
-        Task<DeleteRequest> DeletePantryItemsAsync(IEnumerable<int> ids, CancellationToken ct);
+        Task<DeleteRequest> DeletePantryItemsAsync(int userId, IEnumerable<int> ids, CancellationToken ct);
         /// <summary>
         /// Performs a text search on pantry item names (food names) for the current user.
         /// </summary>
