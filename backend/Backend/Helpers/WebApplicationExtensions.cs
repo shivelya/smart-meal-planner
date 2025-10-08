@@ -1,5 +1,4 @@
 using Microsoft.AspNetCore.Diagnostics;
-using Serilog;
 
 namespace Backend.Helpers
 {
@@ -11,9 +10,9 @@ namespace Backend.Helpers
             if (builder.Environment.IsProduction())
             {
                 // Production: use Serilog
-                builder.Host.UseSerilog((ctx, services, lc) =>
-                    lc.ReadFrom.Configuration(ctx.Configuration).Enrich.FromLogContext()
-                );
+                // builder.Host.UseSerilog((ctx, services, lc) =>
+                //     lc.ReadFrom.Configuration(ctx.Configuration).Enrich.FromLogContext()
+                // );
             }
             else
             {
