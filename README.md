@@ -3,7 +3,7 @@
 A full-stack meal planning application built with **Angular** (frontend), **EF Core**, and **ASP.NET Core** (backend). This project demonstrates a professional setup including CI/CD, automated documentation, testing, and deployment.
 
 ## Current Progress
-[User Stories](https://github.com/shivelya/smart-meal-planner/blob/main/docs/user-stories.md)
+[User Stories/Acceptance Criteria](https://github.com/users/shivelya/projects/1)
 
 ## Features
 - Pantry management: add, edit, and remove ingredients
@@ -30,11 +30,12 @@ A full-stack meal planning application built with **Angular** (frontend), **EF C
 - **Deployment & CI/CD**: GitHub Actions + Azure Web Apps + Static Web Apps
 
 ## Live Artifacts
-- [Frontend Docs](https://shivelya.github.io/smart-meal-planner/frontend/) (generated with Compodoc)
+
+- [User Stories/Acceptance Criteria](https://github.com/users/shivelya/projects/1)
 - [API Docs](https://smart-meal-planner-backend-ceazgjcaehfghdf7.canadacentral-01.azurewebsites.net/swagger/index.html) (generated with OpenAPI)
-- [Backend Unit Test Code Coverage](https://shivelya.github.io/smart-meal-planner/frontend/)
-- [Frontend Live Site (planned)](https://lemon-tree-0078d2d0f.1.azurestaticapps.net/)
-- [User Stories](https://github.com/shivelya/smart-meal-planner/blob/main/docs/user-stories.md)
+- [Backend Unit Test Code Coverage](https://shivelya.github.io/smart-meal-planner/coveragereport/)
+- [(planned) Frontend Docs](https://shivelya.github.io/smart-meal-planner/frontend/) (generated with Compodoc) (planned)
+- [(planned) Frontend Live Site](https://lemon-tree-0078d2d0f.1.azurestaticapps.net/)
 
 ## Project Structure
 ```console
@@ -115,15 +116,18 @@ ng start
 
 ### Run tests
 ```bash
+# Backend unit (xUnit)
+dotnet test Backend.Tests
+
+# Backend integration (xUnit)
+dotnet test Backend.IntegrationTests
+
 # Frontend unit (Karma)
 ng test
 
 # Frontend e2e (Playwright)
 npx playwright test
 
-# Backend (xUnit)
-dotnet test Backend.Tests
-dotnet test Backend.IntegrationTests
 ```
 
 ### API Endpoints
