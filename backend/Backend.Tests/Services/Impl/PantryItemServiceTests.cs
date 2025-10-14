@@ -327,22 +327,50 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task Search_ReturnsMatchingItems_ForUser()
+        public async Task GetPantryItemsAsync_RespectsPagination()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            // Add more items for pagination
+            for (int i = 0; i < 15; i++)
+            {
+                context.PantryItems.Add(new PantryItem { FoodId = 1, Quantity = 1, Unit = "g", UserId = userId });
+            }
+            context.SaveChanges();
+
+            var result = await service.GetPantryItemsAsync(userId, null, 0, 10);
+
+            Assert.NotNull(result);
+            Assert.Equal(10, result.Items.Count());
+            Assert.True(result.TotalCount > 10);
+        }
+
+        [Fact]
+        public async Task GetPantryItemsAsync_Throws_WhenTakeIsZeroOrNegative()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.GetPantryItemsAsync(userId, null, 0, 0));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.GetPantryItemsAsync(userId, null, 0, -5));
+        }
+
+        [Fact]
+        public async Task GetPantryItemsAsync_ReturnsMatchingItems_ForUser()
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("salt", userId, null, null);
+            var results = await service.GetPantryItemsAsync(userId, "salt", null, null);
 
             Assert.Single(results.Items);
             Assert.Equal(1, results.Items.First().Food.Id);
         }
 
         [Fact]
-        public async Task Search_ReturnsMultipleMatches()
+        public async Task GetPantryItemsAsync_ReturnsMultipleMatches()
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("s", userId, null, null); // matches "Sugar" and "Salt"
+            var results = await service.GetPantryItemsAsync(userId, "s", null, null); // matches "Sugar" and "Salt"
 
             Assert.Equal(2, results.TotalCount);
             var names = results.Items.Select(r => r.Food.Id).ToList();
@@ -351,39 +379,39 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task Search_IsCaseInsensitive()
+        public async Task GetPantryItemsAsync_IsCaseInsensitive()
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("SALT", userId, null, null);
+            var results = await service.GetPantryItemsAsync(userId, "SALT", null, null);
 
             Assert.Single(results.Items);
             Assert.Equal(1, results.Items.First().Food.Id);
         }
 
         [Fact]
-        public async Task Search_ReturnsEmpty_WhenNoMatch()
+        public async Task GetPantryItemsAsync_ReturnsEmpty_WhenNoMatch()
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("flour", userId, null, null);
+            var results = await service.GetPantryItemsAsync(userId, "flour", null, null);
 
             Assert.Empty(results.Items);
         }
 
         [Fact]
-        public async Task Search_OnlyReturnsItemsForSpecifiedUser()
+        public async Task GetPantryItemsAsync_OnlyReturnsItemsForSpecifiedUser()
         {
             var service = CreateServiceWithData(out int userId);
 
-            var results = await service.Search("Sugar", userId, null, null);
+            var results = await service.GetPantryItemsAsync(userId, "Sugar", null, null);
 
             Assert.Single(results.Items);
             Assert.Equal(2, results.Items.First().Id);  // should return 2 and not 4
         }
 
         [Fact]
-        public async Task Search_LimitsResultsTo20()
+        public async Task GetPantryItemsAsync_LimitsResultsTo20()
         {
             var context = _fixture.CreateContext();
             int userId = 1;
@@ -406,10 +434,18 @@ namespace Backend.Tests.Services.Impl
             }
             context.SaveChanges();
 
-            var results = await _service.Search("Salt", userId, 20, null);
+            var results = await _service.GetPantryItemsAsync(userId, "Salt", 20, null);
 
             Assert.Equal(25, results.TotalCount);
             Assert.Equal(20, results.Items.Count());
+        }
+        
+        [Fact]
+        public async Task GetPantryItemsAsync_Throws_WhenTakeIsNegative()
+        {
+            var service = CreateServiceWithData(out int userId, out var context);
+
+            await Assert.ThrowsAsync<ArgumentException>(() => service.GetPantryItemsAsync(1, "test", -1, null));
         }
 
         private PantryItemService CreateServiceWithData(out int userId, out PlannerContext context)
@@ -596,22 +632,6 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task Search_Throws_WhenSkipIsNegative()
-        {
-            var service = CreateServiceWithData(out int userId, out var context);
-
-            await Assert.ThrowsAsync<ArgumentException>(() => service.Search("test", 1, null, -1));
-        }
-
-        [Fact]
-        public async Task Search_Throws_WhenTakeIsNegative()
-        {
-            var service = CreateServiceWithData(out int userId, out var context);
-
-            await Assert.ThrowsAsync<ArgumentException>(() => service.Search("test", 1, -1, null));
-        }
-
-        [Fact]
         public async Task UpdatePantryItemAsync_Throws_WhenQuantityIsNegative()
         {
             // Arrange
@@ -627,68 +647,6 @@ namespace Backend.Tests.Services.Impl
 
             // Act & Assert
             await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdatePantryItemAsync(dto, userId));
-        }
-
-        [Fact]
-        public async Task GetAllPantryItemsAsync_ReturnsItems_ForUser()
-        {
-            var service = CreateServiceWithData(out int userId, out var context);
-
-            var result = await service.GetAllPantryItemsAsync(userId, 0, 10);
-
-            Assert.NotNull(result);
-            Assert.True(result.TotalCount > 0);
-        }
-
-        [Fact]
-        public async Task GetAllPantryItemsAsync_ReturnsEmpty_WhenUserHasNoItems()
-        {
-            var service = CreateServiceWithData(out int userId, out var context);
-
-            // Remove all items for user
-            context.PantryItems.RemoveRange(context.PantryItems.Where(p => p.UserId == userId));
-            context.SaveChanges();
-
-            var result = await service.GetAllPantryItemsAsync(userId, 0, 10);
-
-            Assert.NotNull(result);
-            Assert.Empty(result.Items);
-            Assert.Equal(0, result.TotalCount);
-        }
-
-        [Fact]
-        public async Task GetAllPantryItemsAsync_RespectsPagination()
-        {
-            var service = CreateServiceWithData(out int userId, out var context);
-
-            // Add more items for pagination
-            for (int i = 0; i < 15; i++)
-            {
-                context.PantryItems.Add(new PantryItem { FoodId = 1, Quantity = 1, Unit = "g", UserId = userId });
-            }
-            context.SaveChanges();
-
-            var result = await service.GetAllPantryItemsAsync(userId, 0, 10);
-
-            Assert.NotNull(result);
-            Assert.Equal(10, result.Items.Count());
-            Assert.True(result.TotalCount > 10);
-        }
-
-        [Fact]
-        public async Task GetAllPantryItemsAsync_Throws_WhenTakeIsZeroOrNegative()
-        {
-            var service = CreateServiceWithData(out int userId, out var context);
-
-            await Assert.ThrowsAsync<ArgumentException>(() => service.GetAllPantryItemsAsync(userId, 0, 0));
-            await Assert.ThrowsAsync<ArgumentException>(() => service.GetAllPantryItemsAsync(userId, 0, -5));
-        }
-
-        [Fact]
-        public async Task GetAllPantryItemsAsync_Throws_WhenSkipIsNegative()
-        {
-            var service = CreateServiceWithData(out int userId, out var context);
-            await Assert.ThrowsAsync<ArgumentException>(() => service.GetAllPantryItemsAsync(userId, -1, 10));
         }
     }
 }

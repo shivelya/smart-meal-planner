@@ -113,28 +113,33 @@ namespace Backend.Controllers
         }
 
         /// <summary>
-        /// Retrieves all pantry items for the authenticated user with pagination.
+        /// Searches the current user's pantry items for the given name, with pagination.
         /// </summary>
-        /// <param name="skip">The page number to retrieve.</param>
-        /// <param name="take">The number of items per page.</param>
+        /// <param name="query">The search term to query on.</param>
+        /// <param name="take">The number of responses to return for pagination.</param>
+        /// <param name="skip">The number of responses to skip for pagination.</param>
         /// <param name="ct">Cancellation token, unseen by user.</param>
-        /// <remarks>Return a GetPantryItemsResult object containing the total count and fully constituted items.</remarks>
-        [HttpGet]
+        /// <remarks>Returns the pantry items found, along with the total number of responses.</remarks>
+        [HttpGet("search")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> GetItemsAsync([FromQuery] int skip = 0, [FromQuery] int take = 50, CancellationToken ct = default)
+        public async Task<ActionResult<GetPantryItemsResult>> GetItemsAsync(string? query = null, int? take = null, int? skip = null, CancellationToken ct = default)
         {
+            query = SanitizeInput(query);
             const string method = nameof(GetItemsAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. skip={Skip}, take={Take}", method, nameof(PantryItemController), skip, take);
+            _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, take={Take}, skip={Skip}", method, nameof(PantryItemController), query, take, skip);
+
+            if (CheckForNullOrWhitespace(method, query, "query") is { } check2) return check2;
 
             var userId = GetUserId();
             return await TryCallToServiceAsync(method, async () =>
             {
-                var result = await _service.GetAllPantryItemsAsync(userId, skip, take, ct);
-                if (ResultNullCheck(method, result, userId.ToString()) is { } check) return check;
+                var results = await _service.GetPantryItemsAsync(userId, query, take, skip, ct);
+                if (ResultNullCheck(method, results, userId.ToString()) is { } check) return check;
 
-                _logger.LogInformation("{Method}: Retrieved {TotalCount} pantry items.", method, result.TotalCount);
-                return Ok(result);
+                _logger.LogInformation("{Method}: Retrieved {TotalCount} pantry items.", method, results.TotalCount);
+                return Ok(results);
             });
         }
 
@@ -188,37 +193,6 @@ namespace Backend.Controllers
 
                 _logger.LogInformation("{Method}: Deleted {Count} pantry items.", method, deleted.Ids.Count());
                 return StatusCode(204, deleted);
-            });
-        }
-
-        /// <summary>
-        /// Searches the current user's pantry items for the given name, with pagination.
-        /// </summary>
-        /// <param name="query">The search term to query on.</param>
-        /// <param name="take">The number of responses to return for pagination.</param>
-        /// <param name="skip">The number of responses to skip for pagination.</param>
-        /// <param name="ct">Cancellation token, unseen by user.</param>
-        /// <remarks>Returns the pantry items found, along with the total number of responses.</remarks>
-        [HttpGet("search")]
-        [ProducesResponseType(StatusCodes.Status200OK)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-        public async Task<ActionResult<GetPantryItemsResult>> SearchAsync([FromQuery, BindRequired] string query, int? take = null, int? skip = null, CancellationToken ct = default)
-        {
-            query = SanitizeInput(query);
-            const string method = nameof(SearchAsync);
-            _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, take={Take}, skip={Skip}", method, nameof(PantryItemController), query, take, skip);
-
-            if (CheckForNullOrWhitespace(method, query, "query") is { } check2) return check2;
-
-            var userId = GetUserId();
-            return await TryCallToServiceAsync(method, async () =>
-            {
-                var results = await _service.Search(query, userId, take, skip, ct);
-                if (ResultNullCheck(method, results, userId.ToString()) is { } check) return check;
-
-                _logger.LogInformation("{Method}: Search completed successfully. TotalCount={Count}", method, results.TotalCount);
-                return Ok(results);
             });
         }
 

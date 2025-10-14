@@ -124,44 +124,46 @@ namespace Backend.Services.Impl
             return new DeleteRequest { Ids = deletedIds };
         }
 
-        public async Task<GetPantryItemsResult> GetAllPantryItemsAsync(int userId, int? skip, int? take, CancellationToken ct = default)
+        public async Task<GetPantryItemsResult> GetPantryItemsAsync(int userId, string? search, int? take, int? skip, CancellationToken ct = default)
         {
-            _logger.LogInformation("Entering GetAllPantryItemsAsync: take={Take}, skip={Skip}", take, skip);
-            var query = _context.PantryItems
+            _logger.LogInformation("Entering GetPantryItemsAsync: userId={UserId}, search={Search}, take={Take}, skip={Skip}", userId, search, take, skip);
+            var items = _context.PantryItems
                 .AsNoTracking()
                 .Include(i => i.Food)
-                .OrderBy(p => p.Food.Name)
-                .Where(p => p.UserId == userId)
+                .Where(i => i.UserId == userId)
+                .OrderBy(i => i.Food.Name)
                 .AsQueryable();
 
-            var totalCount = await query.CountAsync(ct);
+            if (!string.IsNullOrWhiteSpace(search))
+                items = items.Where(i => i.Food.Name.ToLower().Contains(search.ToLower()));
+
+            var count = await items.CountAsync(ct);
 
             if (skip != null)
             {
                 if (skip < 0)
                 {
-                    _logger.LogWarning("GetAllPantryItemsAsync: Negative skip {Skip}", skip);
+                    _logger.LogWarning("GetPantryItemsAsync: Negative skip {Skip}", skip);
                     throw new ArgumentException("Non-negative skip must be used for pagination.");
                 }
 
-                query = query.Skip(skip.Value);
+                items = items.Skip(skip.Value);
             }
 
             if (take != null)
             {
-                if (take <= 0)
+                if (take < 0)
                 {
-                    _logger.LogWarning("GetAllPantryItemsAsync: Negative or zero take {Take}", take);
-                    throw new ArgumentException("A positive take must be used for pagination.");
+                    _logger.LogWarning("SeGetPantryItemsAsyncarch: Negative take {Take}", take);
+                    throw new ArgumentException("Non-negative take must be used for pagination.");
                 }
 
-                query = query.Take(take.Value);
+                items = items.Take(take.Value);
             }
 
-            var items = await query.ToListAsync(ct);
-
-            _logger.LogInformation("Exiting GetAllPantryItemsAsync: returned {Count} items", items.Count);
-            return new GetPantryItemsResult { Items = items.Select(i => i.ToDto()), TotalCount = totalCount };
+            var results = await items.ToListAsync(ct);
+            _logger.LogInformation("Exiting GetPantryItemsAsync: userId={UserId}, returned={Returned}", userId, results.Count);
+            return new GetPantryItemsResult { TotalCount = count, Items = items.Select(i => i.ToDto()) };
         }
 
         public async Task<PantryItemDto?> GetPantryItemByIdAsync(int id, CancellationToken ct = default)
@@ -226,44 +228,6 @@ namespace Backend.Services.Impl
                 await transaction.RollbackAsync(ct);
                 throw;
             }
-        }
-
-        public async Task<GetPantryItemsResult> Search(string search, int userId, int? take, int? skip, CancellationToken ct = default)
-        {
-            _logger.LogInformation("Entering Search: userId={UserId}, search={Search}, take={Take}, skip={Skip}", userId, search, take, skip);
-            var items = _context.PantryItems
-                .Where(i => i.UserId == userId)
-                .Where(i => i.Food.Name.ToLower().Contains(search.ToLower()))
-                .OrderBy(i => i.Food.Name)
-                .AsQueryable();
-
-            var count = await items.CountAsync(ct);
-
-            if (skip != null)
-            {
-                if (skip < 0)
-                {
-                    _logger.LogWarning("Search: Negative skip {Skip}", skip);
-                    throw new ArgumentException("Non-negative skip must be used for pagination.");
-                }
-
-                items = items.Skip(skip.Value);
-            }
-
-            if (take != null)
-            {
-                if (take < 0)
-                {
-                    _logger.LogWarning("Search: Negative take {Take}", take);
-                    throw new ArgumentException("Non-negative take must be used for pagination.");
-                }
-
-                items = items.Take(take.Value);
-            }
-
-            var results = await items.ToListAsync(ct);
-            _logger.LogInformation("Exiting Search: userId={UserId}, returned={Returned}", userId, results.Count);
-            return new GetPantryItemsResult { TotalCount = count, Items = items.Select(i => i.ToDto()) };
         }
 
         // does a save, may require a transaction
