@@ -120,7 +120,7 @@ namespace Backend.Controllers
         /// <param name="skip">The number of responses to skip for pagination.</param>
         /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns the pantry items found, along with the total number of responses.</remarks>
-        [HttpGet("search")]
+        [HttpGet()]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
