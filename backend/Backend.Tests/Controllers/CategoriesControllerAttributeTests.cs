@@ -7,7 +7,7 @@ namespace Backend.Tests.Controllers
 {
     public class CategoriesControllerAttributeTests
     {
-        private readonly Type _controllerType = typeof(CategoriesController);
+        private readonly Type _controllerType = typeof(CategoryController);
 
         [Fact]
         public void Controller_HasApiControllerAttribute()
