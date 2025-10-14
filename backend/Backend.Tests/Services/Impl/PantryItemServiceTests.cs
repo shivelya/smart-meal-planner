@@ -155,6 +155,37 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
+        public async Task CreatePantryItemsAsync_BadUser_ThrowsArgumentException()
+        {
+            var dtos = new List<CreateUpdatePantryItemRequestDto>
+            {
+                new() { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" },
+                new() { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 2 }, Quantity = 3, Unit = "g" }
+            };
+
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePantryItemsAsync(dtos, 99));
+        }
+
+        [Fact]
+        public async Task CreatePantryItemsAsync_NullDTO_ThrowsArgumentException()
+        {
+            var dtos = new List<CreateUpdatePantryItemRequestDto>
+            {
+                new() { Food = new ExistingFoodReferenceDto { Mode = AddFoodMode.Existing, Id = 1 }, Quantity = 2, Unit = "kg" },
+                null!
+            };
+            var plannerContext = _fixture.CreateContext();
+            var userId = 42;
+            plannerContext.Users.Add(new User { Id = userId, Email = "", PasswordHash = "" });
+            plannerContext.Foods.Add(new Food { Id = 1, Name = "banana", CategoryId = 1, Category = new Category { Id = 1, Name = "produce" } });
+            plannerContext.SaveChanges();
+
+            var result = await _service.CreatePantryItemsAsync(dtos, userId);
+            Assert.Single(result.Items);
+            Assert.Equal(1, result.TotalCount);
+        }
+
+        [Fact]
         public async Task DeletePantryItemAsync_ItemExists_DeletesAndReturnsTrue()
         {
             // Arrange
@@ -383,11 +414,8 @@ namespace Backend.Tests.Services.Impl
 
         private PantryItemService CreateServiceWithData(out int userId, out PlannerContext context)
         {
-            var options = new DbContextOptionsBuilder<PlannerContext>()
-                .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
-                .Options;
             var logger = new LoggerFactory().CreateLogger<PantryItemService>();
-            context = new PlannerContext(options, _fixture.Configuration, new LoggerFactory().CreateLogger<PlannerContext>());
+            context = _fixture.CreateContext();
             userId = 1;
 
             var user = new User { Id = userId, Email = "test@example.com", PasswordHash = Guid.NewGuid().ToString() };
@@ -523,6 +551,11 @@ namespace Backend.Tests.Services.Impl
         public async Task UpdatePantryItemAsync_Throws_WhenUserIdMismatch()
         {
             var service = CreateServiceWithData(out int userId, out var context);
+
+            var user = new User { Id = 2, Email = "test2@example.com", PasswordHash = Guid.NewGuid().ToString() };
+            context.Users.Add(user);
+            context.SaveChanges();
+
             var item = new PantryItem { Id = 1, UserId = 2, FoodId = 1, Quantity = 1, Unit = "g" };
             context.PantryItems.Add(item);
             context.SaveChanges();
