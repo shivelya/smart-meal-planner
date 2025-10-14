@@ -2,8 +2,6 @@ using System.ComponentModel.DataAnnotations;
 using Backend.DTOs;
 using Backend.Model;
 using Backend.Services.Impl;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 
@@ -15,11 +13,9 @@ namespace Backend.Tests.Services.Impl
         private readonly PlannerContext _context;
         private readonly RecipeService _service;
         private readonly Mock<ILogger<RecipeService>> _loggerMock;
-        private readonly SqliteTestFixture _fixture;
 
         public RecipeServiceTests(SqliteTestFixture fixture)
         {
-            _fixture = fixture;
             _context = fixture.CreateContext();
             _loggerMock = new Mock<ILogger<RecipeService>>();
             _service = new RecipeService(_context, _loggerMock.Object);
