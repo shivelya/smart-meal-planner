@@ -38,8 +38,7 @@ public class SqliteTestFixture : IDisposable
         }
 
         // Factory method for fresh contexts
-        public PlannerContext CreateContext()
-            => new PlannerContext(_options, _configuration, _logger);
+        public PlannerContext CreateContext() => new(_options, _configuration, _logger);
 
         public IConfiguration Configuration { get { return _configuration; } }
 
