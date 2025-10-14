@@ -23,9 +23,9 @@ namespace Backend.Tests.DTOs
                 new() { Id = 1, FoodId = 2, Purchased = false },
                 new() { Id = 2, FoodId = 3, Purchased = true }
             };
-            var dto = new GetShoppingListResult { TotalCount = 2, Foods = foods };
+            var dto = new GetShoppingListResult { TotalCount = 2, Items = foods };
             Assert.Equal(2, dto.TotalCount);
-            Assert.Equal(foods, dto.Foods);
+            Assert.Equal(foods, dto.Items);
         }
     }
 

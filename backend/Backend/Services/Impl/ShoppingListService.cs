@@ -29,7 +29,7 @@ namespace Backend.Services.Impl
             return new GetShoppingListResult
             {
                 TotalCount = items.Count,
-                Foods = items.Select(i => i.ToDto())
+                Items = items.Select(i => i.ToDto())
             };
         }
 

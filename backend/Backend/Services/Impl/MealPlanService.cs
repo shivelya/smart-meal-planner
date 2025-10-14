@@ -56,7 +56,7 @@ namespace Backend.Services.Impl
             _logger.LogInformation("GetMealPlansAsync: Retrieved {Count} meal plans for userId={UserId}", plans.Count, userId);
             _logger.LogInformation("Exiting GetMealPlansAsync: userId={UserId}", userId);
 
-            return new GetMealPlansResult { TotalCount = count, MealPlans = plans.Select(p => p.ToDto()) };
+            return new GetMealPlansResult { TotalCount = count, Items = plans.Select(p => p.ToDto()) };
         }
 
         public async Task<MealPlanDto> AddMealPlanAsync(int userId, CreateUpdateMealPlanRequestDto request, CancellationToken ct = default)

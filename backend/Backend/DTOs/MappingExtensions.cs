@@ -93,4 +93,11 @@ namespace Backend.DTOs
             };
         }
     }
+
+    public abstract class GetItemsResult<T>
+    {
+        public required int TotalCount { get; set; }
+
+        public required IEnumerable<T> Items { get; set; } = [];
+    }
 }

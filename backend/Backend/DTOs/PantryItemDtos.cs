@@ -18,11 +18,7 @@ namespace Backend.DTOs
         public string? Unit { get; set; }
     }
 
-    public class GetPantryItemsResult
-    {
-        public required int TotalCount { get; set; }
-        public required IEnumerable<PantryItemDto> Items { get; set; }
-    }
+    public class GetPantryItemsResult : GetItemsResult<PantryItemDto> { }
 
     public class DeleteRequest
     {

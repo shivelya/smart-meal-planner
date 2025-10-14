@@ -48,7 +48,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GetMealPlans_ReturnsOk_WithMealPlans()
         {
-            var mealPlans = new GetMealPlansResult { TotalCount = 1, MealPlans = [new MealPlanDto { Id = 1, Meals = [] }] };
+            var mealPlans = new GetMealPlansResult { TotalCount = 1, Items = [new MealPlanDto { Id = 1, Meals = [] }] };
             _mockService.Setup(s => s.GetMealPlansAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), CancellationToken.None)).ReturnsAsync(mealPlans);
 
             var result = await _controller.GetMealPlansAsync();
@@ -69,13 +69,13 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task GetMealPlans_ReturnsOk_WithEmptyList()
         {
-            var mealPlan = new GetMealPlansResult { TotalCount = 0, MealPlans = [] };
+            var mealPlan = new GetMealPlansResult { TotalCount = 0, Items = [] };
             _mockService.Setup(s => s.GetMealPlansAsync(It.IsAny<int>(), It.IsAny<int?>(), It.IsAny<int?>(), CancellationToken.None)).ReturnsAsync(mealPlan);
 
             var result = await _controller.GetMealPlansAsync();
 
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
-            Assert.Empty(((GetMealPlansResult)okResult.Value!).MealPlans);
+            Assert.Empty(((GetMealPlansResult)okResult.Value!).Items);
         }
 
         [Fact]

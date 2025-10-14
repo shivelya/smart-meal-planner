@@ -28,8 +28,8 @@ namespace Backend.IntegrationTests
             var result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(result);
             Assert.Equal(2, result.TotalCount);
-            Assert.Equal(2, result.MealPlans.Count());
-            var mealPlans = result.MealPlans.ToList();
+            Assert.Equal(2, result.Items.Count());
+            var mealPlans = result.Items.ToList();
             mealPlans.ForEach(p => Assert.NotNull(p.Meals));
 
             // verify that we don't return the full object. We return meals, but not their contents
@@ -70,7 +70,7 @@ namespace Backend.IntegrationTests
             Assert.NotNull(result);
             int? firstId = null;
             int? secondId = null;
-            foreach (var m in result.MealPlans)
+            foreach (var m in result.Items)
             {
                 if (firstId == null)
                 {
@@ -96,7 +96,7 @@ namespace Backend.IntegrationTests
             result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(result);
             Assert.Equal(0, result.TotalCount);
-            Assert.Empty(result.MealPlans);
+            Assert.Empty(result.Items);
         }
 
         [Fact]
@@ -110,7 +110,7 @@ namespace Backend.IntegrationTests
             var result = await getResponse.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(result);
 
-            foreach (var m in result.MealPlans)
+            foreach (var m in result.Items)
             {
                 var r = await _client.DeleteAsync($"api/mealplan/{m.Id}");
                 r.EnsureSuccessStatusCode();
@@ -154,11 +154,11 @@ namespace Backend.IntegrationTests
 
                 //first 3 times it should return 5 items. Last time it should return zero but not throw.
                 if (i <= 10)
-                    Assert.Equal(5, result.MealPlans.Count());
+                    Assert.Equal(5, result.Items.Count());
                 else if (i < 16)
-                    Assert.Equal(2, result.MealPlans.Count());
+                    Assert.Equal(2, result.Items.Count());
                 else
-                    Assert.Empty(result.MealPlans);
+                    Assert.Empty(result.Items);
             }
         }
 
@@ -273,7 +273,7 @@ namespace Backend.IntegrationTests
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(result);
-            var mealPlanDto = result.MealPlans.FirstOrDefault(m => m.Meals.Count() == 1);
+            var mealPlanDto = result.Items.FirstOrDefault(m => m.Meals.Count() == 1);
             Assert.NotNull(mealPlanDto);
 
             // add a recipe to it
@@ -309,7 +309,7 @@ namespace Backend.IntegrationTests
             response.EnsureSuccessStatusCode();
             result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(result);
-            var mealToCheck = result.MealPlans.First(m => m.Id == newId);
+            var mealToCheck = result.Items.First(m => m.Id == newId);
             Assert.Equal(mealPlanDto.Id, newId);
             Assert.Equal(mealPlanDto.StartDate, mealToCheck.StartDate);
             Assert.Equal(mealPlanDto.Meals.Count(), mealToCheck.Meals.Count());
@@ -342,7 +342,7 @@ namespace Backend.IntegrationTests
             response.EnsureSuccessStatusCode();
             var result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(result);
-            var id = result.MealPlans.First().Id;
+            var id = result.Items.First().Id;
 
             response = await _client.DeleteAsync($"api/mealplan/{id}");
             response.EnsureSuccessStatusCode();
@@ -353,7 +353,7 @@ namespace Backend.IntegrationTests
             response.EnsureSuccessStatusCode();
             result = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(result);
-            Assert.DoesNotContain(id, result.MealPlans.Select(m => m.Id));
+            Assert.DoesNotContain(id, result.Items.Select(m => m.Id));
         }
 
         [Fact]
@@ -549,7 +549,7 @@ namespace Backend.IntegrationTests
             response.EnsureSuccessStatusCode();
             var mealPlanResult = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(mealPlanResult);
-            var mealPlan = mealPlanResult.MealPlans.First();
+            var mealPlan = mealPlanResult.Items.First();
 
             // add an entry with recipe
             var meals = new List<CreateUpdateMealPlanEntryRequestDto>();
@@ -593,7 +593,7 @@ namespace Backend.IntegrationTests
             response.EnsureSuccessStatusCode();
             var mealPlanResult = await response.Content.ReadFromJsonAsync<GetMealPlansResult>();
             Assert.NotNull(mealPlanResult);
-            var mealPlan = mealPlanResult.MealPlans.First();
+            var mealPlan = mealPlanResult.Items.First();
 
             // find an entry with no recipe
             var mealPlanEntry = mealPlan.Meals.FirstOrDefault(m => m.RecipeId == null);

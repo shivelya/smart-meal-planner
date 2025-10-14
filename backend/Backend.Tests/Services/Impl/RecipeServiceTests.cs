@@ -48,7 +48,7 @@ namespace Backend.Tests.Services.Impl
                 Instructions = "Do stuff",
                 Ingredients =
                 [
-                    new() { Food = new NewFoodReferenceDto { Mode = AddFoodMode.New, Name = "Ing", CategoryId = 1 }, Quantity = 1, Unit = "g" }
+                    new() { Food = new NewFoodReferenceDto { Name = "Ing", CategoryId = 1 }, Quantity = 1, Unit = "g" }
                 ]
             };
 
@@ -400,7 +400,7 @@ namespace Backend.Tests.Services.Impl
                 Title = "New",
                 Source = "S2",
                 Instructions = "I2",
-                Ingredients = [new() { Food = new NewFoodReferenceDto { Mode = AddFoodMode.New, Name = "Ing", CategoryId = 2 }, Quantity = 1, Unit = "g" }]
+                Ingredients = [new() { Food = new NewFoodReferenceDto { Name = "Ing", CategoryId = 2 }, Quantity = 1, Unit = "g" }]
             };
 
             var result = await _service.UpdateAsync(9, dto, 1);

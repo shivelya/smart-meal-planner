@@ -62,7 +62,7 @@ namespace Backend.Tests.Services.Impl
 
             Assert.NotNull(result);
             Assert.Equal(0, result.TotalCount);
-            Assert.Empty(result.MealPlans);
+            Assert.Empty(result.Items);
         }
 
         [Fact]
@@ -76,8 +76,8 @@ namespace Backend.Tests.Services.Impl
 
             var result = await _service.GetMealPlansAsync(2, 0, 10);
 
-            Assert.Single(result.MealPlans);
-            Assert.Equal(1, result.MealPlans.First().Id);
+            Assert.Single(result.Items);
+            Assert.Equal(1, result.Items.First().Id);
         }
 
         [Fact]
@@ -92,8 +92,8 @@ namespace Backend.Tests.Services.Impl
 
             var result = await _service.GetMealPlansAsync(3, 1, 1);
 
-            Assert.Single(result.MealPlans);
-            Assert.Equal(2, result.MealPlans.First().Id);
+            Assert.Single(result.Items);
+            Assert.Equal(2, result.Items.First().Id);
         }
 
         [Fact]

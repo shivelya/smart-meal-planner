@@ -146,7 +146,7 @@ namespace Backend.Tests.Controllers
             var expected = new GetShoppingListResult
             {
                 TotalCount = 2,
-                Foods =
+                Items =
                 [
                     new ShoppingListItemDto { Id = 1, FoodId = 10, Purchased = false },
                     new ShoppingListItemDto { Id = 2, FoodId = 20, Purchased = true }
@@ -159,7 +159,7 @@ namespace Backend.Tests.Controllers
             var okResult = Assert.IsType<OkObjectResult>(result.Result);
             var value = Assert.IsType<GetShoppingListResult>(okResult.Value);
             Assert.Equal(2, value.TotalCount);
-            Assert.Collection(value.Foods,
+            Assert.Collection(value.Items,
                 item => Assert.Equal(1, item.Id),
                 item => Assert.Equal(2, item.Id));
         }

@@ -6,11 +6,7 @@ namespace Backend.DTOs
         public required int MealPlanId { get; set; }
     }
 
-    public class GetShoppingListResult
-    {
-        public int TotalCount { get; set; }
-        public required IEnumerable<ShoppingListItemDto> Foods { get; set; }
-    }
+    public class GetShoppingListResult : GetItemsResult<ShoppingListItemDto> { }
 
     public class ShoppingListItemDto
     {
