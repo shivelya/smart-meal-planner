@@ -254,6 +254,8 @@ namespace Backend.Controllers
 
         private static void SanitizeRequest(CreateUpdatePantryItemRequestDto dto)
         {
+            if (dto == null) return;
+
             dto.Unit = SanitizeInput(dto.Unit);
             if (dto.Food is NewFoodReferenceDto newOne)
                 newOne.Name = SanitizeInput(newOne.Name);
