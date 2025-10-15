@@ -11,8 +11,6 @@ namespace Backend.DTOs
 
     public class CreateUpdatePantryItemRequestDto
     {
-        //optional since there won't be one on creates
-        public int? Id { get; set; }
         public required FoodReferenceDto Food { get; set; }
         public required decimal Quantity { get; set; }
         public string? Unit { get; set; }

@@ -130,8 +130,6 @@ namespace Backend.Controllers
             const string method = nameof(GetItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, take={Take}, skip={Skip}", method, nameof(PantryItemController), query, take, skip);
 
-            if (CheckForNullOrWhitespace(method, query, "query") is { } check2) return check2;
-
             var userId = GetUserId();
             return await TryCallToServiceAsync(method, async () =>
             {
@@ -218,7 +216,7 @@ namespace Backend.Controllers
             var userId = GetUserId();
             return await TryCallToServiceAsync(method, async () =>
             {
-                var updated = await _service.UpdatePantryItemAsync(pantryItem, userId, ct);
+                var updated = await _service.UpdatePantryItemAsync(pantryItem, userId, id, ct);
                 if (ResultNullCheck(method, updated, userId.ToString()) is { } check) return check;
 
                 _logger.LogInformation("{Method}: Pantry item updated successfully. id={Id}", method, updated.Id);

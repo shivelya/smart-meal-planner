@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security;
 using Backend.DTOs;
 using Backend.Model;
 using Microsoft.EntityFrameworkCore;
@@ -152,10 +153,10 @@ namespace Backend.Services.Impl
 
             if (take != null)
             {
-                if (take < 0)
+                if (take <= 0)
                 {
-                    _logger.LogWarning("SeGetPantryItemsAsyncarch: Negative take {Take}", take);
-                    throw new ArgumentException("Non-negative take must be used for pagination.");
+                    _logger.LogWarning("SeGetPantryItemsAsyncarch: Non-positive take {Take}", take);
+                    throw new ArgumentException("Positive take must be used for pagination.");
                 }
 
                 items = items.Take(take.Value);
@@ -179,7 +180,7 @@ namespace Backend.Services.Impl
             return entity?.ToDto();
         }
 
-        public async Task<PantryItemDto> UpdatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId, CancellationToken ct = default)
+        public async Task<PantryItemDto> UpdatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId, int id, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering UpdatePantryItemAsync: userId={UserId}, dto={Dto}", userId, pantryItemDto);
             if (pantryItemDto == null)
@@ -188,17 +189,11 @@ namespace Backend.Services.Impl
                 throw new ArgumentException("pantryItem is required.");
             }
 
-            if (pantryItemDto.Id == null)
-            {
-                _logger.LogWarning("UpdatePantryItemAsync: PantryItemDto.Id is required for updates. userId={UserId}", userId);
-                throw new ArgumentException("PantryItemDto.Id is required for updates.");
-            }
-
-            var item = await _context.PantryItems.FirstOrDefaultAsync(item => item.Id == pantryItemDto.Id && item.UserId == userId, ct);
+            var item = await _context.PantryItems.FirstOrDefaultAsync(item => item.Id == id && item.UserId == userId, ct);
             if (item == null)
             {
-                _logger.LogWarning("UpdatePantryItemAsync: Could not find pantry item {Id} for userId {UserId}", pantryItemDto.Id, userId);
-                throw new ArgumentException($"Could not find pantry item {pantryItemDto.Id} to update.");
+                _logger.LogWarning("UpdatePantryItemAsync: Could not find pantry item {Id} for userId {UserId}", id, userId);
+                throw new SecurityException($"Could not find pantry item {id} to update.");
             }
 
             if (pantryItemDto.Quantity < 0)
@@ -278,12 +273,6 @@ namespace Backend.Services.Impl
             {
                 _logger.LogWarning("CreatePantryItemAsync: pantryItemDto is null for userId {UserId}", userId);
                 throw new ArgumentException("pantryItem is required.");
-            }
-
-            if (pantryItemDto.Id != null)
-            {
-                _logger.LogWarning("CreatePantryItemAsync: PantryItemDto.Id must be null for creates. userId={UserId}, id={Id}", userId, pantryItemDto.Id);
-                throw new ArgumentException("PantryItemDto.Id must be null for creates.");
             }
 
             if (pantryItemDto.Quantity < 0)

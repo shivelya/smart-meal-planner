@@ -44,9 +44,10 @@ namespace Backend.Services
         /// </summary>
         /// <param name="pantryItemDto">The pantry item DTO to update.</param>
         /// <param name="userId">The userId the pantry item belongs to.</param>
+        /// <param name="id">The id of the pantry item.</param>
         /// <param name="ct">A token to cancel the operation.</param>
         /// <returns>The updated pantry item DTO.</returns>
-        Task<PantryItemDto> UpdatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId, CancellationToken ct);
+        Task<PantryItemDto> UpdatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId, int id, CancellationToken ct);
 
         /// <summary>
         /// Deletes a pantry item by its unique ID.
