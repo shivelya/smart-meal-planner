@@ -93,7 +93,7 @@ namespace Backend.Services.Impl
             if (entity is null)
             {
                 _logger.LogWarning("DeletePantryItemAsync: Item {Id} could not be found.", id);
-                throw new ArgumentException("Item could not be found.", nameof(id));
+                throw new SecurityException("Item could not be found.");
             }
 
             if (entity.UserId != userId)
@@ -243,7 +243,7 @@ namespace Backend.Services.Impl
                 if (await _context.Foods.FirstOrDefaultAsync(i => i.Id == foodId) == null)
                 {
                     _logger.LogWarning("UpdatePantryItemFood: FoodId {FoodId} not valid", foodId);
-                    throw new ValidationException("FoodId provided was not valid.");
+                    throw new ArgumentException("FoodId provided was not valid.");
                 }
             }
             else if (pantryItemDto.Food.Mode == AddFoodMode.New)

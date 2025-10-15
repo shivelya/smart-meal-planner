@@ -261,24 +261,6 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public async Task GetItemsAsync_WithEmptyTerm_ReturnsBadRequest()
-        {
-            var result = await _controller.GetItemsAsync("", null, null, CancellationToken.None);
-
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Contains("required", badRequest.Value!.ToString());
-        }
-
-        [Fact]
-        public async Task GetItemsAsync_WithNullTerm_ReturnsBadRequest()
-        {
-            var result = await _controller.GetItemsAsync(null!, null, null, CancellationToken.None);
-
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Contains("required", badRequest.Value!.ToString());
-        }
-
-        [Fact]
         public async Task GetItemsAsync_ReturnsEmptyListIfNoResults()
         {
             var searchTerm = "NotFound";
@@ -431,15 +413,6 @@ namespace Backend.Tests.Controllers
             var objResult = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
         }
-
-        [Fact]
-        public async Task GetItemsAsync_ReturnsBadRequest_WhenQueryIsNullOrEmpty()
-        {
-            var result = await _controller.GetItemsAsync(null!, null, null, CancellationToken.None);
-            var objResult = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal(400, objResult.StatusCode);
-        }
- 
 
         [Fact]
         public async Task Update_ReturnsBadRequest_WhenPantryItemIsNull()

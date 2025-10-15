@@ -173,9 +173,8 @@ namespace Backend.Controllers
         /// <param name="request">A collection of pantry item IDs to delete.</param>
         /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns Ok with the ids of deleted items, otherwise 404 if none are found.</remarks>
-        [HttpDelete("bulk")]
+        [HttpPost("bulk-delete")]
         [ProducesResponseType(typeof(DeleteRequest), StatusCodes.Status204NoContent)]
-        [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<DeleteRequest>> DeleteItemsAsync([FromBody, BindRequired] DeleteRequest request, CancellationToken ct)
         {
