@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Mvc;
 
@@ -40,6 +41,11 @@ namespace Backend.Controllers
             {
                 _logger.LogWarning(ex, "{Method}: Bad parameter. Identifying token={Token}", method, token);
                 return BadRequest();
+            }
+            catch (SecurityException ex)
+            {
+                _logger.LogWarning(ex, "{Method}: NotFound. Identifying token={Token}", method, token);
+                return NotFound();
             }
             catch (Exception ex)
             {
