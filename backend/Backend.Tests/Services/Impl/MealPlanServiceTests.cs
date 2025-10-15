@@ -62,7 +62,7 @@ namespace Backend.Tests.Services.Impl
 
             Assert.NotNull(result);
             Assert.Equal(0, result.TotalCount);
-            Assert.Empty(result.MealPlans);
+            Assert.Empty(result.Items);
         }
 
         [Fact]
@@ -76,8 +76,8 @@ namespace Backend.Tests.Services.Impl
 
             var result = await _service.GetMealPlansAsync(2, 0, 10);
 
-            Assert.Single(result.MealPlans);
-            Assert.Equal(1, result.MealPlans.First().Id);
+            Assert.Single(result.Items);
+            Assert.Equal(1, result.Items.First().Id);
         }
 
         [Fact]
@@ -92,8 +92,8 @@ namespace Backend.Tests.Services.Impl
 
             var result = await _service.GetMealPlansAsync(3, 1, 1);
 
-            Assert.Single(result.MealPlans);
-            Assert.Equal(2, result.MealPlans.First().Id);
+            Assert.Single(result.Items);
+            Assert.Equal(2, result.Items.First().Id);
         }
 
         [Fact]
@@ -373,7 +373,7 @@ namespace Backend.Tests.Services.Impl
             Assert.Equal(mealPlan, result);
         }
 
-         [Fact]
+        [Fact]
         public async Task CookMeal_Throws_WhenMealPlanIdInvalid()
         {
             await Assert.ThrowsAsync<SecurityException>(() => _service.CookMealAsync(999, 1, 1));
@@ -414,7 +414,8 @@ namespace Backend.Tests.Services.Impl
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
             var food = new Food { Id = 1, Name = "Egg", CategoryId = 1, Category = new Category { Id = 1, Name = "Dairy" } };
             var pantryItem = new PantryItem { Id = 1, UserId = 1, FoodId = 1, Food = food, Quantity = 2 };
-            var recipe = new Recipe {
+            var recipe = new Recipe
+            {
                 Id = 1,
                 UserId = 1,
                 Source = "",
@@ -447,7 +448,8 @@ namespace Backend.Tests.Services.Impl
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
             var food = new Food { Id = 1, Name = "Egg", CategoryId = 1 };
             var pantryItem = new PantryItem { Id = 1, UserId = 1, FoodId = 1, Food = food, Quantity = 2 };
-            var recipe = new Recipe {
+            var recipe = new Recipe
+            {
                 Id = 1,
                 UserId = 1,
                 Source = "",
@@ -467,6 +469,23 @@ namespace Backend.Tests.Services.Impl
             plannerContext.MealPlanEntries.Add(mealPlanEntry);
             plannerContext.SaveChanges();
             var result = await _service.CookMealAsync(1, 2, 1);
+            Assert.Equal(0, result.TotalCount);
+            Assert.Empty(result.Items);
+        }
+
+        [Fact]
+        public async Task CookMeal_ReturnsEmpty_WhenEntryHasNoRecipe()
+        {
+            var user = new User { Id = 1, Email = "", PasswordHash = "" };
+            var mealPlan = new MealPlan { Id = 1, UserId = 1 };
+            var mealPlanEntry = new MealPlanEntry { Id = 2, MealPlanId = 1, Notes = "n" };
+            plannerContext.Users.Add(user);
+            plannerContext.MealPlans.Add(mealPlan);
+            plannerContext.MealPlanEntries.Add(mealPlanEntry);
+            plannerContext.SaveChanges();
+
+            var result = await _service.CookMealAsync(1, 2, 1);
+
             Assert.Equal(0, result.TotalCount);
             Assert.Empty(result.Items);
         }

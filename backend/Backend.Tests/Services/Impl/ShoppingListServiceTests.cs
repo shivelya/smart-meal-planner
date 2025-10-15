@@ -38,7 +38,7 @@ namespace Backend.Tests.Services.Impl
 
             Assert.NotNull(result);
             Assert.Equal(0, result.TotalCount);
-            Assert.Empty(result.Foods);
+            Assert.Empty(result.Items);
         }
 
         [Fact]
@@ -57,7 +57,7 @@ namespace Backend.Tests.Services.Impl
 
             Assert.NotNull(result);
             Assert.Equal(2, result.TotalCount);
-            Assert.Collection(result.Foods,
+            Assert.Collection(result.Items,
                 item => Assert.Equal(1, item.Id),
                 item => Assert.Equal(2, item.Id));
         }

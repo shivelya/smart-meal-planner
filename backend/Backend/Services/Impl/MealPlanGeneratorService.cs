@@ -2,6 +2,7 @@ using Backend.DTOs;
 using Backend.Helpers;
 using Backend.Model;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Backend.Services.Impl
 {
@@ -50,18 +51,37 @@ namespace Backend.Services.Impl
             // copy to a list so we can add to it
             var mealsToAdd = mealPlanDto.Meals.ToList();
 
+            Exception? serviceException = null;
             foreach (var generator in _generators)
             {
                 // if we have enough meals, break out
                 if (mealsToAdd.Count == meals) break;
 
                 // call the generator
-                _logger.LogInformation("Calling external recipe generator {GeneratorName} for user {UserId}.", generator.GetType().Name, userId);
-                var mealPlanEntries = await generator.GenerateMealPlanAsync(meals - mealsToAdd.Count, pantry, ct);
-                mealsToAdd.AddRange(mealPlanEntries);
+                try
+                {
+                    _logger.LogInformation("Calling external recipe generator {GeneratorName} for user {UserId}.", generator.GetType().Name, userId);
+                    var mealPlanEntries = await generator.GenerateMealPlanAsync(meals - mealsToAdd.Count, pantry, ct);
+                    mealsToAdd.AddRange(mealPlanEntries);
+                }
+                catch (Exception ex)
+                {
+                    // our generator threw. If these are the only recipes we're returning to the user then we should let them know
+                    // that the service is down
+                    // we might have recipes coming from our own system or from another external generator
+                    serviceException = ex;
+                    _logger.LogWarning(ex, "GenerateMealPlanAsync: External generator threw an exception.");
+                }
             }
 
             mealPlanDto.Meals = mealsToAdd;
+
+            if (serviceException != null && mealPlanDto.Meals.IsNullOrEmpty())
+            {
+                // if a service threw and now we have nothing to return to the user then we need to fail the call
+                throw new HttpRequestException(null, serviceException);
+            }
+
             _logger.LogInformation("Exiting GenerateMealPlanAsync: userId={UserId}, totalMeals={TotalMeals}", userId, mealsToAdd.Count);
             return mealPlanDto;
         }

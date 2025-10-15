@@ -14,6 +14,7 @@ namespace Backend.IntegrationTests
         public AccountTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             _client = factory.CreateClient();
         }
 
@@ -207,6 +208,7 @@ namespace Backend.IntegrationTests
             var factory = new CustomWebApplicationFactory();
             factory.ConfigValues = new Dictionary<string, string> { { "Jwt:RefreshExpireDays", "-1" } };
             await factory.InitializeAsync();
+            factory.ResetDatabase();
             var client = factory.CreateClient();
 
             var tokens = await factory.LoginAsync(client);

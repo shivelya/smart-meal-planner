@@ -1,5 +1,5 @@
 using System.ComponentModel.DataAnnotations;
-using System.Globalization;
+using System.Security;
 using Backend.DTOs;
 using Backend.Model;
 using Microsoft.EntityFrameworkCore;
@@ -20,36 +20,11 @@ namespace Backend.Services.Impl
                 throw new ArgumentException("UserId provided was not valid.");
             }
 
-            if (pantryItemDto == null)
-            {
-                _logger.LogWarning("CreatePantryItemAsync: pantryItemDto is null for userId {UserId}", userId);
-                throw new ArgumentException("pantryItem is required.");
-            }
-
-            if (pantryItemDto.Id != null)
-            {
-                _logger.LogWarning("CreatePantryItemAsync: PantryItemDto.Id must be null for creates. userId={UserId}, id={Id}", userId, pantryItemDto.Id);
-                throw new ArgumentException("PantryItemDto.Id must be null for creates.");
-            }
-
-            if (pantryItemDto.Quantity < 0)
-            {
-                _logger.LogWarning("CreatePantryItemAsync: Negative quantity {Quantity} for userId {UserId}", pantryItemDto.Quantity, userId);
-                throw new ArgumentException("Cannot set pantry item with negative quantity.");
-            }
-
-            if (pantryItemDto.Food == null)
-            {
-                _logger.LogWarning("CreatePantryItemAsync: Food is null for userId {UserId}", userId);
-                throw new ArgumentException("Food is required.");
-            }
-
-            // transaction is probably overkill, but since we re-query the context to ensure we have the Food, I want it to be able to
-            // roll back if there's an issue.
             var transaction = await _context.Database.BeginTransactionAsync(ct);
             try
             {
                 _logger.LogInformation("CreatePantryItemAsync: Creating pantry item for userId={UserId}, dto={Dto}", userId, pantryItemDto);
+                // does a save, may require transaction
                 PantryItem entity = await CreatePantryItem(pantryItemDto, userId);
                 await _context.SaveChangesAsync(ct);
 
@@ -66,6 +41,7 @@ namespace Backend.Services.Impl
             }
             catch
             {
+                _logger.LogError("CreatePantryItemAsync: Error during transaction, rolling it back");
                 await transaction.RollbackAsync(ct);
                 throw;
             }
@@ -74,25 +50,57 @@ namespace Backend.Services.Impl
         public async Task<GetPantryItemsResult> CreatePantryItemsAsync(IEnumerable<CreateUpdatePantryItemRequestDto> pantryItemDtos, int userId, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering CreatePantryItemsAsync: userId={UserId}, count={Count}", userId, pantryItemDtos.Count());
+            if (_context.Users.Find(userId) == null)
+            {
+                _logger.LogWarning("CreatePantryItemAsync: Invalid userId {UserId}", userId);
+                throw new ArgumentException("UserId provided was not valid.");
+            }
 
-            if (pantryItemDtos.Any(dto => dto.Food == null))
-                _logger.LogWarning("CreatePantryItemsAsync: Some pantry items have null Food for userId={UserId}", userId);
+            if (pantryItemDtos.Any(dto => dto == null || dto.Food == null))
+                _logger.LogWarning("CreatePantryItemsAsync: Some pantry items are null or have null Food for userId={UserId}", userId);
 
-            var tasks = pantryItemDtos.Where(p => p != null && p.Food != null).Select(async dto => await CreatePantryItem(dto, userId));
-            var pantryItems = await Task.WhenAll(tasks);
+            var dtoList = pantryItemDtos.Where(p => p != null && p.Food != null).ToList();
+            var pantryItems = new List<PantryItem>();
+            var transaction = await _context.Database.BeginTransactionAsync(ct);
+            try
+            {
+                foreach (var d in dtoList)
+                {
+                    // does a save, may require transaction
+                    var pantryItem = await CreatePantryItem(d, userId);
+                    pantryItems.Add(pantryItem);
+                }
 
-            int count = await _context.SaveChangesAsync(ct);
+                int count = await _context.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
 
-            _logger.LogInformation("CreatePantryItemsAsync: {Count} pantry items created for userId={UserId}", count, userId);
-            _logger.LogInformation("Exiting CreatePantryItemsAsync: userId={UserId}, totalCreated={Total}", userId, pantryItems.Length);
-            return new GetPantryItemsResult { TotalCount = pantryItems.Length, Items = pantryItems.Select(i => i.ToDto()) };
+                _logger.LogInformation("CreatePantryItemsAsync: {Count} pantry items created for userId={UserId}", count, userId);
+                _logger.LogInformation("Exiting CreatePantryItemsAsync: userId={UserId}, totalCreated={Total}", userId, pantryItems.Count);
+                return new GetPantryItemsResult { TotalCount = pantryItems.Count, Items = pantryItems.Select(i => i.ToDto()) };
+            }
+            catch
+            {
+                _logger.LogError("CreatePantryItemsAsync: Error during transaction, rolling it back");
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
         }
 
-        public async Task<bool> DeletePantryItemAsync(int id, CancellationToken ct = default)
+        public async Task<bool> DeletePantryItemAsync(int userId, int id, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering DeletePantryItemAsync: itemId={ItemId}", id);
             var entity = await _context.PantryItems.FindAsync([id], ct);
-            if (entity is null) return false;
+            if (entity is null)
+            {
+                _logger.LogWarning("DeletePantryItemAsync: Item {Id} could not be found.", id);
+                throw new SecurityException("Item could not be found.");
+            }
+
+            if (entity.UserId != userId)
+            {
+                _logger.LogWarning("DeletePantryItemAsync: User {UserId} does not have permission to delete item {Id}.", userId, id);
+                throw new ArgumentException("Item does not belong to user.", nameof(id));
+            }
 
             _context.PantryItems.Remove(entity);
             var deleted = await _context.SaveChangesAsync(ct);
@@ -101,10 +109,10 @@ namespace Backend.Services.Impl
             return deleted > 0;
         }
 
-        public async Task<DeleteRequest> DeletePantryItemsAsync(IEnumerable<int> ids, CancellationToken ct = default)
+        public async Task<DeleteRequest> DeletePantryItemsAsync(int userId, IEnumerable<int> ids, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering DeletePantryItemsAsync: count={Count}", ids.Count());
-            var entities = _context.PantryItems.Where(p => ids.Contains(p.Id));
+            var entities = _context.PantryItems.Where(p => ids.Contains(p.Id) && p.UserId == userId);
             var deletedIds = await entities
                 .Select(e => e.Id)
                 .ToListAsync(ct);
@@ -117,43 +125,46 @@ namespace Backend.Services.Impl
             return new DeleteRequest { Ids = deletedIds };
         }
 
-        public async Task<GetPantryItemsResult> GetAllPantryItemsAsync(int? skip, int? take, CancellationToken ct = default)
+        public async Task<GetPantryItemsResult> GetPantryItemsAsync(int userId, string? search, int? take, int? skip, CancellationToken ct = default)
         {
-            _logger.LogInformation("Entering GetAllPantryItemsAsync: take={Take}, skip={Skip}", take, skip);
-            var query = _context.PantryItems
+            _logger.LogInformation("Entering GetPantryItemsAsync: userId={UserId}, search={Search}, take={Take}, skip={Skip}", userId, search, take, skip);
+            var items = _context.PantryItems
                 .AsNoTracking()
                 .Include(i => i.Food)
-                .OrderBy(p => p.Food.Name)
+                .Where(i => i.UserId == userId)
+                .OrderBy(i => i.Food.Name)
                 .AsQueryable();
 
-            var totalCount = await query.CountAsync(ct);
+            if (!string.IsNullOrWhiteSpace(search))
+                items = items.Where(i => i.Food.Name.ToLower().Contains(search.ToLower()));
+
+            var count = await items.CountAsync(ct);
 
             if (skip != null)
             {
                 if (skip < 0)
                 {
-                    _logger.LogWarning("GetAllPantryItemsAsync: Negative skip {Skip}", skip);
+                    _logger.LogWarning("GetPantryItemsAsync: Negative skip {Skip}", skip);
                     throw new ArgumentException("Non-negative skip must be used for pagination.");
                 }
 
-                query = query.Skip(skip.Value);
+                items = items.Skip(skip.Value);
             }
 
             if (take != null)
             {
-                if (take < 0)
+                if (take <= 0)
                 {
-                    _logger.LogWarning("GetAllPantryItemsAsync: Negative take {Take}", take);
-                    throw new ArgumentException("Non-negative take must be used for pagination.");
+                    _logger.LogWarning("SeGetPantryItemsAsyncarch: Non-positive take {Take}", take);
+                    throw new ArgumentException("Positive take must be used for pagination.");
                 }
 
-                query = query.Take(take.Value);
+                items = items.Take(take.Value);
             }
 
-            var items = await query.ToListAsync(ct);
-
-            _logger.LogInformation("Exiting GetAllPantryItemsAsync: returned {Count} items", items.Count);
-            return new GetPantryItemsResult { Items = items.Select(i => i.ToDto()), TotalCount = totalCount };
+            var results = await items.ToListAsync(ct);
+            _logger.LogInformation("Exiting GetPantryItemsAsync: userId={UserId}, returned={Returned}", userId, results.Count);
+            return new GetPantryItemsResult { TotalCount = count, Items = items.Select(i => i.ToDto()) };
         }
 
         public async Task<PantryItemDto?> GetPantryItemByIdAsync(int id, CancellationToken ct = default)
@@ -169,7 +180,7 @@ namespace Backend.Services.Impl
             return entity?.ToDto();
         }
 
-        public async Task<PantryItemDto> UpdatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId, CancellationToken ct = default)
+        public async Task<PantryItemDto> UpdatePantryItemAsync(CreateUpdatePantryItemRequestDto pantryItemDto, int userId, int id, CancellationToken ct = default)
         {
             _logger.LogInformation("Entering UpdatePantryItemAsync: userId={UserId}, dto={Dto}", userId, pantryItemDto);
             if (pantryItemDto == null)
@@ -178,17 +189,11 @@ namespace Backend.Services.Impl
                 throw new ArgumentException("pantryItem is required.");
             }
 
-            if (pantryItemDto.Id == null)
-            {
-                _logger.LogWarning("UpdatePantryItemAsync: PantryItemDto.Id is required for updates. userId={UserId}", userId);
-                throw new ArgumentException("PantryItemDto.Id is required for updates.");
-            }
-
-            var item = await _context.PantryItems.FirstOrDefaultAsync(item => item.Id == pantryItemDto.Id && item.UserId == userId, ct);
+            var item = await _context.PantryItems.FirstOrDefaultAsync(item => item.Id == id && item.UserId == userId, ct);
             if (item == null)
             {
-                _logger.LogWarning("UpdatePantryItemAsync: Could not find pantry item {Id} for userId {UserId}", pantryItemDto.Id, userId);
-                throw new ArgumentException($"Could not find pantry item {pantryItemDto.Id} to update.");
+                _logger.LogWarning("UpdatePantryItemAsync: Could not find pantry item {Id} for userId {UserId}", id, userId);
+                throw new SecurityException($"Could not find pantry item {id} to update.");
             }
 
             if (pantryItemDto.Quantity < 0)
@@ -197,61 +202,30 @@ namespace Backend.Services.Impl
                 throw new ArgumentException("Cannot set pantry item with negative quantity.");
             }
 
-            item.Quantity = pantryItemDto.Quantity;
-            item.Unit = pantryItemDto.Unit;
-            item.FoodId = await UpdatePantryItemFood(pantryItemDto);
+            var transaction = await _context.Database.BeginTransactionAsync(ct);
+            try
+            {
+                item.Quantity = pantryItemDto.Quantity;
+                item.Unit = pantryItemDto.Unit;
+                // does a save, may require transaction
+                item.FoodId = await UpdatePantryItemFood(pantryItemDto);
 
-            await _context.SaveChangesAsync(ct);
-            _logger.LogInformation("UpdatePantryItemAsync: Updated pantry item for userId={UserId}, itemId={ItemId}", userId, item.Id);
-            _logger.LogInformation("Exiting UpdatePantryItemAsync: userId={UserId}, itemId={ItemId}", userId, item.Id);
-            return item.ToDto();
+                await _context.SaveChangesAsync(ct);
+                await transaction.CommitAsync(ct);
+
+                _logger.LogInformation("UpdatePantryItemAsync: Updated pantry item for userId={UserId}, itemId={ItemId}", userId, item.Id);
+                _logger.LogInformation("Exiting UpdatePantryItemAsync: userId={UserId}, itemId={ItemId}", userId, item.Id);
+                return item.ToDto();
+            }
+            catch
+            {
+                _logger.LogError("UpdatePantryItemAsync: Error during transaction, rolling it back");
+                await transaction.RollbackAsync(ct);
+                throw;
+            }
         }
 
-        public async Task<GetPantryItemsResult> Search(string search, int userId, int? take, int? skip, CancellationToken ct = default)
-        {
-            _logger.LogInformation("Entering Search: userId={UserId}, search={Search}, take={Take}, skip={Skip}", userId, search, take, skip);
-#pragma warning disable CA1304 // Specify CultureInfo
-#pragma warning disable CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
-#pragma warning disable CA1311 // Specify a culture or use an invariant version
-            var items = _context.PantryItems
-                .Where(i => i.UserId == userId)
-                .Where(i => i.Food.Name.ToLower().Contains(search.ToLower()))
-                .OrderBy(i => i.Food.Name)
-                .AsQueryable();
-#pragma warning restore CA1311 // Specify a culture or use an invariant version
-#pragma warning restore CA1862 // Use the 'StringComparison' method overloads to perform case-insensitive string comparisons
-#pragma warning restore CA1304 // Specify CultureInfo
-
-            var count = await items.CountAsync(ct);
-
-            if (skip != null)
-            {
-                if (skip < 0)
-                {
-                    _logger.LogWarning("Search: Negative skip {Skip}", skip);
-                    throw new ArgumentException("Non-negative skip must be used for pagination.");
-                }
-
-                items = items.Skip(skip.Value);
-            }
-
-            if (take != null)
-            {
-                if (take < 0)
-                {
-                    _logger.LogWarning("Search: Negative take {Take}", take);
-                    throw new ArgumentException("Non-negative take must be used for pagination.");
-                }
-
-                items = items.Take(take.Value);
-            }
-
-            var results = await items.ToListAsync(ct);
-            _logger.LogInformation("Exiting Search: userId={UserId}, returned={Returned}", userId, results.Count);
-            return new GetPantryItemsResult { TotalCount = count, Items = items.Select(i => i.ToDto()) };
-        }
-
-        // does not save here for transactional purposes
+        // does a save, may require a transaction
         private async Task<int> UpdatePantryItemFood(CreateUpdatePantryItemRequestDto pantryItemDto)
         {
             if (pantryItemDto.Food == null)
@@ -269,7 +243,7 @@ namespace Backend.Services.Impl
                 if (await _context.Foods.FirstOrDefaultAsync(i => i.Id == foodId) == null)
                 {
                     _logger.LogWarning("UpdatePantryItemFood: FoodId {FoodId} not valid", foodId);
-                    throw new ValidationException("FoodId provided was not valid.");
+                    throw new ArgumentException("FoodId provided was not valid.");
                 }
             }
             else if (pantryItemDto.Food.Mode == AddFoodMode.New)
@@ -281,7 +255,7 @@ namespace Backend.Services.Impl
                     throw new ArgumentException("CategoryId is required on pantry items with new foods.");
                 }
 
-                foodId = CreateNewFood(food1);
+                foodId = await CreateNewFood(food1);
             }
             else
             {
@@ -292,13 +266,25 @@ namespace Backend.Services.Impl
             return foodId;
         }
 
-        // does not save here for transactional purposes
+        // does a save, may require a transaction
         private async Task<PantryItem> CreatePantryItem(CreateUpdatePantryItemRequestDto pantryItemDto, int userId)
         {
+            if (pantryItemDto == null)
+            {
+                _logger.LogWarning("CreatePantryItemAsync: pantryItemDto is null for userId {UserId}", userId);
+                throw new ArgumentException("pantryItem is required.");
+            }
+
             if (pantryItemDto.Quantity < 0)
             {
-                _logger.LogWarning("CreatePantryItem: Negative quantity {Quantity} for userId {UserId}", pantryItemDto.Quantity, userId);
+                _logger.LogWarning("CreatePantryItemAsync: Negative quantity {Quantity} for userId {UserId}", pantryItemDto.Quantity, userId);
                 throw new ArgumentException("Cannot set pantry item with negative quantity.");
+            }
+
+            if (pantryItemDto.Food == null)
+            {
+                _logger.LogWarning("CreatePantryItemAsync: Food is null for userId {UserId}", userId);
+                throw new ArgumentException("Food is required.");
             }
 
             int foodId = await UpdatePantryItemFood(pantryItemDto);
@@ -317,8 +303,8 @@ namespace Backend.Services.Impl
             return entity;
         }
 
-        // does not save here for transactional purposes
-        private int CreateNewFood(NewFoodReferenceDto dto)
+        // does a save here, may require transaction
+        private async Task<int> CreateNewFood(NewFoodReferenceDto dto)
         {
             var food = new Food
             {
@@ -327,6 +313,7 @@ namespace Backend.Services.Impl
             };
 
             _context.Foods.Add(food);
+            await _context.SaveChangesAsync();
             _logger.LogInformation("CreateNewFood: Created new food {FoodName} with id={FoodId}", food.Name, food.Id);
             return food.Id;
         }

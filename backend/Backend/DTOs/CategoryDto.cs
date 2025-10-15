@@ -6,9 +6,5 @@ namespace Backend.DTOs
         public required string Name { get; set; } = null!;
     }
 
-    public class GetCategoriesResult
-    {
-        public required int TotalCount { get; set; }
-        public required IEnumerable<CategoryDto> Items { get; set; } = [];
-    }
+    public class GetCategoriesResult : GetItemsResult<CategoryDto> { }
 }

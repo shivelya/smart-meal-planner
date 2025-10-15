@@ -178,6 +178,53 @@ namespace Backend.Tests.Helpers
         }
 
         [Fact]
+        public async Task GenerateMealPlan_ThrowsHttpRequestException_WhenExternalFailsAndNoRecipesReturned()
+        {
+            var user = new User { Id = 1, Email = "", PasswordHash = "" };
+            _context.Users.Add(user);
+            await _context.SaveChangesAsync();
+            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(2, It.IsAny<IEnumerable<PantryItem>>(), CancellationToken.None))
+                .ThrowsAsync(new Exception());
+
+            await Assert.ThrowsAsync<HttpRequestException>(() => _generator.GenerateMealPlanAsync(2, 1, true));
+        }
+
+        [Fact]
+        public async Task GenerateMealPlan_DoesNotThrow_WhenExternalFails_ButRecipesAreReturned()
+        {
+            var user = new User { Id = 1, Email = "", PasswordHash = "" };
+            var category = new Category { Id = 1, Name = "" };
+            var food = new Food { Id = 1, Name = "Egg", CategoryId = 1, Category = category };
+            var pantry = new PantryItem { Id = 1, UserId = 1, FoodId = 1, Food = food, Quantity = 2 };
+            var ingredient = new RecipeIngredient { RecipeId = 1, FoodId = 1, Food = food, Quantity = 1 };
+            var recipe = new Recipe
+            {
+                Id = 1,
+                UserId = 1,
+                Ingredients = [
+                    ingredient
+                ],
+                Instructions = "",
+                Source = "",
+                Title = ""
+            };
+            _context.Users.Add(user);
+            _context.PantryItems.Add(pantry);
+            _context.Recipes.Add(recipe);
+            await _context.SaveChangesAsync();
+
+            _externalGeneratorMock.Setup(g => g.GenerateMealPlanAsync(It.IsAny<int>(), It.IsAny<IEnumerable<PantryItem>>(), CancellationToken.None))
+                .ThrowsAsync(new Exception());
+
+            var result = await _generator.GenerateMealPlanAsync(10, 1, false);
+
+            _externalGeneratorMock.Verify(g => g.GenerateMealPlanAsync(It.IsAny<int>(), It.IsAny<IEnumerable<PantryItem>>(), CancellationToken.None), Times.Once);
+
+            Assert.Single(result.Meals);
+            Assert.Equal(recipe.Id, result.Meals.First().RecipeId);
+        }
+
+        [Fact]
         public async Task GenerateMealPlan_SkipsManualRecipes_WhenUseExternalIsTrue()
         {
             // Arrange: Add a recipe and matching pantry item to the context

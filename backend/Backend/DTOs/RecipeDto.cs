@@ -21,11 +21,7 @@ namespace Backend.DTOs
         public required List<CreateUpdateRecipeIngredientDto> Ingredients { get; set; } = [];
     }
 
-    public class GetRecipesResult
-    {
-        public required int TotalCount { get; set; }
-        public required IEnumerable<RecipeDto> Items { get; set; }
-    }
+    public class GetRecipesResult : GetItemsResult<RecipeDto> { }
 
     public class GetRecipesRequest
     {

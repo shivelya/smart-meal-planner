@@ -8,7 +8,7 @@ namespace Backend.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class FoodController(IFoodService service, ILogger<FoodController> logger) : ControllerBase
+    public class FoodController(IFoodService service, ILogger<FoodController> logger) : PlannerControllerBase(logger)
     {
         private readonly IFoodService _service = service;
         private readonly ILogger<FoodController> _logger = logger;
@@ -31,7 +31,7 @@ namespace Backend.Controllers
             const string method = nameof(SearchFoodsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, skip={Skip}, take={Take}", method, nameof(FoodController), query, skip, take);
 
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var foods = await _service.SearchFoodsAsync(query!, skip, take, ct);
                 if (foods == null)
@@ -44,18 +44,7 @@ namespace Backend.Controllers
                 _logger.LogInformation("{Method}: Search on '{Query}' completed with {Count} results. Foods: {Foods}", method, query, foods.TotalCount, string.Join(",", foods.Items.Select(f => f.Name)));
                 _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(foods);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, "Could not search for foods: " + ex.Message);
-            }
-        }
-
-        private static string SanitizeInput(string? input)
-        {
-            return input?.Replace(Environment.NewLine, "").Trim()!;
+            });
         }
     }
 }

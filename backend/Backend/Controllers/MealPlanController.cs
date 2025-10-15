@@ -37,7 +37,7 @@ namespace Backend.Controllers
                 var userId = GetUserId();
                 return await _service.GetMealPlansAsync(userId, skip, take, ct);
             }, Ok, (plans) =>
-                _logger.LogInformation("{Method}: GET for meal plans completed with {Count} results. PlanIds: {PlanIds}", method, plans.TotalCount, string.Join(",", plans.MealPlans.Select(p => p.Id)))
+                _logger.LogInformation("{Method}: GET for meal plans completed with {Count} results. PlanIds: {PlanIds}", method, plans.TotalCount, string.Join(",", plans.Items.Select(p => p.Id)))
             );
         }
 
@@ -267,6 +267,11 @@ namespace Backend.Controllers
             {
                 _logger.LogWarning(ex, "{Method}: Could not update meal plan", method);
                 return BadRequest();
+            }
+            catch (HttpRequestException ex)
+            {
+                _logger.LogWarning(ex, "{Method}: External service threw an exception.", method);
+                return StatusCode(503);
             }
             catch (Exception ex)
             {

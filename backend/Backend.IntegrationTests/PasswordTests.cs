@@ -17,6 +17,7 @@ namespace Backend.IntegrationTests
         public PasswordTests(CustomWebApplicationFactory factory)
         {
             _factory = factory;
+            _factory.ResetDatabase();
             _client = factory.CreateClient();
         }
 

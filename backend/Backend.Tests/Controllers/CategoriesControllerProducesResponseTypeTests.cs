@@ -8,7 +8,7 @@ namespace Backend.Tests.Controllers
 {
     public class CategoriesControllerProducesResponseTypeTests
     {
-        private readonly Type _controllerType = typeof(CategoriesController);
+        private readonly Type _controllerType = typeof(CategoryController);
 
         [Fact]
         public void GetCategories_HasCorrectProducesResponseTypeAttributes()

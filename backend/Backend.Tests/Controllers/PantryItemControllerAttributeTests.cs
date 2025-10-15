@@ -1,9 +1,9 @@
-using System.Linq;
 using System.Reflection;
 using Backend.Controllers;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.Routing;
 using Xunit;
 
 namespace Backend.Tests.Controllers
@@ -36,33 +36,45 @@ namespace Backend.Tests.Controllers
 
         [Theory]
         [InlineData("AddItemAsync", typeof(HttpPostAttribute))]
-        [InlineData("AddItemsAsync", typeof(HttpPostAttribute))]
-        [InlineData("GetItemAsync", typeof(HttpGetAttribute))]
-        // Add more endpoint checks as needed
-        public void Endpoint_HasCorrectHttpAttribute(string methodName, Type expectedAttribute)
+        [InlineData("AddItemsAsync", typeof(HttpPostAttribute), "bulk")]
+        [InlineData("GetItemAsync", typeof(HttpGetAttribute), "{id:int}")]
+        [InlineData("GetItemsAsync", typeof(HttpGetAttribute))]
+        [InlineData("DeleteItemAsync", typeof(HttpDeleteAttribute), "{id:int}")]
+        [InlineData("DeleteItemsAsync", typeof(HttpPostAttribute), "bulk-delete")]
+        [InlineData("UpdateAsync", typeof(HttpPutAttribute), "{id:int}")]
+        public void Endpoint_HasCorrectHttpAttribute(string methodName, Type expectedAttribute, string? template = null)
         {
             var method = _controllerType.GetMethod(methodName);
             Assert.NotNull(method);
             var attr = method.GetCustomAttributes(expectedAttribute, false).FirstOrDefault();
             Assert.NotNull(attr);
+
+            HttpMethodAttribute httpAttr = (HttpMethodAttribute)attr!;
+            Assert.NotNull(httpAttr);
+            Assert.Equal(template, httpAttr.Template);
         }
 
         [Theory]
         [InlineData("AddItemAsync", StatusCodes.Status201Created)]
+        [InlineData("AddItemAsync", StatusCodes.Status400BadRequest)]
         [InlineData("AddItemAsync", StatusCodes.Status500InternalServerError)]
         [InlineData("AddItemsAsync", StatusCodes.Status201Created)]
+        [InlineData("AddItemsAsync", StatusCodes.Status400BadRequest)]
         [InlineData("AddItemsAsync", StatusCodes.Status500InternalServerError)]
         [InlineData("GetItemAsync", StatusCodes.Status200OK)]
         [InlineData("GetItemAsync", StatusCodes.Status404NotFound)]
         [InlineData("GetItemAsync", StatusCodes.Status500InternalServerError)]
         [InlineData("GetItemsAsync", StatusCodes.Status200OK)]
+        [InlineData("GetItemsAsync", StatusCodes.Status400BadRequest)]
         [InlineData("GetItemsAsync", StatusCodes.Status500InternalServerError)]
         [InlineData("DeleteItemAsync", StatusCodes.Status204NoContent)]
         [InlineData("DeleteItemAsync", StatusCodes.Status404NotFound)]
         [InlineData("DeleteItemAsync", StatusCodes.Status500InternalServerError)]
         [InlineData("DeleteItemsAsync", StatusCodes.Status204NoContent)]
-        [InlineData("DeleteItemsAsync", StatusCodes.Status404NotFound)]
         [InlineData("DeleteItemsAsync", StatusCodes.Status500InternalServerError)]
+        [InlineData("UpdateAsync", StatusCodes.Status200OK)]
+        [InlineData("UpdateAsync", StatusCodes.Status400BadRequest)]
+        [InlineData("UpdateAsync", StatusCodes.Status500InternalServerError)]
         public void Endpoint_HasCorrectProducesResponseType(string methodName, int statusCode)
         {
             var method = _controllerType.GetMethod(methodName);
