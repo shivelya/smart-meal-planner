@@ -72,9 +72,9 @@ namespace Backend.Tests.Controllers
         [InlineData("DeleteItemAsync", StatusCodes.Status500InternalServerError)]
         [InlineData("DeleteItemsAsync", StatusCodes.Status204NoContent)]
         [InlineData("DeleteItemsAsync", StatusCodes.Status500InternalServerError)]
-        [InlineData("UpdateItemAsync", StatusCodes.Status200OK)]
-        [InlineData("UpdateItemAsync", StatusCodes.Status400BadRequest)]
-        [InlineData("UpdateItemAsync", StatusCodes.Status500InternalServerError)]
+        [InlineData("UpdateAsync", StatusCodes.Status200OK)]
+        [InlineData("UpdateAsync", StatusCodes.Status400BadRequest)]
+        [InlineData("UpdateAsync", StatusCodes.Status500InternalServerError)]
         public void Endpoint_HasCorrectProducesResponseType(string methodName, int statusCode)
         {
             var method = _controllerType.GetMethod(methodName);

@@ -71,7 +71,7 @@ namespace Backend.Tests.Services.Impl
             var userId = 42;
             plannerContext.Users.Add(new User { Id = userId, Email = "a@b.com", PasswordHash = "pw" });
             plannerContext.SaveChanges();
-            await Assert.ThrowsAsync<ValidationException>(() => _service.CreatePantryItemAsync(dto, userId));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreatePantryItemAsync(dto, userId));
         }
 
         [Fact]
