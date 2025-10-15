@@ -478,7 +478,7 @@ namespace Backend.IntegrationTests
 
             // quantities shouldn't change before and after cooking
             // user has to verify change and save it manually
-            response = await _client.GetAsync("api/pantryitem/search?query=butternut");
+            response = await _client.GetAsync("api/pantryitem?query=butternut");
             response.EnsureSuccessStatusCode();
             var pantryResult = await response.Content.ReadFromJsonAsync<GetPantryItemsResult>();
             Assert.NotNull(pantryResult);
