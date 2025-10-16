@@ -141,6 +141,48 @@ namespace Backend.Controllers
             return null;
         }
 
+        /// <summary>
+        /// Checks if the given integer is less than 0. Returns a BadRequest or the provided ActionResult if so.
+        /// </summary>
+        /// <param name="method">The name of the method calling this function, for logging purposes.</param>
+        /// <param name="toCheck">The integer being checked for less than zero.</param>
+        /// <param name="valueName">The name of the object being checked, for logging and error handling purposes.</param>
+        /// <param name="token">An optional identifying token for logging. Uses the userId by default.</param>
+        /// <param name="ret">An optional return function. Uses BadReqeust by default.</param>
+        /// <returns>Null if <paramref name="toCheck"/> is not less than zero, or BadRequest or the given <paramref name="ret"/> otherwise.</returns>
+        protected ActionResult? CheckForLessThan0(string method, decimal? toCheck, string valueName, string? token = null, Func<ActionResult>? ret = null)
+        {
+            if (toCheck < 0)
+            {
+                _logger.LogWarning("{Method}: {ValueName} is less than zero.", method, valueName);
+                _logger.LogInformation("{Method}: Exiting. Identifying Token={Token}", method, token);
+                return ret != null ? ret() : BadRequest($"{valueName} must be non-negative");
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Checks if the given integer is less than or equal to 0. Returns a BadRequest or the provided ActionResult if so.
+        /// </summary>
+        /// <param name="method">The name of the method calling this function, for logging purposes.</param>
+        /// <param name="toCheck">The integer being checked for less than or equal to zero.</param>
+        /// <param name="valueName">The name of the object being checked, for logging and error handling purposes.</param>
+        /// <param name="token">An optional identifying token for logging. Uses the userId by default.</param>
+        /// <param name="ret">An optional return function. Uses BadReqeust by default.</param>
+        /// <returns>Null if <paramref name="toCheck"/> is not less than or equal to zero, or BadRequest or the given <paramref name="ret"/> otherwise.</returns>
+        protected ActionResult? CheckForLessThanOrEqualTo0(string method, decimal? toCheck, string valueName, string? token = null, Func<ActionResult>? ret = null)
+        {
+            if (toCheck <= 0)
+            {
+                _logger.LogWarning("{Method}: {ValueName} is less than or equal to zero.", method, valueName);
+                _logger.LogInformation("{Method}: Exiting. Identifying Token={Token}", method, token);
+                return ret != null ? ret() : BadRequest($"{valueName} must be positive");
+            }
+
+            return null;
+        }
+
         protected int GetUserId()
         {
             var user = User.FindFirst(ClaimTypes.NameIdentifier);

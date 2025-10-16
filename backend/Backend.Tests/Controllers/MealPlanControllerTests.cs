@@ -79,6 +79,26 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
+    public async Task GetMealPlans_ReturnsBadRequest_WhenSkipIsNegative()
+    {
+        var result = await _controller.GetMealPlansAsync(skip: -1);
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("Skip must be greater than or equal to zero.", badRequest.Value);
+    }
+
+    [Fact]
+    public async Task GetMealPlans_ReturnsBadRequest_WhenTakeIsZeroOrNegative()
+    {
+        var resultZero = await _controller.GetMealPlansAsync(take: 0);
+        var badRequestZero = Assert.IsType<BadRequestObjectResult>(resultZero.Result);
+        Assert.Equal("Take must be greater than zero.", badRequestZero.Value);
+
+        var resultNegative = await _controller.GetMealPlansAsync(take: -5);
+        var badRequestNegative = Assert.IsType<BadRequestObjectResult>(resultNegative.Result);
+        Assert.Equal("Take must be greater than zero.", badRequestNegative.Value);
+    }
+
+        [Fact]
         public async Task CreateMealPlan_ReturnsCreated_WhenValid()
         {
             var date = DateTime.Now;
@@ -152,6 +172,19 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
+        public async Task UpdateMealPlan_ReturnsBadRequest_WhenIdIsZeroOrNegative()
+        {
+            var mealPlan = new CreateUpdateMealPlanRequestDto { Meals = [], Id = 1 };
+            var resultZero = await _controller.UpdateMealPlanAsync(0, mealPlan);
+            var badRequestZero = Assert.IsType<BadRequestObjectResult>(resultZero.Result);
+            Assert.Equal("Id must be positive.", badRequestZero.Value);
+
+            var resultNegative = await _controller.UpdateMealPlanAsync(-5, mealPlan);
+            var badRequestNegative = Assert.IsType<BadRequestObjectResult>(resultNegative.Result);
+            Assert.Equal("Id must be positive.", badRequestNegative.Value);
+        }
+
+        [Fact]
         public async Task DeleteMealPlan_ReturnsNoContent_WhenSuccess()
         {
             _mockService.Setup(s => s.DeleteMealPlanAsync(1, It.IsAny<int>(), CancellationToken.None)).ReturnsAsync(true);
@@ -165,6 +198,18 @@ namespace Backend.Tests.Controllers
             _mockService.Setup(s => s.DeleteMealPlanAsync(1, It.IsAny<int>(), CancellationToken.None)).Throws<SecurityException>();
             var result = await _controller.DeleteMealPlanAsync(1);
             Assert.IsType<NotFoundResult>(result);
+        }
+
+        [Fact]
+        public async Task DeleteMealPlan_ReturnsBadRequest_WhenIdIsZeroOrNegative()
+        {
+            var resultZero = await _controller.DeleteMealPlanAsync(0);
+            var badRequestZero = Assert.IsType<BadRequestObjectResult>(resultZero);
+            Assert.Equal("Id must be positive.", badRequestZero.Value);
+
+            var resultNegative = await _controller.DeleteMealPlanAsync(-5);
+            var badRequestNegative = Assert.IsType<BadRequestObjectResult>(resultNegative);
+            Assert.Equal("Id must be positive.", badRequestNegative.Value);
         }
 
         [Fact]

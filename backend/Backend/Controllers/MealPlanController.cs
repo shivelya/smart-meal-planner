@@ -28,18 +28,10 @@ namespace Backend.Controllers
         {
             const string method = nameof(GetMealPlansAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. skip={Skip}, take={Take}", method, nameof(MealPlanController), skip, take);
-            if (skip != null && skip < 0)
-            {
-                _logger.LogWarning("{Method}: Negative skip {Skip}", method, skip);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. skip={Skip}, take={Take}", method, skip, take);
-                return BadRequest("skip must be non-negative");
-            }
-            if (take != null && take <= 0)
-            {
-                _logger.LogWarning("{Method}: Non-positive take {Take}", method, take);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. skip={Skip}, take={Take}", method, skip, take);
-                return BadRequest("take must be positive");
-            }
+            if (CheckForLessThan0(method, skip, nameof(skip)) is { } check) return check;
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForLessThanOrEqualTo0(method, take, nameof(take)) is { } check2) return check2;
+#pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>
             {
@@ -96,8 +88,8 @@ namespace Backend.Controllers
         {
             const string method = nameof(UpdateMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(MealPlanController), id);
-            if (CheckForNull(method, id <= 0 ? null : "", nameof(id), ret: () => BadRequest("Id must be positive.")) is { } check2) return check2;
-            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
+            if (CheckForNull(method, request, nameof(request)) is { } check2) return check2;
 
             SanitizeMeals(request.Meals);
 
@@ -127,7 +119,7 @@ namespace Backend.Controllers
             const string method = nameof(DeleteMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(MealPlanController), id);
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNull(method, id <= 0 ? null : "", nameof(id), ret: () => BadRequest("Id must be positive.")) is { } check2) return check2;
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>
@@ -167,7 +159,7 @@ namespace Backend.Controllers
             const string method = nameof(GenerateMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(MealPlanController));
             if (CheckForNull(method, request, nameof(request)) is { } check) return check;
-            if (CheckForNull(method, request.Days <= 0 ? null : "", nameof(request.Days), ret: () => BadRequest("Days must be positive.")) is { } check2) return check2;
+            if (CheckForLessThanOrEqualTo0(method, request.Days, nameof(request.Days)) is { } check2) return check2;
 #pragma warning disable IDE0046 // Convert to conditional expression
             if (CheckForNull(method, request.Days > MAXDAYS ? null : "", nameof(request.StartDate), ret: () => BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,")) is { } check3) return check3;
 #pragma warning restore IDE0046 // Convert to conditional expression
@@ -203,10 +195,9 @@ namespace Backend.Controllers
             const string method = nameof(CookMealAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, mealEntryId={MealEntryId}", method, nameof(MealPlanController), id, entryId);
 
-            if (CheckForNull(method, id <= 0 ? null : "", nameof(id), ret: () => BadRequest("Id must be positive.")) is { } check2) return check2;
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNull(method, entryId <= 0 ? null : "", nameof(entryId), ret: () => BadRequest("mealEntryId must be positive.")) is { } check3)
-                return check3;
+            if (CheckForLessThanOrEqualTo0(method, entryId, nameof(entryId)) is { } check2) return check2;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>

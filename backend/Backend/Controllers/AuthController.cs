@@ -183,7 +183,7 @@ namespace Backend.Controllers
 
             request.Email = SanitizeInput(request.Email);
 
-            if (CheckForNullOrWhitespace(method, request.Email, "Email") is { } check) return check;
+            if (CheckForNullOrWhitespace(method, request.Email, nameof(request.Email)) is { } check) return check;
 
             if (userId != request.Id)
             {
