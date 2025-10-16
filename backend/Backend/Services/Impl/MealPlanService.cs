@@ -102,7 +102,7 @@ namespace Backend.Services.Impl
             if (user == null)
             {
                 _logger.LogWarning("UpdateMealPlanAsync: Attempting to update meal plan for non-existent user. userId={UserId}", userId);
-                throw new ArgumentException("Attempting to create meal pln for non-existent user.");
+                throw new ArgumentException("Attempting to create meal plan for non-existent user.");
             }
 
             var mealPlan = await _context.MealPlans
@@ -114,12 +114,6 @@ namespace Backend.Services.Impl
             {
                 _logger.LogWarning("UpdateMealPlanAsync: Cannot find meal plan to update. userId={UserId}, mealPlanId={MealPlanId}", userId, id);
                 throw new SecurityException("Cannot find meal plan to update.");
-            }
-
-            if (request.Id != null && request.Id != id)
-            {
-                _logger.LogWarning("UpdateMealPlanAsync: Attempting to update a different meal plan than the one defined by the id. userId={UserId}, mealPlanId={MealPlanId}", userId, id);
-                throw new ArgumentException("Attempting to update a different meal plan than the one defined by the id.");
             }
 
             mealPlan.StartDate = request.StartDate;
