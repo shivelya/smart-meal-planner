@@ -1,7 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using System.Security;
-using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -12,7 +8,7 @@ namespace Backend.Controllers
     [ApiController]
     [Route("api/[controller]")]
     [Authorize]
-    public class MealPlanController(IMealPlanService service, ILogger<MealPlanController> logger, IConfiguration configuration) : ControllerBase
+    public class MealPlanController(IMealPlanService service, ILogger<MealPlanController> logger, IConfiguration configuration) : PlannerControllerBase(logger)
     {
         private readonly IMealPlanService _service = service;
         private readonly ILogger<MealPlanController> _logger = logger;
@@ -32,13 +28,28 @@ namespace Backend.Controllers
         {
             const string method = nameof(GetMealPlansAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. skip={Skip}, take={Take}", method, nameof(MealPlanController), skip, take);
-            return await CallToService(method, async () =>
+            if (skip != null && skip < 0)
+            {
+                _logger.LogWarning("{Method}: Negative skip {Skip}", method, skip);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. skip={Skip}, take={Take}", method, skip, take);
+                return BadRequest("skip must be non-negative");
+            }
+            if (take != null && take <= 0)
+            {
+                _logger.LogWarning("{Method}: Non-positive take {Take}", method, take);
+                _logger.LogInformation("{Method}: Exiting with BadRequest. skip={Skip}, take={Take}", method, skip, take);
+                return BadRequest("take must be positive");
+            }
+
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
-                return await _service.GetMealPlansAsync(userId, skip, take, ct);
-            }, Ok, (plans) =>
-                _logger.LogInformation("{Method}: GET for meal plans completed with {Count} results. PlanIds: {PlanIds}", method, plans.TotalCount, string.Join(",", plans.Items.Select(p => p.Id)))
-            );
+                var mealPlans = await _service.GetMealPlansAsync(userId, skip, take, ct);
+                if (ResultNullCheck(method, mealPlans) is { } check) return check;
+
+                _logger.LogInformation("{Method}: GET for meal plans completed with {Count} results. PlanIds: {PlanIds}", method, mealPlans.TotalCount, string.Join(",", mealPlans.Items.Select(p => p.Id)));
+                return Ok(mealPlans);
+            });
         }
 
         /// <summary>
@@ -55,24 +66,19 @@ namespace Backend.Controllers
         {
             const string method = nameof(AddMealPlanAsync);
             _logger.LogInformation("{Method}: Entering", method);
-            if (request == null)
-            {
-                _logger.LogWarning("{Method}: Request must be non-null.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
-                return BadRequest("Request must be non-null.");
-            }
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
 
             SanitizeMeals(request.Meals);
 
-            return await CallToService(method, async () =>
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
-                return await _service.AddMealPlanAsync(userId, request, ct);
-            },
-            (plan) => Created("", plan),
-            (plan) =>
-                _logger.LogInformation("{Method}: Created meal plan successfully. Id={Id}", method, plan.Id)
-            );
+                var result = await _service.AddMealPlanAsync(userId, request, ct);
+                if (ResultNullCheck(method, result) is { } check) return check;
+
+                _logger.LogInformation("{Method}: Created meal plan successfully. Id={Id}", method, result.Id);
+                return Created("", result);
+            });
         }
 
         /// <summary>
@@ -90,22 +96,20 @@ namespace Backend.Controllers
         {
             const string method = nameof(UpdateMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(MealPlanController), id);
-            if (request == null)
-            {
-                _logger.LogWarning("{Method}: Request must be non-null.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. id={Id}, request=null", method, id);
-                return BadRequest("Request must be non-null.");
-            }
+            if (CheckForNull(method, id <= 0 ? null : "", nameof(id), ret: () => BadRequest("Id must be positive.")) is { } check2) return check2;
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
 
             SanitizeMeals(request.Meals);
 
-            return await CallToService(method, async () =>
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
-                return await _service.UpdateMealPlanAsync(id, userId, request, ct);
-            }, Ok, (plan) =>
-                _logger.LogInformation("{Method}: Updated meal plan successfully. Id={Id}", method, plan.Id)
-            );
+                var result = await _service.UpdateMealPlanAsync(id, userId, request, ct);
+                if (ResultNullCheck(method, result) is { } check) return check;
+
+                _logger.LogInformation("{Method}: Updated meal plan successfully. Id={Id}", method, result.Id);
+                return Ok(result);
+            });
         }
 
         /// <summary>
@@ -122,16 +126,19 @@ namespace Backend.Controllers
         {
             const string method = nameof(DeleteMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(MealPlanController), id);
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForNull(method, id <= 0 ? null : "", nameof(id), ret: () => BadRequest("Id must be positive.")) is { } check2) return check2;
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-            return await CallToService(method, async () =>
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
-                return await _service.DeleteMealPlanAsync(id, userId, ct);
-            },
-            (plan) => NoContent(),
-            (plan) =>
-                 _logger.LogInformation("{Method}: Deleted meal plan successfully. id={Id}", method, id)
-            );
+                var result = await _service.DeleteMealPlanAsync(id, userId, ct);
+                if (ResultNullCheck(method, result) is { } check) return check;
+
+                _logger.LogInformation("{Method}: Deleted meal plan successfully. id={Id}", method, id);
+                return NoContent();
+            });
         }
 
         /// <summary>
@@ -159,34 +166,21 @@ namespace Backend.Controllers
         {
             const string method = nameof(GenerateMealPlanAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(MealPlanController));
-            if (request == null)
-            {
-                _logger.LogWarning("{Method}: Request must be non-null.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest.", method);
-                return BadRequest("Request must be non-null.");
-            }
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
+            if (CheckForNull(method, request.Days <= 0 ? null : "", nameof(request.Days), ret: () => BadRequest("Days must be positive.")) is { } check2) return check2;
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForNull(method, request.Days > MAXDAYS ? null : "", nameof(request.StartDate), ret: () => BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,")) is { } check3) return check3;
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-            if (request.Days <= 0)
-            {
-                _logger.LogWarning("{Method}: Cannot create meal plan for less than 1 day.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request={@Request}", method, request);
-                return BadRequest("Cannot create meal plan for less than 1 day.");
-            }
-
-            if (request.Days > MAXDAYS)
-            {
-                _logger.LogWarning("{Method}: User tried to create a meal plan for more than {Max} days.", method, MAXDAYS);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request={@Request}", method, request);
-                return BadRequest($"Cannot create meal plan for more than {MAXDAYS} days,");
-            }
-
-            return await CallToService(method, async () =>
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
-                return await _service.GenerateMealPlanAsync(request, userId, ct);
-            }, Ok, (plan) =>
-                 _logger.LogInformation("{Method}: Meal plan generated successfully. Days={Days}", method, request.Days)
-            );
+                var result = await _service.GenerateMealPlanAsync(request, userId, ct);
+                if (ResultNullCheck(method, result) is { } check) return check;
+
+                _logger.LogInformation("{Method}: Meal plan generated successfully. Days={Days}", method, request.Days);
+                return Ok(result);
+            });
         }
 
         /// <summary>
@@ -208,88 +202,27 @@ namespace Backend.Controllers
         {
             const string method = nameof(CookMealAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}, mealEntryId={MealEntryId}", method, nameof(MealPlanController), id, entryId);
-            if (id <= 0)
-            {
-                _logger.LogWarning("{Method}: Id must be positive.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. id={Id}", method, id);
-                return BadRequest("Id must be positive.");
-            }
 
-            if (entryId <= 0)
-            {
-                _logger.LogWarning("{Method}: mealEntryId must be positive.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. mealEntryId={MealEntryId}", method, entryId);
-                return BadRequest("mealEntryId must be positive.");
-            }
+            if (CheckForNull(method, id <= 0 ? null : "", nameof(id), ret: () => BadRequest("Id must be positive.")) is { } check2) return check2;
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForNull(method, entryId <= 0 ? null : "", nameof(entryId), ret: () => BadRequest("mealEntryId must be positive.")) is { } check3)
+                return check3;
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-            return await CallToService(method, async () =>
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
-                return await _service.CookMealAsync(id, entryId, userId, ct);
-            }, Ok, (result) =>
-                 _logger.LogInformation("{Method}: CookMealAsync completed successfully. ItemsCount={Count}", method, result.TotalCount)
-            );
-        }
-
-        private int GetUserId()
-        {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
-        }
-
-        private async Task<ActionResult> CallToService<T>(string method, Func<Task<T>> doWork, Func<T, ActionResult> successReturn,
-            Action<T> successLogs)
-        {
-            try
-            {
-                var result = await doWork();
-                if (result == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500);
-                }
-
-                successLogs(result);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return successReturn(result);
-            }
-            catch (ValidationException ex)
-            {
-                _logger.LogWarning(ex, "{Method}: User does not have permission.", method);
-                return Unauthorized();
-            }
-            catch (SecurityException ex)
-            {
-                _logger.LogWarning(ex, "{Method}: Non-existent ID for meal plan.", method);
-                return NotFound();
-            }
-            catch (ArgumentException ex)
-            {
-                _logger.LogWarning(ex, "{Method}: Could not update meal plan", method);
-                return BadRequest();
-            }
-            catch (HttpRequestException ex)
-            {
-                _logger.LogWarning(ex, "{Method}: External service threw an exception.", method);
-                return StatusCode(503);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500);
-            }
+                var result = await _service.CookMealAsync(id, entryId, userId, ct);
+                if (ResultNullCheck(method, result) is { } check) return check;
+                _logger.LogInformation("{Method}: CookMealAsync completed successfully. ItemsCount={Count}", method, result.TotalCount);
+                return Ok(result);
+            });
         }
 
         private static void SanitizeMeals(IEnumerable<CreateUpdateMealPlanEntryRequestDto> meals)
         {
             foreach (var meal in meals)
                 meal.Notes = SanitizeInput(meal.Notes);
-        }
-
-        private static string? SanitizeInput(string? input)
-        {
-            return input?.Replace(Environment.NewLine, "").Trim()!;
         }
     }
 }

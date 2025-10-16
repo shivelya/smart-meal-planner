@@ -39,7 +39,7 @@ namespace Backend.Controllers
             const string method = nameof(AddItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(PantryItemController));
 
-            CheckForNull(method, dto);
+            CheckForNull(method, dto, nameof(dto));
             SanitizeRequest(dto);
 
             var userId = GetUserId();
@@ -68,7 +68,7 @@ namespace Backend.Controllers
         {
             const string method = nameof(AddItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}.", method, nameof(PantryItemController));
-            if (CheckForNull(method, dtos == null || !dtos.Any() ? null : "") is { } check2) return check2;
+            if (CheckForNullOrEmpty(method, dtos, nameof(dtos)) is { } check2) return check2;
 
             foreach (var dto in dtos!)
                 SanitizeRequest(dto);
@@ -99,7 +99,7 @@ namespace Backend.Controllers
             const string method = nameof(GetItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(PantryItemController), id);
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNull(method, id <= 0 ? null : "") is { } check2) return check2;
+            if (CheckForNull(method, id <= 0 ? null : "", nameof(id)) is { } check2) return check2;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>
@@ -180,7 +180,7 @@ namespace Backend.Controllers
         {
             const string method = nameof(DeleteItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(PantryItemController));
-            if (CheckForNull(method, request) is { } check2) return check2;
+            if (CheckForNull(method, request, nameof(request)) is { } check2) return check2;
 
             var userId = GetUserId();
             return await TryCallToServiceAsync(method, async () =>
@@ -209,7 +209,7 @@ namespace Backend.Controllers
             const string method = nameof(UpdateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(PantryItemController), id);
 
-            if (CheckForNull(method, pantryItem) is { } check2) return check2;
+            if (CheckForNull(method, pantryItem, nameof(pantryItem)) is { } check2) return check2;
             SanitizeRequest(pantryItem);
 
             var userId = GetUserId();

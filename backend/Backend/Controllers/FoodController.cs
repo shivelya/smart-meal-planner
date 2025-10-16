@@ -34,15 +34,9 @@ namespace Backend.Controllers
             return await TryCallToServiceAsync(method, async () =>
             {
                 var foods = await _service.SearchFoodsAsync(query!, skip, take, ct);
-                if (foods == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null foods.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null foods.");
-                }
+                if (ResultNullCheck(method, foods) is { } check) return check;
 
                 _logger.LogInformation("{Method}: Search on '{Query}' completed with {Count} results. Foods: {Foods}", method, query, foods.TotalCount, string.Join(",", foods.Items.Select(f => f.Name)));
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(foods);
             });
         }
