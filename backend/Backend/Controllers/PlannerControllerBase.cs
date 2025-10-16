@@ -36,15 +36,32 @@ namespace Backend.Controllers
         /// <param name="doWork">The actual work the calling method is trying to complete, usually a call to its service.</param>
         /// <param name="token">An optional identifying token. Uses the userId by default.</param>
         /// <returns>The result of <paramref name="doWork"/> on success. If an exception is thrown, the appropriate HTTP response code is returned.</returns>
-        protected async Task<ActionResult> TryCallToServiceAsync(string method, Func<Task<ActionResult>> doWork, string? token = null)
+        protected ActionResult TryCallToService(string method, Func<ActionResult> doWork, string? token = null) =>
+            TryCallToServiceCoreAsync(false, method, () => Task.Run(doWork), token).GetAwaiter().GetResult();
+
+        /// <inheritdoc cref="TryCallToService(string, Func{ActionResult}, string?)" />
+        protected Task<ActionResult> TryCallToServiceAsync(string method, Func<Task<ActionResult>> doWork, string? token = null) =>
+            TryCallToServiceCoreAsync(true, method, doWork, token);
+
+        private async Task<ActionResult> TryCallToServiceCoreAsync(bool async, string method, Func<Task<ActionResult>> doWork, string? token = null)
         {
             token ??= GetUserId().ToString();
             try
             {
-                var result = await doWork();
+                if (async)
+                {
+                    var result = await doWork();
 
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
-                return result;
+                    _logger.LogInformation("{Method}: Exiting successfully.", method);
+                    return result;
+                }
+                else
+                {
+                    var result = doWork();
+
+                    _logger.LogInformation("{Method}: Exiting successfully.", method);
+                    return result.GetAwaiter().GetResult();
+                }
             }
             catch (ValidationException ex)
             {
