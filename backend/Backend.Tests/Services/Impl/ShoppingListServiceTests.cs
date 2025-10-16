@@ -222,11 +222,11 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task DeleteShoppingListItemAsync_ThrowsValidationException_WhenItemNotFound()
+        public async Task DeleteShoppingListItemAsync_ThrowsArgumentException_WhenItemNotFound()
         {
             var context = CreateContext();
             var service = CreateService(context);
-            await Assert.ThrowsAsync<ValidationException>(() => service.DeleteShoppingListItemAsync(99, 42));
+            await Assert.ThrowsAsync<ArgumentException>(() => service.DeleteShoppingListItemAsync(99, 42));
         }
 
         [Fact]

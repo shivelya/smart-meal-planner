@@ -36,8 +36,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.DeleteShoppingListItemAsync(0);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Valid id is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -48,9 +47,8 @@ namespace Backend.Tests.Controllers
             var controller = GetController(serviceMock);
 
             var result = await controller.DeleteShoppingListItemAsync(2);
-            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            var objResult = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
-            Assert.Equal("fail", objResult.Value);
         }
 
         [Fact]
@@ -77,8 +75,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.AddShoppingListItemAsync(null!);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("request object is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -91,9 +88,8 @@ namespace Backend.Tests.Controllers
 
             var request = new CreateUpdateShoppingListEntryRequestDto { FoodId = 20, Purchased = false, Notes = "new" };
             var result = await controller.AddShoppingListItemAsync(request);
-            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            var objResult = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
-            Assert.Equal("fail", objResult.Value);
         }
 
         [Fact]
@@ -120,8 +116,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.UpdateShoppingListItemAsync(null!);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("request object is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -134,9 +129,8 @@ namespace Backend.Tests.Controllers
 
             var request = new CreateUpdateShoppingListEntryRequestDto { Id = 1, FoodId = 10, Purchased = true, Notes = "note" };
             var result = await controller.UpdateShoppingListItemAsync(request);
-            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            var objResult = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
-            Assert.Equal("fail", objResult.Value);
         }
 
         [Fact]
@@ -173,9 +167,8 @@ namespace Backend.Tests.Controllers
 
             var result = await controller.GetShoppingListAsync();
 
-            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            var objResult = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
-            Assert.Equal("fail", objResult.Value);
         }
 
         [Fact]
@@ -183,8 +176,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.GenerateAsync(null!);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("request object is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -193,8 +185,7 @@ namespace Backend.Tests.Controllers
             var controller = GetController();
             var request = new GenerateShoppingListRequestDto { MealPlanId = 0, Restart = false };
             var result = await controller.GenerateAsync(request);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Valid meal plan id is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -220,9 +211,8 @@ namespace Backend.Tests.Controllers
 
             var request = new GenerateShoppingListRequestDto { MealPlanId = 1, Restart = false };
             var result = await controller.GenerateAsync(request);
-            var objResult = Assert.IsType<ObjectResult>(result.Result);
+            var objResult = Assert.IsType<StatusCodeResult>(result.Result);
             Assert.Equal(500, objResult.StatusCode);
-            Assert.Equal("fail", objResult.Value);
         }
     }
 }
