@@ -165,7 +165,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_ReturnsOk_WhenSuccess()
         {
-            var dto = new CreateUpdateRecipeDtoRequest { Id = 1, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateUpdateRecipeIngredientDto>() };
+            var dto = new CreateUpdateRecipeDtoRequest { Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateUpdateRecipeIngredientDto>() };
             var updated = new RecipeDto { Id = 1 };
             _serviceMock.Setup(s => s.UpdateAsync(1, dto, 1, CancellationToken.None)).ReturnsAsync(updated);
             var result = await _controller.UpdateAsync(1, dto, CancellationToken.None);
@@ -176,7 +176,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_ReturnsNotFound_WhenNull()
         {
-            var dto = new CreateUpdateRecipeDtoRequest { Id = 2, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateUpdateRecipeIngredientDto>() };
+            var dto = new CreateUpdateRecipeDtoRequest { Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateUpdateRecipeIngredientDto>() };
             _serviceMock.Setup(s => s.UpdateAsync(2, dto, 1, CancellationToken.None)).ReturnsAsync((RecipeDto)null!);
             var result = await _controller.UpdateAsync(2, dto, CancellationToken.None);
             Assert.IsType<NotFoundResult>(result.Result);
@@ -185,7 +185,7 @@ namespace Backend.Tests.Controllers
         [Fact]
         public async Task Update_Returns500_OnException()
         {
-            var dto = new CreateUpdateRecipeDtoRequest { Id = 3, Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateUpdateRecipeIngredientDto>() };
+            var dto = new CreateUpdateRecipeDtoRequest { Title = "T", Source = "S", Instructions = "I", Ingredients = new List<CreateUpdateRecipeIngredientDto>() };
             _serviceMock.Setup(s => s.UpdateAsync(3, dto, 1, CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var result = await _controller.UpdateAsync(3, dto, CancellationToken.None);
             var status = Assert.IsType<StatusCodeResult>(result.Result);

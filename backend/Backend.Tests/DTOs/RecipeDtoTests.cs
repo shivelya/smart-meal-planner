@@ -25,13 +25,11 @@ namespace Backend.Tests.DTOs
         public void UpdateRecipeDto_PropertyTest()
         {
             var dto = new CreateUpdateRecipeDtoRequest {
-                Id = 5,
                 Title = "Soup",
                 Source = "Book",
                 Instructions = "Heat water.",
                 Ingredients = []
             };
-            Assert.Equal(5, dto.Id);
             Assert.Equal("Soup", dto.Title);
             Assert.Equal("Book", dto.Source);
             Assert.Equal("Heat water.", dto.Instructions);

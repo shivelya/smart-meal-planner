@@ -12,8 +12,6 @@ namespace Backend.DTOs
 
     public class CreateUpdateRecipeDtoRequest
     {
-        //required for update but not for create
-        public int? Id { get; set; }
         public required string Source { get; set; }
         public required string Title { get; set; }
         public required string Instructions { get; set; }

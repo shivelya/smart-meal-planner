@@ -369,7 +369,7 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task UpdateAsync_ThrowsSecurityException_WhenRecipeNotFound()
         {
-            var dto = new CreateUpdateRecipeDtoRequest { Id = 999, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
+            var dto = new CreateUpdateRecipeDtoRequest { Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
             await Assert.ThrowsAsync<SecurityException>(() => _service.UpdateAsync(999, dto, 1));
         }
 
@@ -381,7 +381,7 @@ namespace Backend.Tests.Services.Impl
             var recipe = new Recipe { Id = 8, UserId = 2, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
-            var dto = new CreateUpdateRecipeDtoRequest { Id = 8, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
+            var dto = new CreateUpdateRecipeDtoRequest { Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
             await Assert.ThrowsAsync<SecurityException>(() => _service.UpdateAsync(8, dto, 1));
         }
 
@@ -396,7 +396,6 @@ namespace Backend.Tests.Services.Impl
             _context.SaveChanges();
             var dto = new CreateUpdateRecipeDtoRequest
             {
-                Id = 9,
                 Title = "New",
                 Source = "S2",
                 Instructions = "I2",
