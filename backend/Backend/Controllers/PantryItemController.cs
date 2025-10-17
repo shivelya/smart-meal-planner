@@ -73,6 +73,8 @@ namespace Backend.Controllers
 
             foreach (var dto in dtos!)
             {
+                if (dto == null) continue; // we skip null entries in the service so it's fine to skip them here
+
                 SanitizeRequest(dto);
                 if (CheckForLessThan0(method, dto.Quantity, nameof(dto.Quantity)) is { } check) return check;
             }
