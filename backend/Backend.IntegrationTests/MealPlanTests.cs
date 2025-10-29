@@ -280,7 +280,6 @@ namespace Backend.IntegrationTests
             var firstMeal = mealPlanDto.Meals.First();
             var mealPlanToUpdate = new CreateUpdateMealPlanRequestDto
             {
-                Id = mealPlanDto.Id,
                 StartDate = mealPlanDto.StartDate,
                 Meals = [
                     new CreateUpdateMealPlanEntryRequestDto
@@ -388,8 +387,6 @@ namespace Backend.IntegrationTests
             Assert.NotNull(result);
             Assert.Equal(startDate, result.StartDate);
             Assert.Single(result.Meals);
-
-            Assert.Null(result.Id); // because it doesn't get saved to DB til user persists it
         }
 
         [Fact]
@@ -561,7 +558,6 @@ namespace Backend.IntegrationTests
             meals.Add(new CreateUpdateMealPlanEntryRequestDto { RecipeId = id });
             var request = new CreateUpdateMealPlanRequestDto
             {
-                Id = mealPlan.Id,
                 StartDate = mealPlan.StartDate,
                 Meals = meals
             };

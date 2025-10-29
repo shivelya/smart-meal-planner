@@ -39,7 +39,8 @@ namespace Backend.Controllers
             const string method = nameof(AddItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(PantryItemController));
 
-            CheckForNull(method, dto);
+            if (CheckForNull(method, dto, nameof(dto)) is { } check2) return check2;
+            if (CheckForLessThan0(method, dto.Quantity, nameof(dto.Quantity)) is { } check) return check;
             SanitizeRequest(dto);
 
             var userId = GetUserId();
@@ -68,10 +69,15 @@ namespace Backend.Controllers
         {
             const string method = nameof(AddItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}.", method, nameof(PantryItemController));
-            if (CheckForNull(method, dtos == null || !dtos.Any() ? null : "") is { } check2) return check2;
+            if (CheckForNullOrEmpty(method, dtos, nameof(dtos)) is { } check2) return check2;
 
             foreach (var dto in dtos!)
+            {
+                if (dto == null) continue; // we skip null entries in the service so it's fine to skip them here
+
                 SanitizeRequest(dto);
+                if (CheckForLessThan0(method, dto.Quantity, nameof(dto.Quantity)) is { } check) return check;
+            }
 
             var userId = GetUserId();
             return await TryCallToServiceAsync(method, async () =>
@@ -99,7 +105,7 @@ namespace Backend.Controllers
             const string method = nameof(GetItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(PantryItemController), id);
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNull(method, id <= 0 ? null : "") is { } check2) return check2;
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>
@@ -129,6 +135,8 @@ namespace Backend.Controllers
             query = SanitizeInput(query);
             const string method = nameof(GetItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, take={Take}, skip={Skip}", method, nameof(PantryItemController), query, take, skip);
+            if (CheckForLessThan0(method, skip, nameof(skip)) is { } check) return check;
+            if (CheckForLessThanOrEqualTo0(method, take, nameof(take)) is { } check2) return check2;
 
             var userId = GetUserId();
             return await TryCallToServiceAsync(method, async () =>
@@ -155,6 +163,7 @@ namespace Backend.Controllers
         {
             const string method = nameof(DeleteItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(PantryItemController), id);
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
 
             var userId = GetUserId();
             return await TryCallToServiceAsync(method, async () =>
@@ -180,7 +189,8 @@ namespace Backend.Controllers
         {
             const string method = nameof(DeleteItemsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(PantryItemController));
-            if (CheckForNull(method, request) is { } check2) return check2;
+            if (CheckForNull(method, request, nameof(request)) is { } check2) return check2;
+            if (CheckForNullOrEmpty(method, request.Ids, nameof(request.Ids)) is { } check3) return check3;
 
             var userId = GetUserId();
             return await TryCallToServiceAsync(method, async () =>
@@ -209,7 +219,9 @@ namespace Backend.Controllers
             const string method = nameof(UpdateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(PantryItemController), id);
 
-            if (CheckForNull(method, pantryItem) is { } check2) return check2;
+            if (CheckForNull(method, pantryItem, nameof(pantryItem)) is { } check2) return check2;
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
+            if (CheckForLessThan0(method, pantryItem.Quantity, nameof(pantryItem.Quantity)) is { } check3) return check3;
             SanitizeRequest(pantryItem);
 
             var userId = GetUserId();

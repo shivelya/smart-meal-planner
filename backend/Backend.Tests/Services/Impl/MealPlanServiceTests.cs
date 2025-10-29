@@ -157,19 +157,6 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task UpdateMealPlanAsync_ThrowsIfRequestIdMismatch()
-        {
-            var user = new User { Id = 1, Email = "", PasswordHash = "" };
-            var mealPlan = new MealPlan { Id = 1, UserId = 1, Meals = new List<MealPlanEntry>() };
-            plannerContext.Users.Add(user);
-            plannerContext.MealPlans.Add(mealPlan);
-            plannerContext.SaveChanges();
-            var req = new CreateUpdateMealPlanRequestDto { Id = 2, Meals = [new CreateUpdateMealPlanEntryRequestDto()] };
-
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateMealPlanAsync(1, 1, req));
-        }
-
-        [Fact]
         public async Task UpdateMealPlanAsync_ThrowsIfUpdatesToNonExistentMeals()
         {
             var user = new User { Id = 1, Email = "", PasswordHash = "" };
@@ -179,7 +166,6 @@ namespace Backend.Tests.Services.Impl
             plannerContext.SaveChanges();
             var req = new CreateUpdateMealPlanRequestDto
             {
-                Id = 1,
                 Meals = [
                 new CreateUpdateMealPlanEntryRequestDto { Id = 1, RecipeId = 42 }]
             };
@@ -209,7 +195,6 @@ namespace Backend.Tests.Services.Impl
 
             var req = new CreateUpdateMealPlanRequestDto
             {
-                Id = 1,
                 Meals = [
                 new CreateUpdateMealPlanEntryRequestDto { Id = 1, Notes = "n" },
                 new CreateUpdateMealPlanEntryRequestDto { Notes = "to be added", RecipeId = 2 }]
@@ -248,7 +233,6 @@ namespace Backend.Tests.Services.Impl
             plannerContext.SaveChanges();
             var req = new CreateUpdateMealPlanRequestDto
             {
-                Id = 1,
                 Meals = [
                 new CreateUpdateMealPlanEntryRequestDto { Id = 1, Notes = "n" }]
             };
@@ -274,7 +258,6 @@ namespace Backend.Tests.Services.Impl
             plannerContext.SaveChanges();
             var req = new CreateUpdateMealPlanRequestDto
             {
-                Id = 1,
                 Meals = [
                 new CreateUpdateMealPlanEntryRequestDto { Id = null, Notes = "n", RecipeId = 2 }]
             };
@@ -296,7 +279,7 @@ namespace Backend.Tests.Services.Impl
             plannerContext.Users.Add(user);
             plannerContext.MealPlans.Add(mealPlan);
             plannerContext.SaveChanges();
-            var req = new CreateUpdateMealPlanRequestDto { Id = 1, Meals = [] };
+            var req = new CreateUpdateMealPlanRequestDto { Meals = [] };
 
             var result = await _service.UpdateMealPlanAsync(1, 1, req);
 

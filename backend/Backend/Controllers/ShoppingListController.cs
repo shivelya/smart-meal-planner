@@ -1,5 +1,3 @@
-using System.Globalization;
-using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -10,7 +8,7 @@ namespace Backend.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class ShoppingListController(IShoppingListService service, ILogger<ShoppingListController> logger) : ControllerBase
+    public class ShoppingListController(IShoppingListService service, ILogger<ShoppingListController> logger) : PlannerControllerBase(logger)
     {
         private readonly IShoppingListService _service = service;
         private readonly ILogger<ShoppingListController> _logger = logger;
@@ -27,20 +25,16 @@ namespace Backend.Controllers
         {
             const string method = nameof(GetShoppingListAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(ShoppingListController));
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Getting shopping list for userId={UserId}", method, userId);
                 var result = await _service.GetShoppingListAsync(userId, ct);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
+                if (ResultNullCheck(method, result) is { } check) return check;
+
+                _logger.LogInformation("{Method}: Retrieved shopping list for userId={UserId}", method, userId);
                 return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+            });
         }
 
         /// <summary>
@@ -57,29 +51,21 @@ namespace Backend.Controllers
         {
             const string method = nameof(UpdateShoppingListItemAsync);
             _logger.LogInformation("{Method}: Entering", method);
-            if (request == null)
-            {
-                _logger.LogWarning("{Method}: request object is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
-                return BadRequest("request object is required.");
-            }
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
+            if (CheckForLessThanOrEqualTo0(method, request.Id, nameof(request.Id)) is { } check2) return check2;
 
             request.Notes = SanitizeInput(request.Notes);
 
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Updating shopping list item for userId={UserId}", method, userId);
                 var result = await _service.UpdateShoppingListItemAsync(request, userId, ct);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
+                if (ResultNullCheck(method, result) is { } check3) return check3;
+
+                _logger.LogInformation("{Method}: Updated shopping list item for userId={UserId}", method, userId);
                 return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+            });
         }
 
         /// <summary>
@@ -96,29 +82,21 @@ namespace Backend.Controllers
         {
             const string method = nameof(AddShoppingListItemAsync);
             _logger.LogInformation("{Method}: Entering", method);
-            if (request == null)
-            {
-                _logger.LogWarning("{Method}: request object is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
-                return BadRequest("request object is required.");
-            }
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
+            if (CheckForLessThanOrEqualTo0(method, request.Id, nameof(request.Id)) is { } check2) return check2;
 
             request.Notes = SanitizeInput(request.Notes);
 
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Adding shopping list item for userId={UserId}", method, userId);
                 var result = await _service.AddShoppingListItemAsync(request, userId, ct);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
+                if (ResultNullCheck(method, result) is { } check3) return check3;
+
+                _logger.LogInformation("{Method}: Added shopping list item for userId={UserId}", method, userId);
                 return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+            });
         }
 
         /// <summary>
@@ -136,38 +114,20 @@ namespace Backend.Controllers
         {
             const string method = nameof(DeleteShoppingListItemAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(ShoppingListController), id);
-            if (id <= 0)
-            {
-                _logger.LogWarning("{Method}: Valid id is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. id={Id}", method, id);
-                return BadRequest("Valid id is required.");
-            }
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Deleting shopping list item for userId={UserId}, id={Id}", method, userId, id);
                 var ok = await _service.DeleteShoppingListItemAsync(id, userId, ct);
+                if (ResultNullCheck(method, ok ? "" : null, ret: NotFound) is { } check3) return check3;
 
-                if (ok)
-                {
-                    _logger.LogInformation("{Method}: Item deleted. id={Id}", method, id);
-                    _logger.LogInformation("{Method}: Exiting successfully.", method);
-                    return NoContent();
-                }
-                else
-                {
-                    _logger.LogWarning("{Method}: Item not found. id={Id}", method, id);
-                    _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
-                    return NotFound();
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+                _logger.LogInformation("{Method}: Item deleted. id={Id}", method, id);
+                return NoContent();
+            });
         }
 
         /// <summary>
@@ -185,44 +145,20 @@ namespace Backend.Controllers
         {
             const string method = nameof(GenerateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. request={Request}", method, nameof(ShoppingListController), request);
-            if (request == null)
-            {
-                _logger.LogWarning("{Method}: request object is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
-                return BadRequest("request object is required.");
-            }
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForLessThanOrEqualTo0(method, request.MealPlanId, nameof(request.MealPlanId)) is { } check2) return check2;
+#pragma warning restore IDE0046 // Convert to conditional expression
 
-            if (request.MealPlanId <= 0)
-            {
-                _logger.LogWarning("{Method}: Valid meal plan id is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. mealPlanId={MealPlanId}", method, request.MealPlanId);
-                return BadRequest("Valid meal plan id is required.");
-            }
-
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 _logger.LogInformation("{Method}: Generating shopping list for userId={UserId}, mealPlanId={MealPlanId}, restart={Restart}", method, userId, request.MealPlanId, request.Restart);
                 await _service.GenerateAsync(request, userId, ct);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
+
+                _logger.LogInformation("{Method}: Generated shopping list for userId={UserId}", method, userId);
                 return Ok();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
-        }
-
-        private int GetUserId()
-        {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
-        }
-
-        private static string SanitizeInput(string? input)
-        {
-            return input?.Replace(Environment.NewLine, "").Trim()!;
+            });
         }
     }
 }

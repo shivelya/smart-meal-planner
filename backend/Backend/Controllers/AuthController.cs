@@ -35,14 +35,14 @@ namespace Backend.Controllers
             const string method = nameof(RegisterAsync);
             _logger.LogInformation("{Method}: Entering", method);
 
-            if (CheckForNull(method, request) is { } check) return check;
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
 
             request.Email = SanitizeInput(request.Email);
             request.Password = SanitizeInput(request.Password);
 
-            if (CheckForNullOrWhitespace(method, request.Email, "Email") is { } check2) return check2;
+            if (CheckForNullOrWhitespace(method, request.Email, nameof(request.Email)) is { } check2) return check2;
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request.Password, "Password", request.Password) is { } check3) return check3;
+            if (CheckForNullOrWhitespace(method, request.Password, nameof(request.Password), request.Password) is { } check3) return check3;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>
@@ -82,14 +82,14 @@ namespace Backend.Controllers
             const string method = nameof(LoginAsync);
             _logger.LogInformation("{Method}: Entering", method);
 
-            if (CheckForNull(method, request, null) is { } check) return check;
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
 
             request.Email = SanitizeInput(request.Email);
             request.Password = SanitizeInput(request.Password);
 
-            if (CheckForNullOrWhitespace(method, request.Email, "Email") is { } check2) return check2;
+            if (CheckForNullOrWhitespace(method, request.Email, nameof(request.Email)) is { } check2) return check2;
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request.Password, "Password") is { } check3) return check3;
+            if (CheckForNullOrWhitespace(method, request.Password, nameof(request.Password)) is { } check3) return check3;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>
@@ -119,9 +119,9 @@ namespace Backend.Controllers
             const string method = nameof(RefreshAsync);
             _logger.LogInformation("{Method}: Entering. refreshToken={RefreshToken}", method, request.RefreshToken);
 
-            if (CheckForNull(method, request, null) is { } check) return check;
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request?.RefreshToken, "Refresh token") is { } check2) return check2;
+            if (CheckForNullOrWhitespace(method, request?.RefreshToken, nameof(request.RefreshToken)) is { } check2) return check2;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>
@@ -147,12 +147,12 @@ namespace Backend.Controllers
             _logger.LogInformation("{Method}: Entering", method);
             var userId = GetUserId();
 
-            if (CheckForNull(method, request) is { } result) return result;
+            if (CheckForNull(method, request, nameof(request)) is { } result) return result;
 
             request.RefreshToken = SanitizeInput(request.RefreshToken);
 
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request.RefreshToken, "Refresh token") is { } check) return check;
+            if (CheckForNullOrWhitespace(method, request.RefreshToken, nameof(request.RefreshToken)) is { } check) return check;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>
@@ -179,11 +179,11 @@ namespace Backend.Controllers
             _logger.LogInformation("{Method}: Entering", method);
 
             var userId = GetUserId();
-            if (CheckForNull(method, request) is { } result) return result;
+            if (CheckForNull(method, request, nameof(request)) is { } result) return result;
 
             request.Email = SanitizeInput(request.Email);
 
-            if (CheckForNullOrWhitespace(method, request.Email, "Email") is { } check) return check;
+            if (CheckForNullOrWhitespace(method, request.Email, nameof(request.Email)) is { } check) return check;
 
             if (userId != request.Id)
             {
@@ -217,7 +217,7 @@ namespace Backend.Controllers
             var userId = GetUserId();
             _logger.LogInformation("{Method}: Entering. userId={UserId}", method, userId);
 
-            if (CheckForNull(method, request) is { } result) return result;
+            if (CheckForNull(method, request, nameof(request)) is { } result) return result;
 
             request.NewPassword = SanitizeInput(request.NewPassword);
             request.OldPassword = SanitizeInput(request.OldPassword);
@@ -249,12 +249,12 @@ namespace Backend.Controllers
             const string method = nameof(ForgotPassword);
             _logger.LogInformation("{Method}: Entering.", method);
 
-            if (CheckForNull(method, request, null, () => Ok("If that email exists, a reset link has been sent.")) is { } result) return result;
+            if (CheckForNull(method, request, nameof(request), ret: () => Ok("If that email exists, a reset link has been sent.")) is { } result) return result;
 
             request.Email = SanitizeInput(request.Email);
 
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request.Email, "Email", request.Email,
+            if (CheckForNullOrWhitespace(method, request.Email, nameof(request.Email), request.Email,
                 () => Ok("If that email exists, a reset link has been sent.")) is { } check) return check;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
@@ -280,13 +280,13 @@ namespace Backend.Controllers
             const string method = nameof(ResetPassword);
             _logger.LogInformation("{Method}: Entering", method);
 
-            if (CheckForNull(method, request, null) is { } result) return result;
+            if (CheckForNull(method, request, nameof(request)) is { } result) return result;
 
             request.NewPassword = SanitizeInput(request.NewPassword);
             request.ResetCode = SanitizeInput(request.ResetCode);
 
 #pragma warning disable IDE0046 // Convert to conditional expression
-            if (CheckForNullOrWhitespace(method, request.ResetCode, "Reset token") is { } check) return check;
+            if (CheckForNullOrWhitespace(method, request.ResetCode, nameof(request.ResetCode)) is { } check) return check;
 #pragma warning restore IDE0046 // Convert to conditional expression
 
             return await TryCallToServiceAsync(method, async () =>

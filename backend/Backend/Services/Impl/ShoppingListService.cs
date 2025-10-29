@@ -57,7 +57,7 @@ namespace Backend.Services.Impl
             if (item == null)
             {
                 _logger.LogWarning("UpdateShoppingListItemAsync: Shopping list item not found.");
-                throw new ValidationException("Shopping list item not found.");
+                throw new ArgumentException("Shopping list item not found.");
             }
 
             if (request.FoodId != null)
@@ -69,7 +69,7 @@ namespace Backend.Services.Impl
                 if (food == null)
                 {
                     _logger.LogWarning("UpdateShoppingListItemAsync: Valid food id must be given.");
-                    throw new ArgumentException("Valid food id must be given.");
+                    throw new ArgumentException("If a food ID is provided, it must be valid.");
                 }
 
                 if (food.Id != item.FoodId)
@@ -116,7 +116,7 @@ namespace Backend.Services.Impl
                 if (food == null)
                 {
                     _logger.LogWarning("AddShoppingListItemAsync: If food it is given, it must be valid.");
-                    throw new ArgumentException("Valid food id must be given.");
+                    throw new ArgumentException("If a food ID is provided, it must be valid.");
                 }
             }
 
@@ -151,7 +151,7 @@ namespace Backend.Services.Impl
             if (item == null)
             {
                 _logger.LogWarning("DeleteShoppingListItemAsync: Shopping list item not found.");
-                throw new ValidationException("Shopping list item not found.");
+                throw new ArgumentException("Shopping list item not found.");
             }
 
             _context.ShoppingListItems.Remove(item);

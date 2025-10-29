@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security;
 using Backend.DTOs;
 using Backend.Model;
 using Backend.Services.Impl;
@@ -29,10 +30,10 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task CreateAsync_ThrowsValidationException_WhenRequiredFieldsMissing()
+        public async Task CreateAsync_ThrowsArgumentException_WhenRequiredFieldsMissing()
         {
             var dto = new CreateUpdateRecipeDtoRequest { Title = "", Instructions = "", Ingredients = null!, Source = null! };
-            await Assert.ThrowsAsync<ValidationException>(() => _service.CreateAsync(dto, 1));
+            await Assert.ThrowsAsync<ArgumentException>(() => _service.CreateAsync(dto, 1));
         }
 
         [Fact]
@@ -76,11 +77,11 @@ namespace Backend.Tests.Services.Impl
         [Fact]
         public async Task DeleteAsync_ThrowsArgumentException_WhenRecipeNotFound()
         {
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.DeleteAsync(999, 1));
+            await Assert.ThrowsAsync<SecurityException>(() => _service.DeleteAsync(999, 1));
         }
 
         [Fact]
-        public async Task DeleteAsync_ThrowsArgumentException_WhenUserNotOwner()
+        public async Task DeleteAsync_ThrowsSecurityException_WhenUserNotOwner()
         {
             var fakeUser = new User { Id = 2, Email = "test@example.com", PasswordHash = "asdf",  };
             _context.Users.Add(fakeUser);
@@ -88,7 +89,7 @@ namespace Backend.Tests.Services.Impl
             var recipe = new Recipe { Id = 1, UserId = 2, Title = "T", Source = "S", Instructions = "I" };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.DeleteAsync(1, 1));
+            await Assert.ThrowsAsync<SecurityException>(() => _service.DeleteAsync(1, 1));
         }
 
         [Fact]
@@ -103,10 +104,9 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task GetByIdAsync_ReturnsNull_WhenNotFound()
+        public async Task GetByIdAsync_ThrowsSecurityException_WhenNotFound()
         {
-            var result = await _service.GetByIdAsync(999, 1);
-            Assert.Null(result);
+            await Assert.ThrowsAsync<SecurityException>(() => _service.GetByIdAsync(999, 1));
         }
 
         [Fact]
@@ -367,22 +367,22 @@ namespace Backend.Tests.Services.Impl
         }
 
         [Fact]
-        public async Task UpdateAsync_ThrowsArgumentException_WhenRecipeNotFound()
+        public async Task UpdateAsync_ThrowsSecurityException_WhenRecipeNotFound()
         {
-            var dto = new CreateUpdateRecipeDtoRequest { Id = 999, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateAsync(999, dto, 1));
+            var dto = new CreateUpdateRecipeDtoRequest { Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
+            await Assert.ThrowsAsync<SecurityException>(() => _service.UpdateAsync(999, dto, 1));
         }
 
         [Fact]
-        public async Task UpdateAsync_ThrowsValidationException_WhenUserNotOwner()
+        public async Task UpdateAsync_ThrowsSecurityException_WhenUserNotOwner()
         {
             _context.Users.Add(new User { Id = 2, Email = "test@example", PasswordHash = "hash" });
             _context.SaveChanges();
             var recipe = new Recipe { Id = 8, UserId = 2, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
-            var dto = new CreateUpdateRecipeDtoRequest { Id = 8, Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
-            await Assert.ThrowsAsync<ArgumentException>(() => _service.UpdateAsync(8, dto, 1));
+            var dto = new CreateUpdateRecipeDtoRequest { Title = "T", Source = "S", Instructions = "I", Ingredients = [] };
+            await Assert.ThrowsAsync<SecurityException>(() => _service.UpdateAsync(8, dto, 1));
         }
 
         [Fact]
@@ -396,7 +396,6 @@ namespace Backend.Tests.Services.Impl
             _context.SaveChanges();
             var dto = new CreateUpdateRecipeDtoRequest
             {
-                Id = 9,
                 Title = "New",
                 Source = "S2",
                 Instructions = "I2",
@@ -436,7 +435,7 @@ namespace Backend.Tests.Services.Impl
          [Fact]
         public void CookRecipe_Throws_WhenRecipeIdInvalid()
         {
-            Assert.Throws<ArgumentException>(() => _service.CookRecipe(999, 1));
+            Assert.Throws<SecurityException>(() => _service.CookRecipe(999, 1));
         }
 
         [Fact]
@@ -447,7 +446,7 @@ namespace Backend.Tests.Services.Impl
             var recipe = new Recipe { Id = 1, UserId = 2, Ingredients = [], Source = "", Title = "", Instructions = "" };
             _context.Recipes.Add(recipe);
             _context.SaveChanges();
-            Assert.Throws<ArgumentException>(() => _service.CookRecipe(1, 1));
+            Assert.Throws<SecurityException>(() => _service.CookRecipe(1, 1));
         }
 
         [Fact]

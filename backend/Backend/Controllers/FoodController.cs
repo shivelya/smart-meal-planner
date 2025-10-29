@@ -17,8 +17,8 @@ namespace Backend.Controllers
         /// Search foods by name based on the search term provided.
         /// </summary>
         /// <param name="query">The search term used to search foods by name.</param>
-        /// <param name="skip">The number of results to skip for pagination.</param>
-        /// <param name="take">The number of results to take for pagination.</param>
+        /// <param name="skip">The number of results to skip for pagination. Defaults to null.</param>
+        /// <param name="take">The number of results to take for pagination. Defaults to 50.</param>
         /// <param name="ct">Cancellation token, unseen by user.</param>
         /// <remarks>Returns a list of foods matching the given query, as well as the total count.</remarks>
         [HttpGet]
@@ -31,18 +31,17 @@ namespace Backend.Controllers
             const string method = nameof(SearchFoodsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. query={Query}, skip={Skip}, take={Take}", method, nameof(FoodController), query, skip, take);
 
+            if (CheckForLessThan0(method, skip, nameof(skip)) is { } check) return check;
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForLessThanOrEqualTo0(method, take, nameof(take)) is { } check2) return check2;
+#pragma warning restore IDE0046 // Convert to conditional expression
+
             return await TryCallToServiceAsync(method, async () =>
             {
                 var foods = await _service.SearchFoodsAsync(query!, skip, take, ct);
-                if (foods == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null foods.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null foods.");
-                }
+                if (ResultNullCheck(method, foods) is { } check) return check;
 
                 _logger.LogInformation("{Method}: Search on '{Query}' completed with {Count} results. Foods: {Foods}", method, query, foods.TotalCount, string.Join(",", foods.Items.Select(f => f.Name)));
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(foods);
             });
         }

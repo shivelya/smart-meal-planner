@@ -9,7 +9,6 @@ namespace Backend.DTOs
 
     public class CreateUpdateMealPlanRequestDto
     {
-        public int? Id { get; set; }
         public DateTime? StartDate { get; set; }
         public required IEnumerable<CreateUpdateMealPlanEntryRequestDto> Meals { get; set; }
     }

@@ -64,5 +64,22 @@ namespace Backend.Tests.Controllers
             Assert.Empty(returned.Items);
             Assert.Equal(0, returned.TotalCount);
         }
+
+        [Fact]
+        public async Task SearchFoods_ReturnsBadRequest_WhenSkipIsNegative()
+        {
+            var result = await _controller.SearchFoodsAsync("test", CancellationToken.None, skip: -1);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
+        [Fact]
+        public async Task SearchFoods_ReturnsBadRequest_WhenTakeIsZeroOrNegative()
+        {
+            var resultZero = await _controller.SearchFoodsAsync("test", CancellationToken.None, take: 0);
+            Assert.IsType<BadRequestObjectResult>(resultZero.Result);
+
+            var resultNegative = await _controller.SearchFoodsAsync("test", CancellationToken.None, take: -5);
+            Assert.IsType<BadRequestObjectResult>(resultNegative.Result);
+        }
     }
 }

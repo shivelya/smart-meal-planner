@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using System.Security;
 using System.Text.Json;
 using Backend.DTOs;
 using Backend.Model;
@@ -18,7 +19,7 @@ namespace Backend.Services.Impl
             if (string.IsNullOrWhiteSpace(recipeDto.Title) || string.IsNullOrWhiteSpace(recipeDto.Instructions) || recipeDto.Ingredients == null || recipeDto.Ingredients.Count == 0)
             {
                 _logger.LogWarning("CreateAsync: Title, instructions, and at least one ingredient are required to create recipe.");
-                throw new ValidationException("Title, instructions, and at least one ingredient are required to create recipe.");
+                throw new ArgumentException("Title, instructions, and at least one ingredient are required to create recipe.");
             }
 
             if (await _context.Users.FindAsync([userId], ct) == null)
@@ -62,7 +63,7 @@ namespace Backend.Services.Impl
             if (recipe is null)
             {
                 _logger.LogWarning("DeleteAsync: No such ingredient found for recipe ID {Id}", id);
-                throw new ArgumentException("No such ingredient found.");
+                throw new SecurityException("No such ingredient found.");
             }
 
             _context.Recipes.Remove(recipe);
@@ -86,7 +87,7 @@ namespace Backend.Services.Impl
             if (entity is null)
             {
                 _logger.LogWarning("GetByIdAsync: Recipe with ID {Id} not found for user {UserId}", id, userId);
-                return null;
+                throw new SecurityException("No such recipe found.");
             }
 
             _logger.LogInformation("GetByIdAsync: Recipe retrieved: {@Recipe}", entity);
@@ -185,7 +186,7 @@ namespace Backend.Services.Impl
                 .ThenInclude(i => i.Food)
                 .ThenInclude(f => f.Category)
                 .FirstOrDefaultAsync(r => r.Id == id && r.UserId == userId, ct)
-                ?? throw new ArgumentException($"Recipe with id {id.ToString(System.Globalization.CultureInfo.InvariantCulture)} could not be found.");
+                ?? throw new SecurityException($"Recipe with id {id} could not be found.");
 
             entity.Title = recipeDto.Title;
             entity.Instructions = recipeDto.Instructions;
@@ -217,7 +218,7 @@ namespace Backend.Services.Impl
         {
             _logger.LogInformation("Entering CookRecipe: userId={UserId}, recipeId={RecipeId}", userId, id);
             var recipe = _context.Recipes.AsNoTracking().Include(r => r.Ingredients).FirstOrDefault(r => r.Id == id && r.UserId == userId)
-                ?? throw new ArgumentException("id is not a valid id of a recipe.");
+                ?? throw new SecurityException("id is not a valid id of a recipe.");
 
             var pantry = _context.PantryItems
                 .AsNoTracking()
@@ -237,28 +238,26 @@ namespace Backend.Services.Impl
         private async Task ValidateIngredientAsync(CreateUpdateRecipeIngredientDto ing)
         {
             _logger.LogInformation("Entering ValidateIngredient: foodMode={FoodMode}", ing.Food.Mode);
-            if (ing.Food.Mode == AddFoodMode.Existing)
+            if (ing.Food is ExistingFoodReferenceDto existingFood)
             {
-                var food = (ExistingFoodReferenceDto)ing.Food;
-                if (await _context.Foods.FirstOrDefaultAsync(i => i.Id == food.Id) == null)
+                if (await _context.Foods.FirstOrDefaultAsync(i => i.Id == existingFood.Id) == null)
                 {
                     _logger.LogWarning("ValidateIngredient: Found ingredient with unknown ID.");
-                    throw new ValidationException("Found ingredient with unknown ID.");
+                    throw new ArgumentException("Found ingredient with unknown ID.");
                 }
             }
-            else if (ing.Food.Mode == AddFoodMode.New)
+            else if (ing.Food is NewFoodReferenceDto newFood)
             {
-                var food1 = (NewFoodReferenceDto)ing.Food;
-                if (await _context.Categories.FirstOrDefaultAsync(i => i.Id == food1.CategoryId) == null)
+                if (await _context.Categories.FirstOrDefaultAsync(i => i.Id == newFood.CategoryId) == null)
                 {
                     _logger.LogWarning("ValidateIngredient: Found ingredient with unknown category.");
-                    throw new ValidationException("Found ingredient with unknown category.");
+                    throw new ArgumentException("Found ingredient with unknown category.");
                 }
 
-                if (string.IsNullOrWhiteSpace(food1.Name))
+                if (string.IsNullOrWhiteSpace(newFood.Name))
                 {
                     _logger.LogWarning("ValidateIngredient: Ingredient name required.");
-                    throw new ValidationException("Ingredient name required.");
+                    throw new ArgumentException("Ingredient name required.");
                 }
             }
             _logger.LogInformation("Exiting ValidateIngredient: foodMode={FoodMode}", ing.Food.Mode);

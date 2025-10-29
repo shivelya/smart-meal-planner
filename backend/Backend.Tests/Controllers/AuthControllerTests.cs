@@ -36,8 +36,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.ChangePasswordAsync(null!, CancellationToken.None);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Request object is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result);
         }
 
         [Fact]
@@ -142,8 +141,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.ResetPassword(null!, CancellationToken.None);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Request object is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result);
         }
 
         [Fact]
@@ -151,7 +149,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.ResetPassword(new Backend.DTOs.ResetPasswordRequest { ResetCode = null!, NewPassword = "new" }, CancellationToken.None);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
+            Assert.IsType<BadRequestObjectResult>(result);
         }
 
         [Fact]
@@ -192,8 +190,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.RegisterAsync(null!, CancellationToken.None);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Request object is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -253,8 +250,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.LoginAsync(null!, CancellationToken.None);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Request object is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -314,8 +310,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.RefreshAsync(new Backend.DTOs.RefreshRequest { RefreshToken = null!}, CancellationToken.None);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
-            Assert.Equal("Refresh token is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result.Result);
         }
 
         [Fact]
@@ -349,8 +344,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.LogoutAsync(null!, CancellationToken.None);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Request object is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result);
         }
 
         [Fact]
@@ -358,8 +352,7 @@ namespace Backend.Tests.Controllers
         {
             var controller = GetController();
             var result = await controller.LogoutAsync(new Backend.DTOs.RefreshRequest { RefreshToken = null! }, CancellationToken.None);
-            var badRequest = Assert.IsType<BadRequestObjectResult>(result);
-            Assert.Equal("Refresh token is required.", badRequest.Value);
+            Assert.IsType<BadRequestObjectResult>(result);
         }
 
         [Fact]

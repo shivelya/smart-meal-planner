@@ -32,15 +32,9 @@ namespace Backend.Controllers
             return await TryCallToServiceAsync(method, async () =>
             {
                 var categories = await _service.GetAllAsync(ct);
-                if (categories == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null categories.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null categories.");
-                }
+                if (ResultNullCheck(method, categories) is { } check) return check;
 
                 _logger.LogInformation("{Method}: Retrieved {Count} categories. Categories: {Categories}", method, categories.TotalCount, string.Join(",", categories.Items.Select(c => c.Name)));
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(categories);
             });
         }

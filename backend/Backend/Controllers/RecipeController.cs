@@ -1,6 +1,3 @@
-using System.ComponentModel.DataAnnotations;
-using System.Globalization;
-using System.Security.Claims;
 using Backend.DTOs;
 using Backend.Helpers;
 using Backend.Services;
@@ -19,14 +16,14 @@ namespace Backend.Controllers
     [Authorize]
     [ApiController]
     [Route("api/[controller]")]
-    public class RecipeController(IRecipeService recipeService, ILogger<RecipeController> logger, IRecipeExtractor extractor) : ControllerBase
+    public class RecipeController(IRecipeService recipeService, ILogger<RecipeController> logger, IRecipeExtractor extractor) : PlannerControllerBase(logger)
     {
         private readonly IRecipeService _recipeService = recipeService;
         private readonly ILogger<RecipeController> _logger = logger;
         private readonly IRecipeExtractor _extractor = extractor;
 
         /// <summary>
-        /// Creates a new recipe on the server, given a CreateRecipeDto object.
+        /// Creates a new recipe on the server, given a CreateUpdateRecipeRequestDto object.
         /// </summary>
         /// <param name="request">The requested recipe to be created.</param>
         /// <param name="ct">A token to cancel the operation.</param>
@@ -39,43 +36,21 @@ namespace Backend.Controllers
         {
             const string method = nameof(CreateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(RecipeController));
-
-            if (request == null)
-            {
-                _logger.LogWarning("{Method}: Request object is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
-                return BadRequest("request object is required.");
-            }
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
+            if (SanitizeAndCheckIngredients(method, request.Ingredients) is { } check2) return check2;
 
             request.Source = SanitizeInput(request.Source);
             request.Title = SanitizeInput(request.Title);
-            SanitizeIngredients(request.Ingredients);
 
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 var created = await _recipeService.CreateAsync(request, userId, ct);
-                if (created == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null created recipe.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null created recipe.");
-                }
+                if (ResultNullCheck(method, created) is { } check3) return check3;
+
                 _logger.LogInformation("{Method}: Recipe created with ID {Id}", method, created.Id);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Created("", created);
-            }
-            catch (ValidationException ex)
-            {
-                _logger.LogWarning(ex, "{Method}: Could not create recipe.", method);
-                return BadRequest(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, "Could not create recipe.");
-            }
+            });
         }
 
         /// <summary>
@@ -92,26 +67,20 @@ namespace Backend.Controllers
         {
             const string method = nameof(GetByIdAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
-            try
+
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
+#pragma warning restore IDE0046 // Convert to conditional expression
+
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 var r = await _recipeService.GetByIdAsync(id, userId, ct);
-                if (r is null)
-                {
-                    _logger.LogWarning("{Method}: Recipe with ID {Id} not found.", method, id);
-                    _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
-                    return NotFound();
-                }
-                _logger.LogInformation("{Method}: Recipe retrieved. id={Id}", method, r.Id);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
+                if (ResultNullCheck(method, r, ret: NotFound) is { } check2) return check2;
+
+                _logger.LogInformation("{Method}: Recipe retrieved. id={Id}", method, r!.Id);
                 return Ok(r);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+            });
         }
 
         /// <summary>
@@ -128,40 +97,21 @@ namespace Backend.Controllers
         {
             const string method = nameof(GetByIdsAsync);
             _logger.LogInformation("{Method}: Entering {Controller}", method, nameof(RecipeController));
-            if (request == null)
-            {
-                _logger.LogWarning("{Method}: Request object is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
-                return BadRequest("request object is required.");
-            }
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
+            if (CheckForNullOrEmpty(method, request.Ids, nameof(request.Ids)) is { } check2) return check2;
 
-            if (request.Ids == null)
-            {
-                _logger.LogWarning("{Method}: Ids are required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. ids=null", method);
-                return BadRequest("List of ids is required.");
-            }
+            foreach (var id in request.Ids)
+                if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check3) return check3;
 
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 var r = await _recipeService.GetByIdsAsync(request.Ids, userId, ct);
-                if (r == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null recipes.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null recipes.");
-                }
+                if (ResultNullCheck(method, r) is { } check4) return check4;
+
                 _logger.LogInformation("{Method}: Retrieved {Count} recipes.", method, r.TotalCount);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(r);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+            });
         }
 
         /// <summary>
@@ -182,6 +132,7 @@ namespace Backend.Controllers
             ingredient = SanitizeInput(ingredient);
             const string method = nameof(SearchAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. title={Title}, ingredient={Ingredient}, skip={Skip}, take={Take}", method, nameof(RecipeController), title, ingredient, skip, take);
+
             if (title == null && ingredient == null)
             {
                 _logger.LogWarning("{Method}: At least one of title or ingredient must be provided for search.", method);
@@ -189,26 +140,20 @@ namespace Backend.Controllers
                 return BadRequest("At least one of title or ingredient must be provided for search.");
             }
 
-            try
+            if (CheckForLessThan0(method, skip, nameof(skip)) is { } check) return check;
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForLessThanOrEqualTo0(method, take, nameof(take)) is { } check2) return check2;
+#pragma warning restore IDE0046 // Convert to conditional expression
+
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 var r = await _recipeService.SearchAsync(userId, title, ingredient, skip, take, ct);
-                if (r == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null search results.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null search results.");
-                }
+                if (ResultNullCheck(method, r) is { } check3) return check3;
+
                 _logger.LogInformation("{Method}: Search returned {Count} recipes.", method, r.TotalCount);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(r);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+            });
         }
 
         /// <summary>
@@ -227,37 +172,21 @@ namespace Backend.Controllers
         {
             const string method = nameof(UpdateAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
-            if (request == null)
-            {
-                _logger.LogWarning("{Method}: Request object is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
-                return BadRequest("Request object is required.");
-            }
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
 
+            if (SanitizeAndCheckIngredients(method, request.Ingredients) is { } check2) return check2;
             request.Source = SanitizeInput(request.Source);
             request.Title = SanitizeInput(request.Title);
-            SanitizeIngredients(request.Ingredients);
 
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 var updated = await _recipeService.UpdateAsync(id, request, userId, ct);
-                if (updated is null)
-                {
-                    _logger.LogWarning("{Method}: Recipe with ID {Id} not found for update.", method, id);
-                    _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
-                    return NotFound();
-                }
+                if (ResultNullCheck(method, updated, ret: NotFound) is { } check3) return check3;
+
                 _logger.LogInformation("{Method}: Recipe updated. id={Id}", method, updated.Id);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(updated);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+            });
         }
 
         /// <summary>
@@ -274,26 +203,20 @@ namespace Backend.Controllers
         {
             const string method = nameof(DeleteAsync);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
-            try
+
+#pragma warning disable IDE0046 // Convert to conditional expression
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
+#pragma warning restore IDE0046 // Convert to conditional expression
+
+            return await TryCallToServiceAsync(method, async () =>
             {
                 var userId = GetUserId();
                 var ok = await _recipeService.DeleteAsync(id, userId, ct);
-                if (ok)
-                {
-                    _logger.LogInformation("{Method}: Recipe with ID {Id} deleted.", method, id);
-                    _logger.LogInformation("{Method}: Exiting successfully.", method);
-                    return NoContent();
-                }
-                _logger.LogWarning("{Method}: Recipe with ID {Id} not found for deletion.", method, id);
-                _logger.LogInformation("{Method}: Exiting with NotFound. id={Id}", method, id);
-                return NotFound();
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+                if (ResultNullCheck(method, ok ? "" : null, ret: NotFound) is { } check2) return check2;
+
+                _logger.LogInformation("{Method}: Recipe with ID {Id} deleted.", method, id);
+                return NoContent();
+            });
         }
 
         /// <summary>
@@ -308,46 +231,33 @@ namespace Backend.Controllers
         /// <remarks>returns a recipe object for the user to verify. Does not insert recipe into the database. OK on success.</remarks>
         [HttpPost("extract")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status502BadGateway)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ExtractedRecipe>> ExtractRecipeAsync([FromBody, BindRequired] ExtractRequest request, CancellationToken ct)
         {
             const string method = nameof(ExtractRecipeAsync);
             _logger.LogInformation("{Method}: Entering {Controller}.", method, nameof(RecipeController));
-            if (request == null)
+            if (CheckForNull(method, request, nameof(request)) is { } check) return check;
+            if (CheckForNull(method, request.Source, nameof(request.Source)) is { } check2) return check2;
+
+            request.Source = NormalizeUri(request.Source);
+            if (!IsValidUrl(request.Source))
             {
-                _logger.LogWarning("{Method}: Request object is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. request=null", method);
-                return BadRequest("Request object is required.");
+                _logger.LogWarning("{Method}: Invalid URL provided: {Source}", method, request.Source);
+                return BadRequest("The provided URL is not valid.");
             }
 
-            request.Source = SanitizeInput(request.Source);
-
-            if (request.Source == null)
-            {
-                _logger.LogWarning("{Method}: Source URL is required.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. source=null", method);
-                return BadRequest("Source URL is required.");
-            }
-
-            try
+            return await TryCallToServiceAsync(method, async () =>
             {
                 _logger.LogInformation("{Method}: Extracting recipe from source URL: {Source}", method, request.Source);
                 var draft = await _extractor.ExtractRecipeAsync(request.Source, ct);
-                if (draft == null)
-                {
-                    _logger.LogWarning("{Method}: No recipe could be extracted from the provided URL: {Source}", method, request.Source);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                }
+                if (ResultNullCheck(method, draft, ret: () => StatusCode(StatusCodes.Status422UnprocessableEntity)) is { } check3) return check3;
+
                 _logger.LogInformation("{Method}: Recipe extracted from source.", method);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(draft);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+            });
         }
 
         /// <summary>
@@ -359,7 +269,7 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="id">The id of the recipe that is being cooked.</param>
         /// <remarks>returns a list of pantry items to possibly be deleted by the user now that the recipe has been made.</remarks>
-        [HttpPut("{id}/cook")]
+        [HttpGet("{id}/cook")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -367,55 +277,52 @@ namespace Backend.Controllers
         {
             const string method = nameof(CookRecipe);
             _logger.LogInformation("{Method}: Entering {Controller}. id={Id}", method, nameof(RecipeController), id);
-            if (id <= 0)
-            {
-                _logger.LogWarning("{Method}: Id must be positive.", method);
-                _logger.LogInformation("{Method}: Exiting with BadRequest. id={Id}", method, id);
-                return BadRequest("Id must be positive.");
-            }
+
+            if (CheckForLessThanOrEqualTo0(method, id, nameof(id)) is { } check) return check;
 
             var userId = GetUserId();
-            try
+            return TryCallToService(method, () =>
             {
                 var result = _recipeService.CookRecipe(id, userId);
-                if (result == null)
-                {
-                    _logger.LogWarning("{Method}: Service returned null pantry items.", method);
-                    _logger.LogInformation("{Method}: Exiting with null result.", method);
-                    return StatusCode(500, "Service returned null pantry items.");
-                }
+                if (ResultNullCheck(method, result) is { } check2) return check2;
+
                 _logger.LogInformation("{Method}: CookRecipe completed successfully. TotalCount={Count}", method, result.TotalCount);
-                _logger.LogInformation("{Method}: Exiting successfully.", method);
                 return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "{Method}: Exception occurred. Message: {Message}, StackTrace: {StackTrace}", method, ex.Message, ex.StackTrace);
-                _logger.LogInformation("{Method}: Exiting with error.", method);
-                return StatusCode(500, ex.Message);
-            }
+            });
         }
 
-        private int GetUserId()
-        {
-            return int.Parse(User.FindFirst(ClaimTypes.NameIdentifier)?.Value!, CultureInfo.InvariantCulture);
-        }
-
-        private static string SanitizeInput(string? input)
-        {
-            return input?.Replace(Environment.NewLine, "").Trim()!;
-        }
-
-        private static void SanitizeIngredients(List<CreateUpdateRecipeIngredientDto> ingredients)
+        private ActionResult? SanitizeAndCheckIngredients(string method, List<CreateUpdateRecipeIngredientDto> ingredients)
         {
             foreach (var ing in ingredients)
             {
                 ing.Unit = SanitizeInput(ing.Unit);
-                if (ing.Food.GetType() == typeof(NewFoodReferenceDto))
+                if (CheckForLessThanOrEqualTo0(method, ing.Quantity, nameof(ing.Quantity)) is { } check) return check;
+                if (ing.Food is NewFoodReferenceDto newFood)
                 {
-                    ((NewFoodReferenceDto)ing.Food).Name = SanitizeInput(((NewFoodReferenceDto)ing.Food).Name);
+                    if (CheckForNull(method, newFood.Name, nameof(newFood.Name)) is { } check2) return check2;
+                    if (CheckForLessThanOrEqualTo0(method, newFood.CategoryId, nameof(newFood.CategoryId)) is { } check3) return check3;
+                    newFood.Name = SanitizeInput(newFood.Name);
                 }
+                else if (ing.Food is ExistingFoodReferenceDto existingFood)
+                    if (CheckForLessThanOrEqualTo0(method, existingFood.Id, nameof(existingFood.Id)) is { } check4) return check4;
             }
+
+            return null;
+        }
+
+        protected static string NormalizeUri(string? input)
+        {
+            input = input?.Replace(Environment.NewLine, "").Trim()!;
+
+            if (!input.StartsWith("http://") && !input.StartsWith("https://"))
+                input = "https://" + input;
+            return input;
+        }
+
+        private static bool IsValidUrl(string url)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
         }
     }
 }
