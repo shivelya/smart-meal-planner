@@ -40,7 +40,7 @@ namespace Backend.Tests.Controllers
         [InlineData("UpdateAsync", typeof(HttpPutAttribute))]
         [InlineData("DeleteAsync", typeof(HttpDeleteAttribute))]
         [InlineData("ExtractRecipeAsync", typeof(HttpPostAttribute))]
-        [InlineData("CookRecipe", typeof(HttpPutAttribute))]
+        [InlineData("CookRecipe", typeof(HttpGetAttribute))]
         public void Endpoint_HasCorrectHttpAttribute(string methodName, Type expectedAttribute)
         {
             var method = _controllerType.GetMethod(methodName);
@@ -68,6 +68,9 @@ namespace Backend.Tests.Controllers
         [InlineData("DeleteAsync", StatusCodes.Status500InternalServerError)]
         [InlineData("ExtractRecipeAsync", StatusCodes.Status200OK)]
         [InlineData("ExtractRecipeAsync", StatusCodes.Status500InternalServerError)]
+        [InlineData("ExtractRecipeAsync", StatusCodes.Status400BadRequest)]
+        [InlineData("ExtractRecipeAsync", StatusCodes.Status502BadGateway)]
+        [InlineData("ExtractRecipeAsync", StatusCodes.Status422UnprocessableEntity)]
         [InlineData("CookRecipe", StatusCodes.Status200OK)]
         [InlineData("CookRecipe", StatusCodes.Status400BadRequest)]
         [InlineData("CookRecipe", StatusCodes.Status500InternalServerError)]

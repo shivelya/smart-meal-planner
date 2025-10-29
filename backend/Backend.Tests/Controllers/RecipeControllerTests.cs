@@ -218,20 +218,30 @@ namespace Backend.Tests.Controllers
         }
 
         [Fact]
-        public async Task ExtractRecipe_ReturnsOk_WhenSuccess()
+        public async Task ExtractRecipe_ReturnsOk_OnSuccess()
         {
             var extracted = new ExtractedRecipe { Title = "test" };
-            _extractorMock.Setup(e => e.ExtractRecipeAsync("url", CancellationToken.None)).ReturnsAsync(extracted);
-            var request = new ExtractRequest { Source = "url" };
+            var request = new ExtractRequest { Source = "https://test.com" };
+            _extractorMock.Setup(e => e.ExtractRecipeAsync(request.Source, CancellationToken.None)).ReturnsAsync(extracted);
             var result = await _controller.ExtractRecipeAsync(request, CancellationToken.None);
             var ok = Assert.IsType<OkObjectResult>(result.Result);
             Assert.Equal(extracted, ok.Value);
         }
 
         [Fact]
+        public async Task ExtractRecipe_ReturnsBadRequest_WhenInvalidUrl()
+        {
+            var extracted = new ExtractedRecipe { Title = "test" };
+            _extractorMock.Setup(e => e.ExtractRecipeAsync("url", CancellationToken.None)).ReturnsAsync(extracted);
+            var request = new ExtractRequest { Source = "url a" };
+            var result = await _controller.ExtractRecipeAsync(request, CancellationToken.None);
+            var ok = Assert.IsType<BadRequestObjectResult>(result.Result);
+        }
+
+        [Fact]
         public async Task ExtractRecipe_Returns500_OnException()
         {
-            _extractorMock.Setup(e => e.ExtractRecipeAsync("url", CancellationToken.None)).ThrowsAsync(new Exception("fail"));
+            _extractorMock.Setup(e => e.ExtractRecipeAsync("https://url", CancellationToken.None)).ThrowsAsync(new Exception("fail"));
             var request = new ExtractRequest { Source = "url" };
             var result = await _controller.ExtractRecipeAsync(request, CancellationToken.None);
             var status = Assert.IsType<StatusCodeResult>(result.Result);
