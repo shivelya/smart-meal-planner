@@ -81,7 +81,7 @@ namespace Backend.Controllers
             catch (HttpRequestException ex)
             {
                 _logger.LogWarning(ex, "{Method}: External service threw an exception.", method);
-                return StatusCode(StatusCodes.Status503ServiceUnavailable);
+                return StatusCode(ex.StatusCode != null ? (int)ex.StatusCode : StatusCodes.Status503ServiceUnavailable);
             }
             catch (Exception ex)
             {
