@@ -23,7 +23,7 @@ namespace Backend.Controllers
         private readonly IRecipeExtractor _extractor = extractor;
 
         /// <summary>
-        /// Creates a new recipe on the server, given a CreateRecipeDto object.
+        /// Creates a new recipe on the server, given a CreateUpdateRecipeRequestDto object.
         /// </summary>
         /// <param name="request">The requested recipe to be created.</param>
         /// <param name="ct">A token to cancel the operation.</param>
@@ -231,6 +231,9 @@ namespace Backend.Controllers
         /// <remarks>returns a recipe object for the user to verify. Does not insert recipe into the database. OK on success.</remarks>
         [HttpPost("extract")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status502BadGateway)]
+        [ProducesResponseType(StatusCodes.Status422UnprocessableEntity)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<ExtractedRecipe>> ExtractRecipeAsync([FromBody, BindRequired] ExtractRequest request, CancellationToken ct)
         {
@@ -239,13 +242,18 @@ namespace Backend.Controllers
             if (CheckForNull(method, request, nameof(request)) is { } check) return check;
             if (CheckForNull(method, request.Source, nameof(request.Source)) is { } check2) return check2;
 
-            request.Source = SanitizeInput(request.Source);
+            request.Source = NormalizeUri(request.Source);
+            if (!IsValidUrl(request.Source))
+            {
+                _logger.LogWarning("{Method}: Invalid URL provided: {Source}", method, request.Source);
+                return BadRequest("The provided URL is not valid.");
+            }
 
             return await TryCallToServiceAsync(method, async () =>
             {
                 _logger.LogInformation("{Method}: Extracting recipe from source URL: {Source}", method, request.Source);
                 var draft = await _extractor.ExtractRecipeAsync(request.Source, ct);
-                if (ResultNullCheck(method, draft) is { } check3) return check3;
+                if (ResultNullCheck(method, draft, ret: () => StatusCode(StatusCodes.Status422UnprocessableEntity)) is { } check3) return check3;
 
                 _logger.LogInformation("{Method}: Recipe extracted from source.", method);
                 return Ok(draft);
@@ -261,7 +269,7 @@ namespace Backend.Controllers
         /// </summary>
         /// <param name="id">The id of the recipe that is being cooked.</param>
         /// <remarks>returns a list of pantry items to possibly be deleted by the user now that the recipe has been made.</remarks>
-        [HttpPut("{id}/cook")]
+        [HttpGet("{id}/cook")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
@@ -288,6 +296,7 @@ namespace Backend.Controllers
             foreach (var ing in ingredients)
             {
                 ing.Unit = SanitizeInput(ing.Unit);
+                if (CheckForLessThanOrEqualTo0(method, ing.Quantity, nameof(ing.Quantity)) is { } check) return check;
                 if (ing.Food is NewFoodReferenceDto newFood)
                 {
                     if (CheckForNull(method, newFood.Name, nameof(newFood.Name)) is { } check2) return check2;
@@ -299,6 +308,21 @@ namespace Backend.Controllers
             }
 
             return null;
+        }
+
+        protected static string NormalizeUri(string? input)
+        {
+            input = input?.Replace(Environment.NewLine, "").Trim()!;
+
+            if (!input.StartsWith("http://") && !input.StartsWith("https://"))
+                input = "https://" + input;
+            return input;
+        }
+
+        private static bool IsValidUrl(string url)
+        {
+            return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+                && (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps);
         }
     }
 }
